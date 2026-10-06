@@ -11,8 +11,8 @@
 // Estas duas chaves podem ficar públicas (quem tranca os dados é o RLS).
 // A chave service_role NUNCA vai para aqui.
 const CONFIG = {
-  SUPABASE_URL: 'SEU_VALOR_AQUI',
-  SUPABASE_ANON_KEY: 'SEU_VALOR_AQUI',
+  SUPABASE_URL: 'https://kpqdwnmaezyaflmhvdog.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwcWR3bm1hZXp5YWZsbWh2ZG9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyNzY1MjAsImV4cCI6MjEwNjg1MjUyMH0.hQPwp-Kuq6Q1u9KSDpIegCc_KihjdmgQFO9zFI8Wbtk',
 };
 
 // Modo local: localhost, 127.0.0.1 ou ficheiro aberto diretamente (file://)
