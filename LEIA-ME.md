@@ -14,9 +14,9 @@ supabase/functions/_shared/         Código partilhado das funções
 supabase/functions/instagram-webhook   O cérebro (público)
 supabase/functions/ig-scheduler        Esvazia a fila (1 min)
 supabase/functions/ig-token-refresh    Renova o token (semanal)
-supabase/functions/ig-insights         Métricas
+supabase/functions/ig-insights         Métricas em direto (já não usada pelo painel)
 supabase/functions/ig-media            Posts
-supabase/functions/ig-analysis         Análise (posts, alcance, quem mais comenta)
+supabase/functions/ig-analysis         Métricas do painel (alcance, posts, quem mais comenta)
 ```
 
 ## Passo 0: testar já, sem configurar nada

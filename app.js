@@ -179,14 +179,12 @@ function renderInstagram() {
       <button class="tab" data-tab="metrics">Métricas</button>
       <button class="tab" data-tab="automations">Automações</button>
       <button class="tab" data-tab="interactions">Interações</button>
-      <button class="tab" data-tab="analysis">Análise</button>
     </div>
     <div id="ig-body"></div>`;
   $$('.tab').forEach((t) => t.addEventListener('click', () => { state.igTab = t.dataset.tab; renderInstagram(); }));
   $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === state.igTab));
   if (state.igTab === 'metrics') renderMetrics();
   else if (state.igTab === 'interactions') renderLeads();
-  else if (state.igTab === 'analysis') renderAnalysis();
   else renderAutomations();
 }
 
@@ -200,33 +198,6 @@ function bars(series) {
   const max = Math.max(1, ...series.map((p) => p.value));
   return `<div class="bars${series.length > 60 ? ' dense' : ''}">${series.map((p) => `<div class="bar-col" data-tip="${esc(fmtDate(p.date))}: ${p.value}"><div class="bar" style="height:${Math.max(2, (p.value / max) * 100)}%"></div></div>`).join('')}</div>`;
 }
-
-async function renderMetrics() {
-  const body = $('#ig-body');
-  body.innerHTML = `<div class="card muted">A carregar métricas...</div>`;
-  let data = null;
-  if (sb) { try { const r = await sb.functions.invoke('ig-insights'); if (!r.error && r.data && !r.data.error) data = r.data; } catch {} }
-  if (state.route !== 'instagram' || state.igTab !== 'metrics') return;
-  const leads = await safeCount('ig_leads');
-  if (!data) {
-    body.innerHTML = `
-      <div class="card empty"><div class="big">◎</div><h2>Liga o teu Instagram para ver as métricas</h2>
-      <p>Depois de ligares a conta (ver LEIA-ME), aqui vais ver seguidores, novos seguidores e alcance.</p></div>
-      <div class="grid cols-3" style="margin-top:16px"><div class="card"><div class="stat-l">Leads captados</div><div class="stat-n">${leads}</div></div></div>`;
-    return;
-  }
-  body.innerHTML = `
-    <div class="grid cols-3">
-      <div class="card"><div class="stat-l">Seguidores</div><div class="stat-n">${fmt(data.followers ?? 0)}</div></div>
-      <div class="card hl"><div class="stat-l">Leads captados</div><div class="stat-n">${leads}</div></div>
-      <div class="card"><div class="stat-l">Alcance</div><div class="stat-n">${data.reach_30d == null ? '-' : fmt(data.reach_30d)}</div><div class="stat-sub">contas alcançadas · 30 dias</div></div>
-    </div>
-    <div class="grid cols-2" style="margin-top:16px">
-      <div class="card"><h3>Crescimento do perfil <span class="muted small">novos seguidores por dia</span></h3>${bars(data.followers_by_day || [])}</div>
-      <div class="card"><h3>Alcance <span class="muted small">contas alcançadas por dia</span></h3>${bars(data.reach_by_day || [])}</div>
-    </div>`;
-}
-
 
 // Miniatura do post ligado à automação (1.º post + "+N" se houver mais; ícone se for para todos)
 function thumbHTML(ids) {
@@ -493,7 +464,7 @@ function exportLeadsCSV() {
 
 
 // ============================================================
-// ANÁLISE: métricas por período, alcance por dia, melhores posts e quem mais comenta
+// MÉTRICAS: cartões por período, crescimento e alcance por dia, melhores posts e quem mais comenta
 // (o resultado fica guardado na tabela ig_analysis e só atualiza quando se carrega em "Atualizar")
 // ============================================================
 const AN = { data: null, updated: null, period: '30', sort: 'best', loading: false };
@@ -502,15 +473,16 @@ const AN_SORTS = [['best', 'Melhores'], ['likes', 'Mais curtidos'], ['comments',
 const anDays = () => (AN.period === 'all' ? null : Number(AN.period));
 const anLabel = () => (AN.period === 'all' ? 'Tudo' : `${AN.period} dias`);
 
-async function renderAnalysis() {
-  $('#ig-body').innerHTML = '<div class="card muted">A carregar análise...</div>';
+async function renderMetrics() {
+  $('#ig-body').innerHTML = '<div class="card muted">A carregar métricas...</div>';
+  AN.leads = await safeCount('ig_leads');
   if (sb) {
     try {
       const { data } = await sb.from('ig_analysis').select('data,updated_at').eq('id', 'main').maybeSingle();
       if (data) { AN.data = data.data; AN.updated = data.updated_at; }
     } catch (e) { console.error(e); }
   }
-  if (state.route !== 'instagram' || state.igTab !== 'analysis') return;
+  if (state.route !== 'instagram' || state.igTab !== 'metrics') return;
   drawAnalysis();
 }
 
@@ -527,7 +499,7 @@ async function runAnalysis() {
     toast('Análise atualizada.');
   } catch (e) { console.error(e); toast('Não foi possível atualizar a análise. Tenta outra vez daqui a pouco.', true); }
   AN.loading = false;
-  if (state.route === 'instagram' && state.igTab === 'analysis') drawAnalysis();
+  if (state.route === 'instagram' && state.igTab === 'metrics') drawAnalysis();
 }
 
 function drawAnalysis() {
@@ -537,9 +509,10 @@ function drawAnalysis() {
   const bind = () => $('#an-refresh')?.addEventListener('click', runAnalysis);
 
   if (!d) {
-    body.innerHTML = `<div class="card empty"><div class="big">📊</div><h2>Ainda não há análise</h2>
-      <p>${sb ? 'Carrega em Atualizar para analisar os teus posts, o alcance e quem mais comenta.<br>Pode demorar cerca de 1 minuto.' : 'Liga o teu Instagram (ver LEIA-ME) para ver a análise.'}</p>
-      ${sb ? `<div style="margin-top:14px">${btn.replace('class="btn"', 'class="btn primary"')}</div>` : ''}</div>`;
+    body.innerHTML = `<div class="card empty"><div class="big">📊</div><h2>${sb ? 'Ainda não há métricas' : 'Liga o teu Instagram para ver as métricas'}</h2>
+      <p>${sb ? 'Carrega em Atualizar para analisar os teus posts, o alcance e quem mais comenta.<br>Pode demorar cerca de 1 minuto.' : 'Depois de ligares a conta (ver LEIA-ME), aqui vais ver seguidores, alcance, melhores posts e muito mais.'}</p>
+      ${sb ? `<div style="margin-top:14px">${btn.replace('class="btn"', 'class="btn primary"')}</div>` : ''}</div>
+      <div class="grid cols-3" style="margin-top:16px"><div class="card hl"><div class="stat-l">Leads captados</div><div class="stat-n">${fmt(AN.leads || 0)}</div></div></div>`;
     return bind();
   }
 
@@ -551,6 +524,8 @@ function drawAnalysis() {
   // Alcance por dia
   const n = anDays();
   const serie = n ? d.reach_daily.slice(-n) : d.reach_daily;
+  // Novos seguidores por dia: a API só devolve os últimos 30 dias
+  const growth = (d.followers_by_day || []).slice(-(n && n < 30 ? n : 30));
 
   // Melhores posts do período
   const cutoff = n ? Date.now() - n * 864e5 : 0;
@@ -562,14 +537,18 @@ function drawAnalysis() {
       <div class="pills">${AN_PERIODS.map(([v, t]) => `<button class="${AN.period === v ? 'on' : ''}" data-period="${v}">${t}</button>`).join('')}</div>
       ${btn}
     </div>
-    <div class="grid cols-5">
+    <div class="grid cols-6">
       <div class="card"><div class="stat-l">Seguidores</div><div class="stat-n">${fmt(d.followers)}</div><div class="stat-sub">Total atual</div></div>
+      <div class="card hl"><div class="stat-l">Leads captados</div><div class="stat-n">${fmt(AN.leads || 0)}</div><div class="stat-sub">Total de contactos</div></div>
       <div class="card"><div class="stat-l">Novos seg.</div><div class="stat-n">${dash(w.new_followers)}</div><div class="stat-sub">Últimos ${wd} dias</div></div>
       <div class="card"><div class="stat-l">Alcance</div><div class="stat-n">${dash(w.reach)}</div><div class="stat-sub">Contas alcançadas · ${wd} dias</div></div>
       <div class="card"><div class="stat-l">Contas engajadas</div><div class="stat-n">${dash(w.engaged)}</div><div class="stat-sub">Últimos ${wd} dias</div></div>
       <div class="card"><div class="stat-l">Interações</div><div class="stat-n">${dash(w.interactions)}</div><div class="stat-sub">Últimos ${wd} dias</div></div>
     </div>
-    <div class="card" style="margin-top:16px"><h3>📈 Alcance por dia <span class="muted small">(passa o rato para ver os números)</span></h3>${bars(serie)}</div>
+    <div class="grid cols-2" style="margin-top:16px">
+      <div class="card"><h3>📈 Crescimento do perfil <span class="muted small">novos seguidores por dia · ${growth.length} dias</span></h3>${bars(growth)}</div>
+      <div class="card"><h3>📈 Alcance por dia <span class="muted small">(passa o rato para ver os números)</span></h3>${bars(serie)}</div>
+    </div>
 
     <div class="card" style="margin-top:16px">
       <div class="row between" style="margin-bottom:14px">

@@ -49,7 +49,10 @@ Deno.serve(async (req) => {
       return r.ok ? (r.data?.data?.[0]?.total_value?.value ?? null) : null;
     };
     const follows = await retry(`/${id}/insights?metric=follower_count&period=day&since=${until - 30 * DAY}&until=${until}`);
-    const fv: number[] = follows.ok ? (follows.data?.data?.[0]?.values ?? []).map((v: any) => v.value ?? 0) : [];
+    const fvals: any[] = follows.ok ? follows.data?.data?.[0]?.values ?? [] : [];
+    const fv: number[] = fvals.map((v: any) => v.value ?? 0);
+    // Novos seguidores por dia (a API só devolve os últimos 30 dias)
+    const followers_by_day = fvals.map((v: any) => ({ date: String(v.end_time).slice(0, 10), value: v.value ?? 0 }));
     const sum = (a: number[]) => a.reduce((x, y) => x + y, 0);
 
     const windows: Record<string, any> = {};
@@ -75,7 +78,7 @@ Deno.serve(async (req) => {
       const likes = p.like_count ?? 0, comments = p.comments_count ?? 0, saves = m.saved ?? 0, shares = m.shares ?? 0;
       return {
         id: p.id, type: p.media_type, permalink: p.permalink, ts: p.timestamp,
-        thumb: p.thumbnail_url || p.media_url || null, caption: String(p.caption ?? "").slice(0, 100),
+        thumb: p.thumbnail_url || p.media_url || null, caption: Array.from(String(p.caption ?? "")).slice(0, 100).join(""), // por caracteres inteiros (não corta emojis ao meio)
         likes, comments, saves, shares, views: m.views ?? 0, reach: m.reach ?? 0,
         interactions: likes + comments + saves + shares,
       };
@@ -112,11 +115,13 @@ Deno.serve(async (req) => {
     const data = {
       generated_at: new Date().toISOString(),
       followers: me.data.followers_count ?? 0,
-      windows, reach_daily, posts, commenters,
+      windows, followers_by_day, reach_daily, posts, commenters,
       stats: { posts_analyzed: posts.length, comments_analyzed: commentsAnalyzed },
     };
     const updated_at = new Date().toISOString();
-    await sb.from("ig_analysis").upsert({ id: "main", data, updated_at });
+    // Guarda o resultado (e avisa se a gravação falhar, em vez de a ignorar em silêncio)
+    const { error: saveError } = await sb.from("ig_analysis").upsert({ id: "main", data, updated_at });
+    if (saveError) return json({ error: "Não foi possível guardar a análise: " + saveError.message });
     return json({ data, updated_at });
   } catch (e) {
     return json({ error: String(e).slice(0, 300) });
