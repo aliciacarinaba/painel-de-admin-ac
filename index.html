@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel de Administração</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Cliente oficial do Supabase (só é usado quando o site está no ar, fora do localhost) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- ECRÃ 1: INÍCIO DE SESSÃO -->
+  <main id="login-screen" class="login-wrap" hidden>
+    <form id="login-form" class="login-card" autocomplete="on">
+      <div class="logo-dot"></div>
+      <h1>Painel de Administração</h1>
+      <p class="muted">Inicia sessão para continuar.</p>
+
+      <label class="label" for="login-email">E-mail</label>
+      <input id="login-email" type="email" placeholder="o-teu-email@exemplo.com" required autocomplete="username">
+
+      <label class="label" for="login-pass">Palavra-passe</label>
+      <input id="login-pass" type="password" placeholder="Palavra-passe" required autocomplete="current-password">
+
+      <p id="login-error" class="error-msg" hidden></p>
+      <button class="btn primary block" type="submit" id="login-btn">Entrar</button>
+
+      <p id="login-local-note" class="note" hidden>
+        Modo de teste local: qualquer e-mail e uma palavra-passe de 5 dígitos entram.
+        No ar (produção), o início de sessão será pelo Supabase.
+      </p>
+    </form>
+  </main>
+
+  <!-- ECRÃ 2: O SISTEMA -->
+  <div id="app" class="app" hidden>
+    <header class="topbar">
+      <button class="icon-btn" id="menu-toggle" aria-label="Abrir menu">☰</button>
+      <strong>Painel</strong>
+    </header>
+
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><span class="logo-dot small"></span> Painel</div>
+      <nav>
+        <button class="nav-item" data-route="home"><span class="ico">⌂</span> Início</button>
+        <button class="nav-item" data-route="calendar"><span class="ico">▦</span> Calendário</button>
+        <button class="nav-item" data-route="instagram"><span class="ico">◎</span> Instagram</button>
+      </nav>
+      <div class="sidebar-foot">
+        <div id="user-label" class="muted small"></div>
+        <button class="btn ghost block" id="logout-btn">Terminar sessão</button>
+      </div>
+    </aside>
+
+    <section class="content">
+      <div id="local-banner" class="banner" hidden>
+        Estás no modo de teste local. Para colocar no ar de verdade (com início de sessão e
+        dados guardados), segue o LEIA-ME.
+      </div>
+      <div id="view"></div>
+    </section>
+  </div>
+
+  <!-- EDITOR DE AUTOMAÇÃO (ecrã inteiro) -->
+  <div id="editor" class="editor" hidden></div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
