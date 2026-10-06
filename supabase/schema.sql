@@ -196,3 +196,27 @@ begin
     execute format('create policy "admin_total" on %I for all to authenticated using (true) with check (true)', t);
   end loop;
 end $$;
+
+-- ---------- 4) VISTA PARA O SEPARADOR "INTERAÇÕES" ----------
+-- Junta cada lead com o nome da automação e o número de mensagens trocadas.
+-- security_invoker = as regras de acesso (RLS) das tabelas base aplicam-se a quem consulta.
+create or replace view ig_leads_view with (security_invoker = true) as
+select
+  l.*,
+  a.nome as automacao_nome,
+  coalesce(d.total, 0) as interacoes,
+  coalesce(d.ok, 0)    as envios_ok,
+  coalesce(d.erros, 0) as envios_erro
+from ig_leads l
+left join ig_automations a on a.id = l.automation_id
+left join (
+  select ig_user_id,
+         count(*) as total,
+         count(*) filter (where status = 'ok') as ok,
+         count(*) filter (where status = 'erro') as erros
+  from ig_deliveries
+  group by ig_user_id
+) d on d.ig_user_id = l.ig_user_id;
+
+revoke all on ig_leads_view from anon;
+grant select on ig_leads_view to authenticated, service_role;

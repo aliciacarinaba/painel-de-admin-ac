@@ -178,11 +178,14 @@ function renderInstagram() {
     <div class="tabs">
       <button class="tab" data-tab="metrics">Métricas</button>
       <button class="tab" data-tab="automations">Automações</button>
+      <button class="tab" data-tab="interactions">Interações</button>
     </div>
     <div id="ig-body"></div>`;
   $$('.tab').forEach((t) => t.addEventListener('click', () => { state.igTab = t.dataset.tab; renderInstagram(); }));
   $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === state.igTab));
-  if (state.igTab === 'metrics') renderMetrics(); else renderAutomations();
+  if (state.igTab === 'metrics') renderMetrics();
+  else if (state.igTab === 'interactions') renderLeads();
+  else renderAutomations();
 }
 
 // Número com separador de milhares em português (ex: 1.721)
@@ -271,6 +274,232 @@ async function renderAutomations() {
     const { error } = await sb.from('ig_automations').update({ active: e.target.checked }).eq('id', id);
     if (error) { toast('Não foi possível atualizar.', true); e.target.checked = !e.target.checked; }
   });
+}
+
+
+// ============================================================
+// INTERAÇÕES: todos os leads captados (Tabela, Planilha ou Gráfico)
+// ============================================================
+const ORIGENS = { comment: 'Comentário', dm: 'Direct', story_reply: 'Resposta a story' };
+const ORIGEM_ICO = { comment: '💬', dm: '📩', story_reply: '↩️' };
+const origemTxt = (o) => ORIGENS[o] || (o ? o : '-');
+const L = { rows: [], view: 'table', q: '', origem: '', etiqueta: '', automacao: '', sortK: 'updated_at', sortDir: -1, page: 1, size: 25 };
+
+// Data e hora em português: 09/09/2026 14:30
+const fmtDateTime = (iso) => {
+  if (!iso) return '-';
+  const d = new Date(iso); if (isNaN(d)) return '-';
+  const p = (n) => String(n).padStart(2, '0');
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+
+// Vai buscar todos os leads (a base de dados devolve no máximo 1000 linhas por pedido)
+async function loadLeads() {
+  if (!sb) return [];
+  const all = [];
+  for (let from = 0; from < 50000; from += 1000) {
+    const { data, error } = await sb.from('ig_leads_view').select('*').order('updated_at', { ascending: false }).range(from, from + 999);
+    if (error) throw error;
+    all.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
+  return all;
+}
+
+async function renderLeads() {
+  const body = $('#ig-body');
+  body.innerHTML = '<div class="card muted">A carregar contactos...</div>';
+  try { L.rows = await loadLeads(); } catch (e) { console.error(e); L.rows = []; }
+  if (state.route !== 'instagram' || state.igTab !== 'interactions') return;
+  if (!L.rows.length) {
+    body.innerHTML = `<div class="card empty"><div class="big">☺</div><h2>Ainda não há contactos</h2>
+      <p>Quando alguém comentar uma das tuas palavras e receber a DM, aparece aqui.</p></div>`;
+    return;
+  }
+  drawLeads();
+}
+
+// Linhas depois de filtros e ordenação
+function leadsFiltered() {
+  const q = L.q.trim().toLowerCase();
+  let r = L.rows.filter((x) =>
+    (!L.origem || x.last_source === L.origem) &&
+    (!L.etiqueta || (x.tags || []).includes(L.etiqueta)) &&
+    (!L.automacao || (x.automacao_nome || '') === L.automacao) &&
+    (!q || [x.username, x.last_keyword, x.email, x.telefone, x.automacao_nome, (x.tags || []).join(' ')].some((v) => String(v || '').toLowerCase().includes(q))));
+  const k = L.sortK, d = L.sortDir;
+  const val = (x) => (k === 'contacto' ? (x.email || x.telefone || '') : x[k]);
+  r.sort((a, b) => {
+    const va = val(a) ?? '', vb = val(b) ?? '';
+    if (typeof va === 'number' || typeof vb === 'number') return ((va || 0) - (vb || 0)) * d;
+    return String(va).localeCompare(String(vb), 'pt') * d;
+  });
+  return r;
+}
+
+// Vista Tabela: igual ao exemplo (Conta, Origem, Palavra, Contacto, Etiqueta, Recebeu?, Interações, Última vez)
+const COLS_TABLE = [
+  { k: 'username', t: 'Conta' }, { k: 'last_source', t: 'Origem' }, { k: 'last_keyword', t: 'Palavra' },
+  { k: 'contacto', t: 'Contacto' }, { k: 'tags', t: 'Etiqueta', nosort: true }, { k: 'envios_ok', t: 'Recebeu?' },
+  { k: 'interacoes', t: 'Interações' }, { k: 'updated_at', t: 'Última vez' },
+];
+// Vista Planilha: todas as colunas
+const COLS_SHEET = [
+  { k: 'username', t: 'Perfil' }, { k: 'ig_user_id', t: 'ID Instagram' }, { k: 'last_source', t: 'Origem' }, { k: 'last_keyword', t: 'Palavra' },
+  { k: 'automacao_nome', t: 'Automação' }, { k: 'email', t: 'E-mail' }, { k: 'telefone', t: 'Telefone' }, { k: 'tags', t: 'Etiqueta', nosort: true },
+  { k: 'envios_ok', t: 'Entregas' }, { k: 'interacoes', t: 'Interações' }, { k: 'link_sent', t: 'Link enviado' }, { k: 'flow_step', t: 'Passo' },
+  { k: 'created_at', t: 'Primeira vez' }, { k: 'updated_at', t: 'Última vez' },
+];
+
+function cellHTML(x, k, sheet) {
+  const dash = '<span class="muted">-</span>';
+  switch (k) {
+    case 'username': return x.username ? `<a class="acct" href="https://instagram.com/${encodeURIComponent(x.username)}" target="_blank" rel="noopener">@${esc(x.username)}</a>` : `<span class="muted">ID ${esc(x.ig_user_id)}</span>`;
+    case 'last_source': return sheet ? esc(origemTxt(x.last_source)) : `<span class="src">${ORIGEM_ICO[x.last_source] || ''} ${esc(origemTxt(x.last_source))}</span>`;
+    case 'last_keyword': return x.last_keyword ? esc(x.last_keyword) : dash;
+    case 'automacao_nome': return esc(x.automacao_nome || '-');
+    case 'contacto': return [x.email, x.telefone].filter(Boolean).map(esc).join('<br>') || dash;
+    case 'email': case 'telefone': case 'flow_step': case 'ig_user_id': return esc(x[k] ?? '');
+    case 'tags': return `<span class="tags-cell" data-a="edit-tags" data-id="${esc(x.ig_user_id)}" title="Clicar para editar">${(x.tags || []).length ? (x.tags || []).map((t) => `<span class="chip gray">${esc(t)}</span>`).join('') : '<span class="muted">+ etiqueta</span>'}</span>`;
+    case 'envios_ok': return sheet ? String(x.envios_ok ?? 0) : (x.envios_ok > 0 ? 'Sim' : (x.envios_erro > 0 ? 'Erro' : dash));
+    case 'interacoes': return String(x.interacoes ?? 0);
+    case 'link_sent': return x.link_sent ? 'Sim' : 'Não';
+    case 'created_at': case 'updated_at': return fmtDateTime(x[k]);
+  }
+  return '';
+}
+
+function drawLeads() {
+  const body = $('#ig-body');
+  const all = leadsFiltered();
+  const uniq = (f) => [...new Set(L.rows.flatMap(f).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt'));
+  const opt = (arr, cur, label) => `<option value="">${label}</option>` + arr.map((v) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(v)}</option>`).join('');
+  const origens = [...new Set(L.rows.map((x) => x.last_source).filter(Boolean))];
+
+  const recebeu = L.rows.filter((x) => x.envios_ok > 0).length;
+  body.innerHTML = `
+    <div class="row between" style="margin-bottom:16px">
+      <div class="mini-stats">${L.view === 'chart' ? '' : `
+        <div class="mini"><b>${fmt(L.rows.length)}</b><span>Contactos captados</span></div>
+        <div class="mini"><b>${fmt(recebeu)}</b><span>Receberam a entrega</span></div>`}
+      </div>
+      <div class="seg" role="tablist">
+        ${[['table', 'Tabela'], ['sheet', 'Planilha'], ['chart', 'Gráfico']].map(([v, t]) => `<button class="${L.view === v ? 'on' : ''}" data-view="${v}">${t}</button>`).join('')}
+      </div>
+    </div>
+    ${L.view === 'chart' ? '' : `
+    <div class="toolbar">
+      <input type="text" id="l-q" placeholder="Buscar por @ ou palavra..." value="${esc(L.q)}">
+      <select id="l-origem"><option value="">Todas as origens</option>${origens.map((o) => `<option value="${esc(o)}" ${o === L.origem ? 'selected' : ''}>${esc(origemTxt(o))}</option>`).join('')}</select>
+      <select id="l-etiqueta">${opt(uniq((x) => x.tags || []), L.etiqueta, 'Todas as etiquetas')}</select>
+      <select id="l-auto">${opt(uniq((x) => [x.automacao_nome]), L.automacao, 'Todas as automações')}</select>
+      <button class="btn" id="l-csv">⬇ Exportar CSV</button>
+    </div>`}
+    <div id="l-body"></div>`;
+
+  $$('[data-view]', body).forEach((b) => b.addEventListener('click', () => { L.view = b.dataset.view; L.page = 1; drawLeads(); }));
+  if (L.view !== 'chart') {
+    $('#l-q').addEventListener('input', (e) => { L.q = e.target.value; L.page = 1; drawLeadsBody(); });
+    $('#l-origem').addEventListener('change', (e) => { L.origem = e.target.value; L.page = 1; drawLeads(); });
+    $('#l-etiqueta').addEventListener('change', (e) => { L.etiqueta = e.target.value; L.page = 1; drawLeads(); });
+    $('#l-auto').addEventListener('change', (e) => { L.automacao = e.target.value; L.page = 1; drawLeads(); });
+    $('#l-csv').addEventListener('click', exportLeadsCSV);
+  }
+  drawLeadsBody();
+}
+
+function drawLeadsBody() {
+  const box = $('#l-body'); if (!box) return;
+  if (L.view === 'chart') return drawLeadsCharts(box);
+  const all = leadsFiltered();
+  const sheet = L.view === 'sheet';
+  const pages = Math.max(1, Math.ceil(all.length / L.size));
+  if (L.page > pages) L.page = pages;
+  const rows = sheet ? all : all.slice((L.page - 1) * L.size, L.page * L.size);
+  const arrow = (k) => (L.sortK === k ? (L.sortDir > 0 ? ' ▲' : ' ▼') : '');
+  const cols = sheet ? COLS_SHEET : COLS_TABLE;
+
+  box.innerHTML = `
+    <div class="tbl-wrap ${sheet ? 'sheet' : ''}">
+      <table class="tbl">
+        <thead><tr>${sheet ? '<th class="rn"></th>' : ''}${cols.map((c) => `<th ${c.nosort ? '' : `data-sort="${c.k}"`}>${c.t}${arrow(c.k)}</th>`).join('')}</tr></thead>
+        <tbody>${rows.length ? rows.map((x, i) => `<tr>${sheet ? `<td class="rn">${i + 1}</td>` : ''}${cols.map((c) => `<td>${cellHTML(x, c.k, sheet)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${cols.length + 1}" class="muted" style="text-align:center;padding:28px">Nenhum contacto com estes filtros.</td></tr>`}</tbody>
+      </table>
+    </div>
+    ${sheet ? '' : `<div class="row between" style="margin-top:12px">
+      <div class="row"><span class="muted small">Linhas por página</span>
+        <select id="l-size" style="width:auto">${[25, 50, 100].map((n) => `<option ${n === L.size ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+      <div class="row"><button class="btn sm" id="l-prev" ${L.page <= 1 ? 'disabled' : ''}>Anterior</button>
+        <span class="small">${L.page} / ${pages}</span>
+        <button class="btn sm" id="l-next" ${L.page >= pages ? 'disabled' : ''}>Seguinte</button></div></div>`}`;
+
+  $$('[data-sort]', box).forEach((th) => th.addEventListener('click', () => {
+    const k = th.dataset.sort; L.sortDir = L.sortK === k ? -L.sortDir : (['updated_at', 'created_at', 'interacoes', 'envios_ok'].includes(k) ? -1 : 1); L.sortK = k; drawLeadsBody();
+  }));
+  $$('[data-a=edit-tags]', box).forEach((el) => el.addEventListener('click', () => editTags(el.dataset.id)));
+  if (!sheet) {
+    $('#l-size')?.addEventListener('change', (e) => { L.size = +e.target.value; L.page = 1; drawLeadsBody(); });
+    $('#l-prev')?.addEventListener('click', () => { L.page--; drawLeadsBody(); });
+    $('#l-next')?.addEventListener('click', () => { L.page++; drawLeadsBody(); });
+  }
+}
+
+// Editar etiquetas de um contacto (separadas por vírgula)
+async function editTags(id) {
+  const x = L.rows.find((r) => r.ig_user_id === id); if (!x) return;
+  const txt = prompt('Etiquetas deste contacto (separadas por vírgula):', (x.tags || []).join(', '));
+  if (txt === null) return;
+  const tags = [...new Set(txt.split(',').map((t) => t.trim()).filter(Boolean))];
+  const { error } = await sb.from('ig_leads').update({ tags }).eq('ig_user_id', id);
+  if (error) return toast('Não foi possível guardar as etiquetas.', true);
+  x.tags = tags; drawLeads(); toast('Etiquetas guardadas.');
+}
+
+// Barras horizontais (ranking)
+function hbars(items) {
+  const max = Math.max(1, ...items.map((i) => i.n));
+  if (!items.length) return '<p class="muted small">Sem dados ainda.</p>';
+  return items.map((i) => `<div class="hb"><span title="${esc(i.t)}">${esc(i.t)}</span><div class="hb-track"><div class="hb-fill" style="width:${(i.n / max) * 100}%"></div></div><b>${fmt(i.n)}</b></div>`).join('');
+}
+const countBy = (rows, f) => { const m = {}; rows.forEach((r) => { const k = f(r); if (k) m[k] = (m[k] || 0) + 1; }); return Object.entries(m).map(([t, n]) => ({ t, n })).sort((a, b) => b.n - a.n); };
+
+function drawLeadsCharts(box) {
+  const rows = L.rows;
+  const total = rows.length;
+  const comContacto = rows.filter((r) => r.email || r.telefone).length;
+  const comLink = rows.filter((r) => r.link_sent).length;
+  const dias30 = Date.now() - 30 * 864e5;
+  const novos30 = rows.filter((r) => new Date(r.created_at).getTime() >= dias30).length;
+  const ativos7 = rows.filter((r) => new Date(r.updated_at).getTime() >= Date.now() - 7 * 864e5).length;
+  // Novos contactos por dia (últimos 30 dias)
+  const perDay = {};
+  rows.forEach((r) => { const k = String(r.created_at).slice(0, 10); perDay[k] = (perDay[k] || 0) + 1; });
+  const serie = Array.from({ length: 30 }, (_, i) => { const d = new Date(Date.now() - (29 - i) * 864e5).toISOString().slice(0, 10); return { date: d, value: perDay[d] || 0 }; });
+
+  box.innerHTML = `
+    <div class="grid cols-3">
+      <div class="card hl"><div class="stat-l">Contactos</div><div class="stat-n">${fmt(total)}</div><div class="stat-sub">${fmt(novos30)} novos · 30 dias</div></div>
+      <div class="card"><div class="stat-l">Com e-mail ou telefone</div><div class="stat-n">${fmt(comContacto)}</div><div class="stat-sub">${total ? Math.round((comContacto / total) * 100) : 0}% dos contactos</div></div>
+      <div class="card"><div class="stat-l">Link enviado</div><div class="stat-n">${fmt(comLink)}</div><div class="stat-sub">${fmt(ativos7)} ativos · 7 dias</div></div>
+    </div>
+    <div class="card" style="margin-top:16px"><h3>Novos contactos <span class="muted small">por dia · 30 dias</span></h3>${bars(serie)}</div>
+    <div class="grid cols-2" style="margin-top:16px">
+      <div class="card"><h3>Origem</h3>${hbars(countBy(rows, (r) => origemTxt(r.last_source)))}</div>
+      <div class="card"><h3>Palavras mais usadas</h3>${hbars(countBy(rows, (r) => (r.last_keyword || '').toLowerCase().trim()).slice(0, 8))}</div>
+      <div class="card"><h3>Automações</h3>${hbars(countBy(rows, (r) => r.automacao_nome || 'Sem automação').slice(0, 8))}</div>
+      <div class="card"><h3>Etiquetas</h3>${hbars(countBy(rows.flatMap((r) => (r.tags || []).map((t) => ({ t }))), (r) => r.t).slice(0, 8))}</div>
+    </div>`;
+}
+
+// Exporta a lista filtrada para CSV (abre no Excel / Numbers / Google Sheets)
+function exportLeadsCSV() {
+  const rows = leadsFiltered();
+  const head = ['Perfil', 'ID Instagram', 'Origem', 'Palavra', 'Automação', 'E-mail', 'Telefone', 'Etiquetas', 'Interações', 'Link enviado', 'Passo', 'Primeira vez', 'Última vez'];
+  const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const lines = rows.map((x) => [x.username ? '@' + x.username : '', x.ig_user_id, origemTxt(x.last_source), x.last_keyword, x.automacao_nome, x.email, x.telefone, (x.tags || []).join(', '), x.interacoes, x.link_sent ? 'Sim' : 'Não', x.flow_step, fmtDateTime(x.created_at), fmtDateTime(x.updated_at)].map(cell).join(';'));
+  const blob = new Blob(['﻿' + [head.map(cell).join(';'), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `interacoes-${new Date().toISOString().slice(0, 10)}.csv`; a.click(); URL.revokeObjectURL(a.href);
 }
 
 // ============================================================
