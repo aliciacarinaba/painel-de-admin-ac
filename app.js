@@ -172,6 +172,10 @@ const BRAND = {
   cores: [
     ['Branco sujo', '#F2F2F2'], ['Bege', '#E8E3DF'], ['Rosa', '#C8A49F'], ['Rosa velho', '#8F5B5F'], ['Castanho escuro', '#190506'],
   ],
+  variacoes: [
+    ['50', '#F5EFF0'], ['100', '#EBE0E1'], ['200', '#D7C1C3'], ['300', '#C3A2A4'], ['400', '#AF8386'], ['500', '#9C6368'],
+    ['600', '#7C5053'], ['700', '#5D3C3E'], ['800', '#3E282A'], ['900', '#1F1415'], ['950', '#160E0F'],
+  ],
   fontes: [
     ['Fonte principal', 'Ethereal', 'Títulos'],
     ['Fonte secundária', 'TT Drugs', 'Corpo de texto'],
@@ -266,6 +270,8 @@ function renderBranding() {
 
       <div class="card"><h3>2. Paleta de cores</h3>
         <div class="swatches">${B.cores.map(([n, h]) => `<div class="swatch"><span class="chip" style="background:${h}"></span><strong>${esc(n)}</strong><span class="muted">${h}</span></div>`).join('')}</div>
+        <div class="stat-l" style="margin-top:20px">Variações de cor</div>
+        <div class="swatches tints">${B.variacoes.map(([n, h]) => `<div class="swatch"><span class="chip" style="background:${h}"></span><strong>${n}</strong><span class="muted">${h}</span></div>`).join('')}</div>
       </div>
 
       <div class="card"><h3>3. Tipografia</h3>
