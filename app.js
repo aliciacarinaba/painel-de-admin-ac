@@ -121,6 +121,8 @@ function go(route) {
   $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.route === route));
   if (route === 'home') renderHome();
   else if (route === 'calendar') renderCalendar();
+  else if (route === 'proposals') renderSoon('Propostas', '▤', 'Aqui vais poder gerir as tuas propostas.');
+  else if (route === 'courses') renderSoon('Oferta Formativa', '🎓', 'Aqui vais poder gerir a tua oferta formativa.');
   else renderInstagram();
 }
 
@@ -162,6 +164,16 @@ function renderCalendar() {
       <div class="big">▦</div>
       <h2>Calendário</h2>
       <p>Esta área vai chegar em breve para planeares os teus conteúdos.</p>
+    </div>`;
+}
+
+// ---------- Propostas e Oferta Formativa (placeholders) ----------
+function renderSoon(titulo, icone, texto) {
+  $('#view').innerHTML = `
+    <div class="card empty" style="margin-top:40px">
+      <div class="big">${icone}</div>
+      <h2>${titulo}</h2>
+      <p>${texto} Esta área vai chegar em breve.</p>
     </div>`;
 }
 
