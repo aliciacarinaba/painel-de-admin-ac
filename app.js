@@ -152,12 +152,158 @@ function renderHome() {
   if (state.homeTab === 'branding') renderBranding(); else renderGeneral();
 }
 
+const BRAND = {
+  perfil: [
+    ['Nome, idade e profissão', 'Alícia Carina, 27 anos, empresária, estilista de unhas e formadora.'],
+    ['O que vendo?', 'Formação sobre gestão financeira e precificação de serviços na área da beleza; formação teórica e prática de estilismo de unhas.'],
+    ['Para quem vendo?', 'Estilistas de unhas e profissionais de beleza que exercem funções em Portugal.'],
+    ['Qual o meu diferencial?', 'Converso honestamente sobre dinheiro e sobre as dificuldades de ter um negócio na área da beleza em Portugal, assim como a parte mais bonita. Partilho uma “vida real”, em vez de romantizar a área e a profissão. Além disso, a minha formação e prática em Psicologia permitem-me ter uma visão e comunicação mais empáticas e equilibradas.'],
+  ],
+  nicho: 'Estilismo de unhas e gestão financeira para profissionais de beleza',
+  visuais: ['🌸 Flores', '📚 Livros ou cadernos', '☕️ Chávena de café com leite', '💻 MacBook, iPad ou iPhone', '☀️ Espaços iluminados com luz natural e sombras', '🏛️ Arquitetura antiga'],
+  emojis: '🏛️ 🤌🏻 ☕️ 🗝️ 💸 ⏱️ 😮‍💨 🖋️ 🤞🏻 ⏳ 🔏 🔍 🔓 🤎',
+  sensacao: 'Sofisticação serena com intimidade. A marca transmite calma, elegância e profundidade, o sentido de segurança de quem já caminhou o caminho. Há humanidade e vulnerabilidade honesta, mas sempre com compostura. É como estar numa conversa particular com alguém em quem se confia, numa sala iluminada por luz natural, onde se pode falar de dificuldades sem perder a dignidade.',
+  dominantes: [
+    'Estética claustral: arquitetura antiga, espaços introspetivos, luz natural que cria sombra e drama',
+    'Minimalismo editorial: ordem, branco, espaço em branco generoso',
+    'Toques de sensualidade: mãos, flores, texturas em primeiro plano (pele, tecidos, papel)',
+    'Tons terra e ouro: reminiscência de antiguidade, valor, profundidade',
+    'Movimento contido: silhuetas, perfis, gestos que sugerem ação mas com controlo',
+  ],
+  maisQue: [
+    ['Discreta, mas marcante', 'Não grita, mas deixa marca profunda. Elegância que não precisa de anunciar a sua presença.'],
+    ['Minimalista com expressão', 'Cada elemento visual é escolhido com propósito. Não há excessos, mas há personalidade em cada detalhe.'],
+    ['Neutra na forma, ousada na mensagem', 'Visual contido e sofisticado, comunicação corajosa, honesta e desafiadora do status quo.'],
+    ['Acessível, mas aspiracional', 'Sente-se como algo que se pode alcançar, mas que levanta o nível. Não intimida, inspira.'],
+  ],
+  cores: [
+    ['Branco sujo', '#F2F2F2'], ['Bege', '#E8E3DF'], ['Rosa', '#C8A49F'], ['Rosa velho', '#8F5B5F'], ['Castanho escuro', '#190506'],
+  ],
+  fontes: [
+    ['Fonte principal', 'Ethereal', 'Títulos'],
+    ['Fonte secundária', 'TT Drugs', 'Corpo de texto'],
+    ['Fonte de apoio', 'Royal Fortune Script', 'Detalhes e informações em destaque'],
+  ],
+  imagem: {
+    estilo: 'Cinematografia de luz natural e sombra, com referências a fotografia europeia, pintura clássica e editorial de moda de luxo.',
+    tecnica: [
+      'Paleta: tons quentes (terra, ouro, sépia) e frios (cinzento-azulado, verde profundo), com muito branco/creme',
+      'Luz: lateral e dramática, com contraste claro entre luz e sombra; final de tarde ou pouco depois do amanhecer',
+      'Profundidade de campo seletiva: detalhes focados, fundo desfocado',
+      'Composição simétrica ou pela regra dos terços, com espaço negativo abundante; close-ups e detalhes, não planos gerais',
+      'Texturas visíveis: pele, papel, tecido, pedra, flores',
+      'Movimento estático ou contido (gestos, silhuetas)',
+    ],
+    sim: [
+      'Close-ups de mãos (a fazer unhas, a folhear um livro, a tocar em texturas)',
+      'Detalhes de flores, sobretudo rosas, peónias e flores secas',
+      'Objetos do quotidiano iluminados: chávena de café com leite, caderno aberto, caneta, livro',
+      'Arquitetura e espaços: interiores clássicos, corredores antigos, portas, janelas, escadas',
+      'Retratos e silhuetas de perfil, com luz lateral e emoção subtil',
+      'Texturas abstratas: pano, papel, padrões, sombras em paredes',
+      'Composições estáticas: mesa com objetos, flat lays, arranjos naturais',
+      'Luz natural em janelas: sombras projetadas, cortinas semitransparentes, vidro',
+      'Natureza contida: flores em vasos, plantas dentro de casa',
+      'Preto e branco ou sépia, para momentos de maior introspeção ou dramatismo',
+    ],
+    nao: [
+      'Cor muito saturada ou vibrante (cores primárias puras, arco-íris, néon)',
+      'Flash direto ou luz artificial muito clara',
+      'Planos gerais ou paisagens abertas',
+      'Pessoas a sorrir muito ou expressões exageradas',
+      'Cenários apinhados ou caóticos',
+      'Marcas de água, logótipos ou textos sobrepostos',
+      'Selfies em ângulo baixo ou muito próximas',
+      'Produtos em primeiro plano sem contexto',
+      'Efeito vintage artificial ou filtros que simulam antiguidade',
+      'Praia tropical, néon ou cenários muito “instagramáveis”',
+    ],
+  },
+  elementos: {
+    usados: [
+      'Flores simples, sobretudo rosa e peónia: a preto e branco, aguarela ou fotografia natural',
+      'Linhas finas e geométricas para separar secções, nunca para decorar',
+      'Símbolos tipográficos: travessões, vírgulas, parênteses curvos, aspas',
+      'Molduras subtis: quadrados e retângulos de proporção clássica',
+      'Texturas de papel, linho e mármore, como fundo ou overlay subtil',
+      'Sombras projetadas, que criam profundidade e dramatismo',
+      'Espaço em branco generoso, que é um elemento visual em si',
+      'Pequenos objetos ilustrados ou fotográficos: um livro aberto, uma chávena vista de cima, uma folha',
+    ],
+    recorrentes: [
+      'Flores (rosas e peónias) em 30-40% dos posts',
+      'Luz natural e sombra em praticamente todas as imagens',
+      'Tonalidades terra e ouro como cor dominante',
+      'Texto integrado na imagem, em Symphony ou TT Drugs, sobre branco/creme',
+      'Um objeto-símbolo recorrente (livro, chávena, caneta específica)',
+      'Composição minimalista: 1 a 3 elementos principais por imagem',
+      'Proporções clássicas: quadrado para o Instagram, composição equilibrada',
+      'Marcas de autenticidade: mão visível, imperfeições naturais, real e não perfeito',
+    ],
+    nao: [
+      'Clipart, emojis grandes ou GIFs',
+      'Múltiplas cores saturadas',
+      'Fontes pixel, bubbly ou infantis',
+      'Brilhos, glitter ou efeitos metalizados',
+      'Elementos que competem com a imagem',
+      'Padrões repetitivos ou muito geométricos (mandala, caleidoscópio)',
+      'Marcas de água com logótipo grande',
+      'Molduras pesadas ou ornamentadas',
+      'Ilustrações cartoon ou de estilo muito informal',
+    ],
+  },
+  pinterest: 'https://pt.pinterest.com/aliciacarinaba/al%C3%ADcia-c/moodboard/',
+};
+
 function renderBranding() {
+  const B = BRAND, ul = (l) => `<ul class="brand-list">${l.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
   $('#home-body').innerHTML = `
-    <div class="card empty" style="margin-top:16px">
-      <div class="big">🎨</div>
-      <h2>Branding</h2>
-      <p>Aqui vais poder reunir a identidade da tua marca. Esta área vai chegar em breve.</p>
+    <div class="brandpage">
+      <div class="card"><h3>Perfil</h3>
+        ${B.perfil.map(([t, d]) => `<div class="brand-q"><div class="stat-l">${esc(t)}</div><p>${esc(d)}</p></div>`).join('')}
+        <div class="brand-q"><div class="stat-l">Nicho principal</div><p><strong>${esc(B.nicho)}</strong></p></div>
+      </div>
+
+      <div class="grid cols-2">
+        <div class="card"><h3>Elementos visuais</h3>${ul(B.visuais)}</div>
+        <div class="card"><h3>Emojis</h3><p class="brand-emojis">${esc(B.emojis)}</p></div>
+      </div>
+
+      <div class="card"><h3>1. Direção visual da marca</h3>
+        <div class="stat-l">Sensação principal</div><p>${esc(B.sensacao)}</p>
+        <div class="stat-l">Elementos dominantes</div>${ul(B.dominantes)}
+        <div class="stat-l">A marca é mais…</div>
+        <div class="grid cols-2">${B.maisQue.map(([t, d]) => `<div class="brand-box"><strong>${esc(t)}</strong><p>${esc(d)}</p></div>`).join('')}</div>
+      </div>
+
+      <div class="card"><h3>2. Paleta de cores</h3>
+        <div class="swatches">${B.cores.map(([n, h]) => `<div class="swatch"><span class="chip" style="background:${h}"></span><strong>${esc(n)}</strong><span class="muted">${h}</span></div>`).join('')}</div>
+      </div>
+
+      <div class="card"><h3>3. Tipografia</h3>
+        <div class="grid cols-3">${B.fontes.map(([t, n, u]) => `<div class="brand-box"><div class="stat-l">${esc(t)}</div><strong>${esc(n)}</strong><p>${esc(u)}</p></div>`).join('')}</div>
+      </div>
+
+      <div class="card"><h3>4. Estilo de imagem</h3>
+        <p>${esc(B.imagem.estilo)}</p>
+        <div class="stat-l">Características técnicas</div>${ul(B.imagem.tecnica)}
+        <div class="grid cols-2">
+          <div><div class="stat-l">Tipos de imagem permitidos</div>${ul(B.imagem.sim)}</div>
+          <div><div class="stat-l">Não representam a marca</div>${ul(B.imagem.nao)}</div>
+        </div>
+      </div>
+
+      <div class="card"><h3>5. Elementos visuais</h3>
+        <div class="grid cols-3">
+          <div><div class="stat-l">Elementos gráficos usados</div>${ul(B.elementos.usados)}</div>
+          <div><div class="stat-l">Elementos recorrentes</div>${ul(B.elementos.recorrentes)}</div>
+          <div><div class="stat-l">Não devem ser usados</div>${ul(B.elementos.nao)}</div>
+        </div>
+      </div>
+
+      <div class="card"><h3>6. Moodboard</h3>
+        <p><a href="${B.pinterest}" target="_blank" rel="noopener">Abrir a pasta do Pinterest ↗</a></p>
+      </div>
     </div>`;
 }
 

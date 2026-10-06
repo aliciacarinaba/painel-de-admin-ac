@@ -244,3 +244,19 @@ textarea.url-box { min-height: 64px; word-break: break-all; font-family: ui-mono
 .health-errs div { display: flex; justify-content: space-between; gap: 16px; padding: 3px 0; }
 .health-errs span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 860px) { .top-auto { grid-template-columns: 1fr; } }
+
+/* Branding */
+.brandpage { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+.brandpage .card h3 { margin: 0 0 12px; }
+.brandpage .card p { margin: 4px 0 12px; line-height: 1.55; }
+.brandpage .stat-l { margin-top: 8px; }
+.brand-q { margin-bottom: 8px; }
+.brand-q p { margin: 2px 0 8px; }
+.brand-list { margin: 6px 0 12px; padding-left: 18px; line-height: 1.55; }
+.brand-list li { margin-bottom: 4px; }
+.brand-emojis { font-size: 28px; line-height: 1.6 !important; letter-spacing: 4px; }
+.brand-box { background: var(--bg-app); border-radius: 12px; padding: 14px 16px; }
+.brand-box p { margin: 4px 0 0 !important; }
+.swatches { display: flex; flex-wrap: wrap; gap: 16px; }
+.swatch { display: flex; flex-direction: column; gap: 4px; width: 140px; }
+.swatch .chip { height: 84px; border-radius: 12px; border: 1px solid rgba(25, 5, 6, .12); margin-bottom: 6px; }
