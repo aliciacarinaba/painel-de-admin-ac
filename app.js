@@ -257,7 +257,7 @@ function renderBranding() {
   $('#home-body').innerHTML = `
     <div class="brandpage">
       <div class="grid cols-2">
-        <div class="card"><h3>Elementos visuais</h3>${ul(B.visuais)}</div>
+        <div class="card"><h3>Elementos visuais</h3><ul class="brand-list cols2">${B.visuais.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>
         <div class="card"><h3>Emojis</h3><p class="brand-emojis">${esc(B.emojis)}</p></div>
       </div>
 

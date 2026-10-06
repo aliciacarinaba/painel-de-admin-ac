@@ -276,3 +276,6 @@ textarea.url-box { min-height: 64px; word-break: break-all; font-family: ui-mono
 .palette .swatches.tints .swatch { width: auto; min-width: 0; grid-column: span 5; }
 .palette .swatches.tints .swatch:nth-child(n+7) { grid-column: span 6; }
 .palette .swatches.tints .chip { height: 64px; }
+
+.brand-list.cols2 { columns: 2; column-gap: 28px; }
+.brand-list.cols2 li { break-inside: avoid; }
