@@ -228,7 +228,7 @@ async function renderMetrics() {
 
 // Miniatura do post ligado à automação (1.º post + "+N" se houver mais; ícone se for para todos)
 function thumbHTML(ids) {
-  if (!ids.length) return '<span class="thumb all" title="Todos os posts"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>';
+  if (!ids.length) return '<span class="thumb all" title="Vale para todos os posts"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>';
   return `<a class="thumb" data-m="${esc(ids[0])}" target="_blank" rel="noopener" title="Ver o post no Instagram"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg>${ids.length > 1 ? `<span class="more">+${ids.length - 1}</span>` : ''}</a>`;
 }
 
@@ -279,7 +279,6 @@ async function renderAutomations() {
         ${thumbHTML(ids)}
         <div>
           <strong>${esc(a.nome || 'Sem nome')}</strong>
-          <div class="muted small">${ids.length ? `${ids.length} ${ids.length === 1 ? 'post' : 'posts'}` : 'Todos os posts'}</div>
           <div>${a.match_any ? '<span class="chip gray">qualquer palavra</span>' : (a.keyword || '').split(',').filter(Boolean).map((k) => `<span class="chip">${esc(k.trim())}</span>`).join('')}</div>
         </div>
       </div>
