@@ -401,6 +401,7 @@ function drawLeads() {
   const comLink = rows.filter((r) => r.link_sent).length;
   const novos30 = rows.filter((r) => new Date(r.created_at).getTime() >= Date.now() - 30 * 864e5).length;
   const ativos7 = rows.filter((r) => new Date(r.updated_at).getTime() >= Date.now() - 7 * 864e5).length;
+  const comContacto = rows.filter((r) => r.email || r.telefone).length;
   // Novos contactos por dia (últimos 30 dias)
   const perDay = {};
   rows.forEach((r) => { const k = String(r.created_at).slice(0, 10); perDay[k] = (perDay[k] || 0) + 1; });
@@ -411,9 +412,11 @@ function drawLeads() {
   const origens = [...new Set(L.rows.map((x) => x.last_source).filter(Boolean))];
 
   body.innerHTML = `
-    <div class="grid cols-2">
+    <div class="grid cols-4">
       <div class="card hl"><div class="stat-l">Contactos</div><div class="stat-n">${fmt(total)}</div><div class="stat-sub">${fmt(novos30)} ${novos30 === 1 ? 'novo' : 'novos'} · 30 dias</div></div>
-      <div class="card"><div class="stat-l">Link enviado</div><div class="stat-n">${fmt(comLink)}</div><div class="stat-sub">${fmt(ativos7)} ${ativos7 === 1 ? 'ativo' : 'ativos'} · 7 dias</div></div>
+      <div class="card"><div class="stat-l">Últimos 7 dias</div><div class="stat-n">${fmt(ativos7)}</div><div class="stat-sub">Movimento recente</div></div>
+      <div class="card"><div class="stat-l">Link enviado</div><div class="stat-n">${fmt(comLink)}</div><div class="stat-sub">Receberam o link na conversa</div></div>
+      <div class="card"><div class="stat-l">Deixaram contacto</div><div class="stat-n">${fmt(comContacto)}</div><div class="stat-sub">E-mail ou telefone na conversa</div></div>
     </div>
     <div class="card" style="margin-top:16px"><h3>Novos contactos <span class="muted small">por dia · 30 dias</span></h3>${bars(serie)}</div>
     <div class="toolbar" style="margin-top:16px">

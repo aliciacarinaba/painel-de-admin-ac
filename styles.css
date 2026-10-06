@@ -86,6 +86,7 @@ textarea.url-box { min-height: 64px; word-break: break-all; font-family: ui-mono
 /* ---------- Cartões e grelhas ---------- */
 .grid { display: grid; gap: 16px; }
 .grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+.grid.cols-4 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
 .grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); }
 .card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; }
 .card.hl { border-color: var(--accent); }
