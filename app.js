@@ -137,9 +137,9 @@ async function safeCount(table, filter) {
 async function renderHome() {
   const v = $('#view');
   v.innerHTML = `
-    <div class="page-head"><h1>Bem-vindo ao teu painel</h1><p class="muted">Um resumo rápido do que está a acontecer.</p></div>
+    <div class="page-head"><h1>👋 Bem-vindo ao teu painel</h1><p class="muted">Um resumo rápido do que está a acontecer.</p></div>
     <div class="grid cols-3">
-      <div class="card"><div class="stat-l">Leads captados</div><div class="stat-n" id="n-leads">0</div></div>
+      <div class="card hl"><div class="stat-l">Leads captados</div><div class="stat-n" id="n-leads">0</div></div>
       <div class="card"><div class="stat-l">Automações ativas</div><div class="stat-n" id="n-autos">0</div></div>
       <div class="card"><div class="stat-l">DMs enviadas (7 dias)</div><div class="stat-n" id="n-dms">0</div></div>
     </div>
@@ -172,7 +172,7 @@ function renderCalendar() {
 // ---------- Instagram ----------
 function renderInstagram() {
   $('#view').innerHTML = `
-    <div class="page-head"><h1>Instagram</h1><p class="muted">Métricas e automações de direct.</p></div>
+    <div class="page-head"><h1>📸 Automação do Instagram</h1><p class="muted">Métricas e automações de direct.</p></div>
     <div class="tabs">
       <button class="tab" data-tab="metrics">Métricas</button>
       <button class="tab" data-tab="automations">Automações</button>
@@ -185,7 +185,7 @@ function renderInstagram() {
 
 function bars(series) {
   const max = Math.max(1, ...series.map((p) => p.value));
-  return `<div class="bars">${series.map((p) => `<div class="bar" style="height:${Math.max(2, (p.value / max) * 100)}%" data-tip="${esc(p.date)}: ${p.value}"></div>`).join('')}</div>`;
+  return `<div class="bars">${series.map((p) => `<div class="bar-col" data-tip="${esc(p.date)}: ${p.value}"><div class="bar" style="height:${Math.max(2, (p.value / max) * 100)}%"></div></div>`).join('')}</div>`;
 }
 
 async function renderMetrics() {
@@ -205,11 +205,11 @@ async function renderMetrics() {
   body.innerHTML = `
     <div class="grid cols-3">
       <div class="card"><div class="stat-l">Seguidores</div><div class="stat-n">${data.followers ?? 0}</div></div>
-      <div class="card"><div class="stat-l">Leads captados</div><div class="stat-n">${leads}</div></div>
+      <div class="card hl"><div class="stat-l">Leads captados</div><div class="stat-n">${leads}</div></div>
     </div>
     <div class="grid cols-2" style="margin-top:16px">
-      <div class="card"><h3>Novos seguidores por dia</h3>${bars(data.followers_by_day || [])}</div>
-      <div class="card"><h3>Alcance por dia</h3>${bars(data.reach_by_day || [])}</div>
+      <div class="card"><h3>Crescimento do perfil <span class="muted small">novos seguidores por dia</span></h3>${bars(data.followers_by_day || [])}</div>
+      <div class="card"><h3>Alcance <span class="muted small">contas alcançadas por dia</span></h3>${bars(data.reach_by_day || [])}</div>
     </div>`;
 }
 
@@ -218,7 +218,7 @@ async function renderAutomations() {
   const body = $('#ig-body');
   body.innerHTML = `
     <div class="row between" style="margin-bottom:14px">
-      <div><h2>Automações</h2><p class="muted small" style="margin:0">Respostas automáticas de DM a partir de comentários.</p></div>
+      <div><h2>✉️ Automações</h2><p class="muted small" style="margin:0">Respostas automáticas de DM a partir de comentários.</p></div>
       <button class="btn primary" id="new-auto">Nova automação</button>
     </div>
     <div class="card" id="auto-list"><div class="muted">A carregar...</div></div>`;
