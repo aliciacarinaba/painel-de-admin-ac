@@ -145,11 +145,14 @@ function renderHome() {
     <div class="tabs">
       <button class="tab" data-tab="general">Informação Geral</button>
       <button class="tab" data-tab="branding">Branding</button>
+      <button class="tab" data-tab="foundations">Fundamentos da Marca</button>
     </div>
     <div id="home-body"></div>`;
   $$('.tab').forEach((t) => t.addEventListener('click', () => { state.homeTab = t.dataset.tab; renderHome(); }));
   $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === state.homeTab));
-  if (state.homeTab === 'branding') renderBranding(); else renderGeneral();
+  if (state.homeTab === 'branding') renderBranding();
+  else if (state.homeTab === 'foundations') renderFundamentos();
+  else renderGeneral();
 }
 
 const BRAND = {
@@ -251,6 +254,132 @@ const BRAND = {
   },
   pinterest: 'https://pt.pinterest.com/aliciacarinaba/al%C3%ADcia-c/moodboard/',
 };
+
+const FUND = {
+  missao: 'Educar estilistas de unhas e profissionais de beleza em Portugal a profissionalizarem os seus negócios através de uma precificação honesta e justa, gestão financeira na prática, formas de rendimento na área da beleza, conhecimento teórico sobre anatomia e saúde ungueal, técnicas de nail art simples, fáceis e rápidas de aplicar, e técnicas de estilismo de unhas naturais e saudáveis, reconhecendo tanto os desafios reais como o potencial de evolução nesta área.',
+  quem: 'Estilistas de unhas e profissionais de beleza que exercem em Portugal, tanto iniciantes que precisam de estruturar o negócio desde o início como profissionais experientes.',
+  resolver: [
+    'Insegurança na precificação e medo de perder clientes ao aumentar preços',
+    'Falta de clareza sobre custos reais e ganho por hora',
+    'Dificuldade em profissionalizar o negócio (organização, gestão, estrutura)',
+    'Bloqueios emocionais (culpa, medo, síndrome do impostor)',
+    'Falta de conhecimentos científicos sobre anatomia e saúde ungueal (anatomia, doenças comuns, alergias…)',
+    'Falta de evolução em técnicas de mesa (baby boomer, ombré, manicure combinada, verniz de gel com nivelamento)',
+  ],
+  servicos: [
+    ['Formação online e infoprodutos de gestão financeira', 'precificação, tabelas Excel, cálculos de custos'],
+    ['Formação em técnicas utilizadas em mesa', 'técnicas teóricas e práticas'],
+    ['Conteúdo educativo', 'reels, posts e stories sobre dinheiro, técnica e realidade do setor'],
+    ['Acompanhamento em grupo', 'formações, comunidade, suporte'],
+    ['Ferramentas práticas', 'tabelas, guias, templates…'],
+  ],
+  visao: 'Ser a referência portuguesa em educação financeira e profissionalização para o setor da beleza, através de um movimento de honestidade total sobre os desafios e oportunidades reais dos negócios desta área.',
+  reconhecida: [
+    ['Transparência', 'sobre dinheiro e dificuldades do setor (sem romantização)'],
+    ['Expertise dupla', 'excelência técnica + educação financeira'],
+    ['Abordagem psicológica', 'reconhecer bloqueios emocionais e oferecer formas de superação ou sugestões para a resolução, não só dar informação'],
+    ['Ferramentas práticas e reais', 'que as profissionais conseguem aplicar imediatamente'],
+    ['Comunidade de profissionais empoderadas', 'que cobram o que merecem, que tomam as rédeas do seu negócio, com limites e regras bem definidos, sem culpa e com a consciência tranquila por entregarem um serviço que respeita a saúde das clientes'],
+  ],
+  impacto: 'Transformar a realidade económica de estilistas de unhas em Portugal, ao mostrar que é possível viver de forma sustentável desta profissão quando se une técnica, precificação e profissionalização. Desconstruir mitos sobre negócios na área da beleza e criar uma cultura onde ganhar bem não é culpa, é responsabilidade. Consciencializar tanto profissionais como clientes sobre os perigos para a saúde que podem surgir por más práticas em salão e entregar dados reais, com base científica, sobre como agir e o que fazer em cada situação.',
+  valores: [
+    ['Transparência', 'Falar a verdade sobre dinheiro, dificuldades e realidades do setor sem medo (em particular da minha experiência pessoal e daquilo que vejo das minhas alunas e pessoas que me rodeiam).',
+      'Nomear o desconfortável. Basear-me em factos, em matemática e não romantizar a realidade. Se é bom, perfeito; se não é, há que explicar porque não é. “Ganhas 10€ e gastas 8€ em material?” Isto é insustentável. Não mascarar com palavras bonitas.',
+      'Publicações e partilhas sobre quanto deves cobrar, com exemplos e cálculos reais. Partilha da minha experiência e do processo que eu própria passo para precificar os meus serviços e produtos. Partilha de exemplos pessoais e de alunas, ou de testemunhos que me chegam através das redes sociais.',
+      'Com explicações teóricas e contextualizadas extensivas de cada assunto, sempre acompanhadas de exemplos concretos. No caso das tabelas Excel, através de cálculos baseados nos valores que eu (ou as alunas) colocarem nas tabelas: a partir do momento em que são valores reais, os cálculos feitos pelas tabelas não têm como enganar.'],
+    ['Honestidade com empatia', 'Reconhecer sempre emoções e bloqueios antes de apresentar soluções.',
+      'Nunca dar informação sem primeiro validar o sentimento. “Eu percebo. Isto é difícil. Aqui está uma forma de o resolvermos.”',
+      'Perguntas que criam reflexão. Partilha de histórias e experiências pessoais. Reflexão sobre os assuntos que demonstra claramente que pensei sobre isso e que me tentei colocar naquele lugar. Expressões como “Eu também passei por isto”. Nunca soar como um “guru” desligado, que fala, fala, fala, mas não compreende realmente o que está a acontecer com os outros ou sugere coisas sem pensar no que a pessoa pode estar a sentir ou a ultrapassar.',
+      'Espaço para fazer perguntas e partilhar dificuldades. Abertura para reconhecer que ninguém começa com perfeição e que os erros são normais e expectáveis. Reconhecimento de que bloqueios emocionais e mentais são normais. Partilha de estratégias que me ajudaram a ultrapassar esses mesmos erros e bloqueios, ou que acredito que possam ajudar em cada caso.'],
+    ['Prática e consistência ao invés de perfeição', 'Mais vale feito do que perfeito.',
+      'Algo colocado em prática, que saiu do papel, vale mais do que algo perfeito que nunca é publicado ou aplicado.',
+      'Exemplos de dúvidas e dificuldades que eu própria tive, e como as ultrapassei colocando em prática, testando e melhorando a cada vez. Exemplos de erros que eu cometi, ou que vi colegas cometerem, e como podem ser resolvidos se as pessoas colocarem em prática aquilo que explico. Exemplos concretos de soluções, técnicas, conselhos e estratégias que podem ajudar a superar isso e como aplicar na prática. Mostrar trabalhos antigos e a evolução até agora.',
+      'Reforço de que pode parecer difícil, pode ser um trabalho chato, mas que só quando for aplicado na prática vai melhorar. Incentivo à autoavaliação e à autocrítica como forma de evolução e superação de dificuldades.'],
+    ['Responsabilidade pessoal', 'Reconhecer que não é culpa de “ninguém”, mas que agir, tomar iniciativa e mudar depende de cada pessoa.',
+      '“Não é culpa tua ter bloqueios, eles existem para toda a gente. Mas é da tua responsabilidade enfrentá-los e tentar superá-los. Se não o fizeres por ti mesma, ninguém o fará.”',
+      'Não ser vitimista. “A tua zona não deixa” é uma crença, não uma verdade. O meu discurso deixa claro que não tolero desculpas e que elas não levam ninguém ao sucesso. Se o discurso de alguém é de vitimização e a pessoa não está disposta a mudar, não é bem-vinda e não posso fazer nada para ajudar. Só quem se quer responsabilizar pelos seus próprios comportamentos poderá ser ajudado e será verdadeiramente acolhido por mim.',
+      'Formações com tarefas e ações. Desafios para aplicar. Não é passiva, é participativa. Se as alunas não quiserem evoluir, não vou ser eu a andar atrás delas. Eu dou as ferramentas de que precisam e elas ficam responsáveis pelo que fazem com isso.'],
+    ['Excelência dupla', 'Técnicas de excelência, que não comprometem a saúde da cliente e que são exequíveis em salão (nada de técnicas irrealistas, que exigem excesso de material, publicitação de produtos e materiais desnecessários, técnicas que demoram mais de 3-4h a fazer, técnicas de competição ou fantasiosas) e consciencialização financeira.',
+      'Nunca separar técnica de finanças. Não sou só coach de preços, sou formadora de estilistas de unhas. Não sou só formadora de unhas, trabalho gestão e falo sobre negócios.',
+      'Os conteúdos estão sempre conectados de alguma forma: posso falar de uma técnica ou de um produto em particular, mas existirá outro conteúdo com a mesma técnica ou produto, onde mostro como rentabilizar ou qual o custo do mesmo. Existirão conteúdos sobre compras a evitar e compras que fazem sentido. Não falo só de produtos ou técnicas, mostro porque podem ou não fazer sentido para cada caso e cada profissional.',
+      'Mostro os produtos que uso e explico o porquê; trago sugestões de produtos mais ou menos acessíveis, com base nos diferentes objetivos que as alunas possam ter. Quando ensino a precificar, mostro como podem calcular o valor que gastam com os seus próprios produtos e dou sugestões de onde podem ganhar mais dinheiro ou poupar.'],
+    ['Psicologia aplicada', 'Reconhecer que muitos bloqueios são emocionais, não técnicos, e que é possível ultrapassá-los.',
+      'A minha formação em Psicologia permite-me compreender e explicar como funcionam os processos mentais e comportamentais das pessoas. Permite-me reconhecer quando as dificuldades são técnicas ou mentais.',
+      'Nomeio bloqueios (culpa, síndrome do impostor, medo, frustração…), identifico padrões e sugiro pequenas alterações, outras formas de pensar ou olhar para um assunto, ou estratégias para lidar com as dificuldades e eventualmente superá-las.',
+      'Parte da solução é compreender padrões de pensamento e como afetam os nossos comportamentos. Por isso, trago muitas vezes para as formações esta identificação e consciencialização, e depois apresento soluções ou estratégias que podem ajudar em cada caso.'],
+    ['Sem romantização', 'Mostrar o lado difícil juntamente com o potencial (nem tudo é mau, mas nem tudo é um mar de rosas).',
+      'Nem tudo é bom e nem tudo é mau. Tudo tem as suas vantagens e desvantagens, e o que funciona com uma pessoa pode não funcionar com outra. Não existem cenários perfeitos para ninguém em nenhuma situação.',
+      'Não trago verdades absolutas e deixo sempre claro que cabe a cada um decidir o que faz ou não sentido para si. Trago factos e números reais, trago a minha realidade, e aquilo que transmito baseia-se na minha experiência e no que partilham comigo, deixando claro que não é regra, é apenas a forma como eu vejo e giro a minha realidade.',
+      'Explico como as coisas funcionam na teoria, qual a minha experiência, partilho outras experiências que possam fazer sentido para cada caso, e dou potenciais estratégias e ferramentas para cada pessoa utilizar com base nos seus objetivos e crenças.'],
+  ],
+  sempre: [
+    ['Validar a emoção antes de oferecer solução', 'a ligação, o reconhecimento e a empatia para com as pessoas e as suas emoções vêm sempre antes da solução'],
+    ['Usar números reais', 'nunca falo em achismos nem em números inventados; falo de €, horas e percentagens concretas, sempre com recurso a exemplos'],
+    ['Ser honesta sobre dificuldades', 'partilhar o lado real, sem romantizar nem fazer promessas vãs'],
+    ['Combinar técnica com gestão', 'uma não existe sem a outra'],
+    ['Oferecer ferramentas práticas', 'tabelas, scripts, passo a passo que funcionam'],
+    ['Reconhecer bloqueios psicológicos', '“Não é culpa, mas responsabilidade”'],
+    ['Usar português europeu em Portugal', 'tu, te, teu, MB Way, preços em euros'],
+  ],
+  nunca: [
+    ['Romantizar a profissão', 'nunca “está tudo bonito e fácil”'],
+    ['Usar jargão vazio', 'sem “empoderamento”, “transformação garantida”, “game changer”'],
+    ['Oferecer falsas promessas', 'sem “fica rica”, “não precisas de trabalhar mais”, “100% garantido”'],
+    ['Ignorar o lado emocional', 'nunca usar apenas informação “fria”, sempre com humanidade e empatia'],
+    ['Ser superficial', 'o conteúdo é aprofundado, real, com camadas'],
+    ['Usar género neutro ou “vocês”', 'falo em tu, diretamente'],
+    ['Falar sem dados', 'tudo se baseia em padrões, notícias, estudos ou tendências que vi ou li, não em opinião vaga sem fundamento'],
+  ],
+  naoNegocio: [
+    ['Cobrar por formações em que não acredito', 'os meus produtos existem porque tenho a certeza de que funcionam (testei e usei antes de vender)'],
+    ['Deixar de ser honesta para vender', 'sem apelo emocional falso, sem hype'],
+    ['Trabalhar com profissionais desalinhadas', 'não quero clientes que só querem “ficar ricas” ou que têm expectativas muito desalinhadas com a realidade'],
+    ['Expandir para áreas que não são o meu foco', 'não vendo maquilhagem, lifestyle vago, etc.'],
+    ['Aceitar que as minhas alunas romantizem a profissão', 'educo para o realismo, não para a ilusão'],
+    ['Contribuir para mitos prejudiciais do setor', 'nunca digo “uns cobram 5€ e estão bem” quando não estão, nem sugiro que existe uma fórmula mágica que funciona com toda a gente'],
+    ['Oferecer “atalhos”', 'não há trabalho fácil, dados adquiridos nem ganhos sem esforço'],
+  ],
+};
+
+function renderFundamentos() {
+  const F = FUND;
+  const ul = (l) => `<ul class="brand-list">${l.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
+  const ol = (l) => `<ol class="brand-list">${l.map(([t, d]) => `<li><strong>${esc(t)}</strong>${d ? ' — ' + esc(d) : ''}</li>`).join('')}</ol>`;
+  $('#home-body').innerHTML = `
+    <div class="brandpage">
+      <div class="card"><h3>1. Missão da marca</h3>
+        <div class="stat-l">A minha missão é</div><p>${esc(F.missao)}</p>
+        <div class="stat-l">Quem é que eu ajudo?</div><p>${esc(F.quem)}</p>
+        <div class="grid cols-2">
+          <div><div class="stat-l">O que é que eu ajudo a resolver</div><ol class="brand-list">${F.resolver.map((x) => `<li>${esc(x)}</li>`).join('')}</ol></div>
+          <div><div class="stat-l">Através de quê? (serviços)</div>${ol(F.servicos)}</div>
+        </div>
+      </div>
+
+      <div class="card"><h3>2. Visão da marca</h3>
+        <div class="stat-l">A minha visão é</div><p>${esc(F.visao)}</p>
+        <div class="stat-l">No futuro, a minha marca será reconhecida por</div>${ol(F.reconhecida)}
+        <div class="stat-l">Qual o impacto que quero gerar</div><p>${esc(F.impacto)}</p>
+      </div>
+
+      <div class="card"><h3>3. Valores da marca</h3>
+        <div class="grid cols-2">${F.valores.map(([t, d, p, c, pr], i) => `
+          <div class="brand-box"><strong>Valor ${String(i + 1).padStart(2, '0')}: ${esc(t)}</strong><p>${esc(d)}</p>
+            <div class="stat-l">O que significa na prática</div><p>${esc(p)}</p>
+            <div class="stat-l">Como aparece no meu conteúdo</div><p>${esc(c)}</p>
+            <div class="stat-l">Como aparece nos meus produtos</div><p>${esc(pr)}</p>
+          </div>`).join('')}</div>
+      </div>
+
+      <div class="card"><h3>4. Código da marca</h3>
+        <div class="grid cols-3">
+          <div><div class="stat-l">O que a minha marca faz sempre</div>${ol(F.sempre)}</div>
+          <div><div class="stat-l">O que a minha marca nunca faz</div>${ol(F.nunca)}</div>
+          <div><div class="stat-l">O que não negoceio, mesmo que traga dinheiro</div>${ol(F.naoNegocio)}</div>
+        </div>
+      </div>
+    </div>`;
+}
 
 function renderBranding() {
   const B = BRAND, ul = (l) => `<ul class="brand-list">${l.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
