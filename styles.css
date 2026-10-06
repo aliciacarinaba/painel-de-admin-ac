@@ -231,3 +231,16 @@ textarea.url-box { min-height: 64px; word-break: break-all; font-family: ui-mono
 .pcard:hover { border-color: var(--accent); }
 .pimg { aspect-ratio: 4 / 5; background: var(--track) center / cover no-repeat; }
 .pstats { display: grid; gap: 2px; padding: 9px 11px; font-size: 12.5px; color: var(--text-2); white-space: nowrap; }
+
+/* ---------- Cartões do topo das Automações ---------- */
+.top-auto { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(0, 2.2fr); gap: 16px; margin-bottom: 20px; }
+.top-auto:empty { display: none; }
+.health-bar { display: flex; height: 12px; border-radius: 999px; overflow: hidden; background: var(--track); margin: 16px 0 12px; }
+.health-bar span { display: block; height: 100%; }
+.health-legend { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 14px; }
+.health-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.health-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.health-errs { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px; font-size: 13px; color: var(--text-2); }
+.health-errs div { display: flex; justify-content: space-between; gap: 16px; padding: 3px 0; }
+.health-errs span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 860px) { .top-auto { grid-template-columns: 1fr; } }

@@ -224,10 +224,69 @@ async function fillThumbs(box, list) {
   });
 }
 
+
+// ---------- Cartões do topo das Automações: Leads captados e Saúde do envio ----------
+// Tira o essencial de uma mensagem de erro guardada (ex: "Graph 400: The comment is invalid...")
+function cleanMotivo(m) {
+  const t = String(m || '');
+  const msg = t.match(/"message":"((?:[^"\\]|\\.)*)"/)?.[1];
+  const code = t.match(/"code":(\d+)/)?.[1];
+  const base = (msg || t || 'Erro desconhecido').replace(/\\"/g, '"').replace(/\s+/g, ' ').trim();
+  return (code ? `Graph ${code}: ` : '') + (base.length > 110 ? base.slice(0, 107) + '...' : base);
+}
+
+async function loadHealth() {
+  const since = new Date(Date.now() - 30 * 864e5).toISOString();
+  const [ok, erro, fila, leads, novos] = await Promise.all([
+    safeCount('ig_deliveries', (q) => q.eq('status', 'ok').gte('ts', since)),
+    safeCount('ig_deliveries', (q) => q.eq('status', 'erro').gte('ts', since)),
+    safeCount('ig_send_queue', (q) => q.in('status', ['pendente', 'expirado']).gte('created_at', since)),
+    safeCount('ig_leads'),
+    safeCount('ig_leads', (q) => q.gte('created_at', since)),
+  ]);
+  let motivos = [];
+  if (sb && erro) {
+    try { const { data } = await sb.from('ig_deliveries').select('motivo').eq('status', 'erro').gte('ts', since).limit(1000); motivos = data || []; } catch { /* sem motivos */ }
+  }
+  const m = {}; motivos.forEach((r) => { const k = cleanMotivo(r.motivo); m[k] = (m[k] || 0) + 1; });
+  const topMotivos = Object.entries(m).map(([t, n]) => ({ t, n })).sort((a, b) => b.n - a.n).slice(0, 3);
+  return { ok, erro, fila, leads, novos, topMotivos };
+}
+
+async function drawHealth(list) {
+  const box = $('#auto-top'); if (!box) return;
+  const h = await loadHealth();
+  if (state.igTab !== 'automations' || state.route !== 'instagram' || !$('#auto-top')) return;
+  const total = h.ok + h.erro + h.fila;
+  const ativas = list.filter((a) => a.active).length;
+  const pct = (n) => (total ? (n / total) * 100 : 0);
+  const taxa = h.ok + h.erro ? Math.round((h.ok / (h.ok + h.erro)) * 100) : null;
+  box.innerHTML = `
+    <div class="card hl"><div class="stat-l">Leads captados</div><div class="stat-n">${fmt(h.leads)}</div>
+      <div class="stat-sub">${fmt(h.novos)} ${h.novos === 1 ? 'novo' : 'novos'} · 30 dias</div></div>
+    <div class="card">
+      <div class="row between"><h3 style="margin:0">🩺 Saúde do envio <span class="muted small">últimos 30 dias</span></h3>
+        <span class="chip ${ativas ? '' : 'gray'}">${ativas} ${ativas === 1 ? 'automação ativa' : 'automações ativas'}</span></div>
+      ${total ? `
+        <div class="health-bar" role="img" aria-label="${h.ok} entregues, ${h.erro} falharam, ${h.fila} na fila ou expirados">
+          <span style="width:${pct(h.ok)}%;background:var(--ok)"></span><span style="width:${pct(h.erro)}%;background:var(--err)"></span><span style="width:${pct(h.fila)}%;background:var(--accent-mid)"></span>
+        </div>
+        <div class="health-legend">
+          <span><i style="background:var(--ok)"></i><b>${fmt(h.ok)}</b> ${h.ok === 1 ? 'entregue' : 'entregues'}</span>
+          <span><i style="background:var(--err)"></i><b>${fmt(h.erro)}</b> ${h.erro === 1 ? 'falhou' : 'falharam'}</span>
+          <span><i style="background:var(--accent-mid)"></i><b>${fmt(h.fila)}</b> na fila ou expirados</span>
+          ${taxa == null ? '' : `<span class="muted">Taxa de entrega: <b>${taxa}%</b></span>`}
+        </div>
+        ${h.topMotivos.length ? `<div class="health-errs">${h.topMotivos.map((e) => `<div><span title="${esc(e.t)}">${esc(e.t)}</span><b>${fmt(e.n)}</b></div>`).join('')}</div>` : ''}`
+      : '<p class="muted" style="margin:12px 0 0">Ainda não há envios nos últimos 30 dias. Quando alguém comentar uma das tuas palavras, o estado dos envios aparece aqui.</p>'}
+    </div>`;
+}
+
 // ---------- Lista de automações ----------
 async function renderAutomations() {
   const body = $('#ig-body');
   body.innerHTML = `
+    <div id="auto-top" class="top-auto"></div>
     <div class="row between" style="margin-bottom:14px">
       <div><h2>✉️ Automações</h2><p class="muted small" style="margin:0">Respostas automáticas de DM a partir de comentários.</p></div>
       <button class="btn primary" id="new-auto">Nova automação</button>
@@ -238,6 +297,7 @@ async function renderAutomations() {
   let list = [];
   if (sb) { try { const { data } = await sb.from('ig_automations').select('*').order('updated_at', { ascending: false }); list = data || []; } catch {} }
   if (state.igTab !== 'automations' || state.route !== 'instagram') return;
+  drawHealth(list);
   const box = $('#auto-list');
   if (!list.length) {
     box.innerHTML = `<div class="empty"><div class="big">✉</div><h3>Ainda não tens automações</h3>
