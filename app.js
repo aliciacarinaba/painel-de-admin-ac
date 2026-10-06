@@ -283,7 +283,7 @@ async function renderAutomations() {
 const ORIGENS = { comment: 'Comentário', dm: 'Direct', story_reply: 'Resposta a story' };
 const ORIGEM_ICO = { comment: '💬', dm: '📩', story_reply: '↩️' };
 const origemTxt = (o) => ORIGENS[o] || (o ? o : '-');
-const L = { rows: [], view: 'table', q: '', origem: '', etiqueta: '', automacao: '', sortK: 'updated_at', sortDir: -1, page: 1, size: 25 };
+const L = { rows: [], q: '', origem: '', etiqueta: '', automacao: '', sortK: 'updated_at', sortDir: -1, page: 1, size: 25 };
 
 // Data e hora em português: 09/09/2026 14:30
 const fmtDateTime = (iso) => {
@@ -337,31 +337,23 @@ function leadsFiltered() {
   return r;
 }
 
-// Vista Tabela: igual ao exemplo (Conta, Origem, Palavra, Contacto, Etiqueta, Recebeu?, Interações, Última vez)
+// Colunas da tabela: Conta, Origem, Palavra, Contacto, Etiqueta, Recebeu?, Interações, Última vez
 const COLS_TABLE = [
   { k: 'username', t: 'Conta' }, { k: 'last_source', t: 'Origem' }, { k: 'last_keyword', t: 'Palavra' },
   { k: 'contacto', t: 'Contacto' }, { k: 'tags', t: 'Etiqueta', nosort: true }, { k: 'envios_ok', t: 'Recebeu?' },
   { k: 'interacoes', t: 'Interações' }, { k: 'updated_at', t: 'Última vez' },
 ];
-// Vista Planilha: todas as colunas
-const COLS_SHEET = [
-  { k: 'username', t: 'Perfil' }, { k: 'ig_user_id', t: 'ID Instagram' }, { k: 'last_source', t: 'Origem' }, { k: 'last_keyword', t: 'Palavra' },
-  { k: 'automacao_nome', t: 'Automação' }, { k: 'email', t: 'E-mail' }, { k: 'telefone', t: 'Telefone' }, { k: 'tags', t: 'Etiqueta', nosort: true },
-  { k: 'envios_ok', t: 'Entregas' }, { k: 'interacoes', t: 'Interações' }, { k: 'link_sent', t: 'Link enviado' }, { k: 'flow_step', t: 'Passo' },
-  { k: 'created_at', t: 'Primeira vez' }, { k: 'updated_at', t: 'Última vez' },
-];
-
 function cellHTML(x, k, sheet) {
   const dash = '<span class="muted">-</span>';
   switch (k) {
     case 'username': return x.username ? `<a class="acct" href="https://instagram.com/${encodeURIComponent(x.username)}" target="_blank" rel="noopener">@${esc(x.username)}</a>` : `<span class="muted">ID ${esc(x.ig_user_id)}</span>`;
-    case 'last_source': return sheet ? esc(origemTxt(x.last_source)) : `<span class="src">${ORIGEM_ICO[x.last_source] || ''} ${esc(origemTxt(x.last_source))}</span>`;
+    case 'last_source': return `<span class="src">${ORIGEM_ICO[x.last_source] || ''} ${esc(origemTxt(x.last_source))}</span>`;
     case 'last_keyword': return x.last_keyword ? esc(x.last_keyword) : dash;
     case 'automacao_nome': return esc(x.automacao_nome || '-');
     case 'contacto': return [x.email, x.telefone].filter(Boolean).map(esc).join('<br>') || dash;
     case 'email': case 'telefone': case 'flow_step': case 'ig_user_id': return esc(x[k] ?? '');
     case 'tags': return `<span class="tags-cell" data-a="edit-tags" data-id="${esc(x.ig_user_id)}" title="Clicar para editar">${(x.tags || []).length ? (x.tags || []).map((t) => `<span class="chip gray">${esc(t)}</span>`).join('') : '<span class="muted">+ etiqueta</span>'}</span>`;
-    case 'envios_ok': return sheet ? String(x.envios_ok ?? 0) : (x.envios_ok > 0 ? 'Sim' : (x.envios_erro > 0 ? 'Erro' : dash));
+    case 'envios_ok': return (x.envios_ok > 0 ? 'Sim' : (x.envios_erro > 0 ? 'Erro' : dash));
     case 'interacoes': return String(x.interacoes ?? 0);
     case 'link_sent': return x.link_sent ? 'Sim' : 'Não';
     case 'created_at': case 'updated_at': return fmtDateTime(x[k]);
@@ -371,77 +363,73 @@ function cellHTML(x, k, sheet) {
 
 function drawLeads() {
   const body = $('#ig-body');
-  const all = leadsFiltered();
+  const rows = L.rows;
+  const total = rows.length;
+  const comLink = rows.filter((r) => r.link_sent).length;
+  const novos30 = rows.filter((r) => new Date(r.created_at).getTime() >= Date.now() - 30 * 864e5).length;
+  const ativos7 = rows.filter((r) => new Date(r.updated_at).getTime() >= Date.now() - 7 * 864e5).length;
+  // Novos contactos por dia (últimos 30 dias)
+  const perDay = {};
+  rows.forEach((r) => { const k = String(r.created_at).slice(0, 10); perDay[k] = (perDay[k] || 0) + 1; });
+  const serie = Array.from({ length: 30 }, (_, i) => { const d = new Date(Date.now() - (29 - i) * 864e5).toISOString().slice(0, 10); return { date: d, value: perDay[d] || 0 }; });
+
   const uniq = (f) => [...new Set(L.rows.flatMap(f).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt'));
   const opt = (arr, cur, label) => `<option value="">${label}</option>` + arr.map((v) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(v)}</option>`).join('');
   const origens = [...new Set(L.rows.map((x) => x.last_source).filter(Boolean))];
 
-  const recebeu = L.rows.filter((x) => x.envios_ok > 0).length;
   body.innerHTML = `
-    <div class="row between" style="margin-bottom:16px">
-      <div class="mini-stats">${L.view === 'chart' ? '' : `
-        <div class="mini"><b>${fmt(L.rows.length)}</b><span>Contactos captados</span></div>
-        <div class="mini"><b>${fmt(recebeu)}</b><span>Receberam a entrega</span></div>`}
-      </div>
-      <div class="seg" role="tablist">
-        ${[['table', 'Tabela'], ['sheet', 'Planilha'], ['chart', 'Gráfico']].map(([v, t]) => `<button class="${L.view === v ? 'on' : ''}" data-view="${v}">${t}</button>`).join('')}
-      </div>
+    <div class="grid cols-2">
+      <div class="card hl"><div class="stat-l">Contactos</div><div class="stat-n">${fmt(total)}</div><div class="stat-sub">${fmt(novos30)} ${novos30 === 1 ? 'novo' : 'novos'} · 30 dias</div></div>
+      <div class="card"><div class="stat-l">Link enviado</div><div class="stat-n">${fmt(comLink)}</div><div class="stat-sub">${fmt(ativos7)} ${ativos7 === 1 ? 'ativo' : 'ativos'} · 7 dias</div></div>
     </div>
-    ${L.view === 'chart' ? '' : `
-    <div class="toolbar">
-      <input type="text" id="l-q" placeholder="Buscar por @ ou palavra..." value="${esc(L.q)}">
+    <div class="card" style="margin-top:16px"><h3>Novos contactos <span class="muted small">por dia · 30 dias</span></h3>${bars(serie)}</div>
+    <div class="toolbar" style="margin-top:16px">
+      <input type="text" id="l-q" placeholder="Procurar por @ ou palavra..." value="${esc(L.q)}">
       <select id="l-origem"><option value="">Todas as origens</option>${origens.map((o) => `<option value="${esc(o)}" ${o === L.origem ? 'selected' : ''}>${esc(origemTxt(o))}</option>`).join('')}</select>
       <select id="l-etiqueta">${opt(uniq((x) => x.tags || []), L.etiqueta, 'Todas as etiquetas')}</select>
       <select id="l-auto">${opt(uniq((x) => [x.automacao_nome]), L.automacao, 'Todas as automações')}</select>
       <button class="btn" id="l-csv">⬇ Exportar CSV</button>
-    </div>`}
+    </div>
     <div id="l-body"></div>`;
 
-  $$('[data-view]', body).forEach((b) => b.addEventListener('click', () => { L.view = b.dataset.view; L.page = 1; drawLeads(); }));
-  if (L.view !== 'chart') {
-    $('#l-q').addEventListener('input', (e) => { L.q = e.target.value; L.page = 1; drawLeadsBody(); });
-    $('#l-origem').addEventListener('change', (e) => { L.origem = e.target.value; L.page = 1; drawLeads(); });
-    $('#l-etiqueta').addEventListener('change', (e) => { L.etiqueta = e.target.value; L.page = 1; drawLeads(); });
-    $('#l-auto').addEventListener('change', (e) => { L.automacao = e.target.value; L.page = 1; drawLeads(); });
-    $('#l-csv').addEventListener('click', exportLeadsCSV);
-  }
+  $('#l-q').addEventListener('input', (e) => { L.q = e.target.value; L.page = 1; drawLeadsBody(); });
+  $('#l-origem').addEventListener('change', (e) => { L.origem = e.target.value; L.page = 1; drawLeadsBody(); });
+  $('#l-etiqueta').addEventListener('change', (e) => { L.etiqueta = e.target.value; L.page = 1; drawLeadsBody(); });
+  $('#l-auto').addEventListener('change', (e) => { L.automacao = e.target.value; L.page = 1; drawLeadsBody(); });
+  $('#l-csv').addEventListener('click', exportLeadsCSV);
   drawLeadsBody();
 }
 
 function drawLeadsBody() {
   const box = $('#l-body'); if (!box) return;
-  if (L.view === 'chart') return drawLeadsCharts(box);
   const all = leadsFiltered();
-  const sheet = L.view === 'sheet';
   const pages = Math.max(1, Math.ceil(all.length / L.size));
   if (L.page > pages) L.page = pages;
-  const rows = sheet ? all : all.slice((L.page - 1) * L.size, L.page * L.size);
+  const rows = all.slice((L.page - 1) * L.size, L.page * L.size);
   const arrow = (k) => (L.sortK === k ? (L.sortDir > 0 ? ' ▲' : ' ▼') : '');
-  const cols = sheet ? COLS_SHEET : COLS_TABLE;
+  const cols = COLS_TABLE;
 
   box.innerHTML = `
-    <div class="tbl-wrap ${sheet ? 'sheet' : ''}">
+    <div class="tbl-wrap">
       <table class="tbl">
-        <thead><tr>${sheet ? '<th class="rn"></th>' : ''}${cols.map((c) => `<th ${c.nosort ? '' : `data-sort="${c.k}"`}>${c.t}${arrow(c.k)}</th>`).join('')}</tr></thead>
-        <tbody>${rows.length ? rows.map((x, i) => `<tr>${sheet ? `<td class="rn">${i + 1}</td>` : ''}${cols.map((c) => `<td>${cellHTML(x, c.k, sheet)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${cols.length + 1}" class="muted" style="text-align:center;padding:28px">Nenhum contacto com estes filtros.</td></tr>`}</tbody>
+        <thead><tr>${cols.map((c) => `<th ${c.nosort ? '' : `data-sort="${c.k}"`}>${c.t}${arrow(c.k)}</th>`).join('')}</tr></thead>
+        <tbody>${rows.length ? rows.map((x) => `<tr>${cols.map((c) => `<td>${cellHTML(x, c.k, false)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${cols.length}" class="muted" style="text-align:center;padding:28px">Nenhum contacto com estes filtros.</td></tr>`}</tbody>
       </table>
     </div>
-    ${sheet ? '' : `<div class="row between" style="margin-top:12px">
+    <div class="row between" style="margin-top:12px">
       <div class="row"><span class="muted small">Linhas por página</span>
         <select id="l-size" style="width:auto">${[25, 50, 100].map((n) => `<option ${n === L.size ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
       <div class="row"><button class="btn sm" id="l-prev" ${L.page <= 1 ? 'disabled' : ''}>Anterior</button>
         <span class="small">${L.page} / ${pages}</span>
-        <button class="btn sm" id="l-next" ${L.page >= pages ? 'disabled' : ''}>Seguinte</button></div></div>`}`;
+        <button class="btn sm" id="l-next" ${L.page >= pages ? 'disabled' : ''}>Seguinte</button></div></div>`;
 
   $$('[data-sort]', box).forEach((th) => th.addEventListener('click', () => {
     const k = th.dataset.sort; L.sortDir = L.sortK === k ? -L.sortDir : (['updated_at', 'created_at', 'interacoes', 'envios_ok'].includes(k) ? -1 : 1); L.sortK = k; drawLeadsBody();
   }));
   $$('[data-a=edit-tags]', box).forEach((el) => el.addEventListener('click', () => editTags(el.dataset.id)));
-  if (!sheet) {
-    $('#l-size')?.addEventListener('change', (e) => { L.size = +e.target.value; L.page = 1; drawLeadsBody(); });
-    $('#l-prev')?.addEventListener('click', () => { L.page--; drawLeadsBody(); });
-    $('#l-next')?.addEventListener('click', () => { L.page++; drawLeadsBody(); });
-  }
+  $('#l-size').addEventListener('change', (e) => { L.size = +e.target.value; L.page = 1; drawLeadsBody(); });
+  $('#l-prev').addEventListener('click', () => { L.page--; drawLeadsBody(); });
+  $('#l-next').addEventListener('click', () => { L.page++; drawLeadsBody(); });
 }
 
 // Editar etiquetas de um contacto (separadas por vírgula)
@@ -453,42 +441,6 @@ async function editTags(id) {
   const { error } = await sb.from('ig_leads').update({ tags }).eq('ig_user_id', id);
   if (error) return toast('Não foi possível guardar as etiquetas.', true);
   x.tags = tags; drawLeads(); toast('Etiquetas guardadas.');
-}
-
-// Barras horizontais (ranking)
-function hbars(items) {
-  const max = Math.max(1, ...items.map((i) => i.n));
-  if (!items.length) return '<p class="muted small">Sem dados ainda.</p>';
-  return items.map((i) => `<div class="hb"><span title="${esc(i.t)}">${esc(i.t)}</span><div class="hb-track"><div class="hb-fill" style="width:${(i.n / max) * 100}%"></div></div><b>${fmt(i.n)}</b></div>`).join('');
-}
-const countBy = (rows, f) => { const m = {}; rows.forEach((r) => { const k = f(r); if (k) m[k] = (m[k] || 0) + 1; }); return Object.entries(m).map(([t, n]) => ({ t, n })).sort((a, b) => b.n - a.n); };
-
-function drawLeadsCharts(box) {
-  const rows = L.rows;
-  const total = rows.length;
-  const comContacto = rows.filter((r) => r.email || r.telefone).length;
-  const comLink = rows.filter((r) => r.link_sent).length;
-  const dias30 = Date.now() - 30 * 864e5;
-  const novos30 = rows.filter((r) => new Date(r.created_at).getTime() >= dias30).length;
-  const ativos7 = rows.filter((r) => new Date(r.updated_at).getTime() >= Date.now() - 7 * 864e5).length;
-  // Novos contactos por dia (últimos 30 dias)
-  const perDay = {};
-  rows.forEach((r) => { const k = String(r.created_at).slice(0, 10); perDay[k] = (perDay[k] || 0) + 1; });
-  const serie = Array.from({ length: 30 }, (_, i) => { const d = new Date(Date.now() - (29 - i) * 864e5).toISOString().slice(0, 10); return { date: d, value: perDay[d] || 0 }; });
-
-  box.innerHTML = `
-    <div class="grid cols-3">
-      <div class="card hl"><div class="stat-l">Contactos</div><div class="stat-n">${fmt(total)}</div><div class="stat-sub">${fmt(novos30)} novos · 30 dias</div></div>
-      <div class="card"><div class="stat-l">Com e-mail ou telefone</div><div class="stat-n">${fmt(comContacto)}</div><div class="stat-sub">${total ? Math.round((comContacto / total) * 100) : 0}% dos contactos</div></div>
-      <div class="card"><div class="stat-l">Link enviado</div><div class="stat-n">${fmt(comLink)}</div><div class="stat-sub">${fmt(ativos7)} ativos · 7 dias</div></div>
-    </div>
-    <div class="card" style="margin-top:16px"><h3>Novos contactos <span class="muted small">por dia · 30 dias</span></h3>${bars(serie)}</div>
-    <div class="grid cols-2" style="margin-top:16px">
-      <div class="card"><h3>Origem</h3>${hbars(countBy(rows, (r) => origemTxt(r.last_source)))}</div>
-      <div class="card"><h3>Palavras mais usadas</h3>${hbars(countBy(rows, (r) => (r.last_keyword || '').toLowerCase().trim()).slice(0, 8))}</div>
-      <div class="card"><h3>Automações</h3>${hbars(countBy(rows, (r) => r.automacao_nome || 'Sem automação').slice(0, 8))}</div>
-      <div class="card"><h3>Etiquetas</h3>${hbars(countBy(rows.flatMap((r) => (r.tags || []).map((t) => ({ t }))), (r) => r.t).slice(0, 8))}</div>
-    </div>`;
 }
 
 // Exporta a lista filtrada para CSV (abre no Excel / Numbers / Google Sheets)
