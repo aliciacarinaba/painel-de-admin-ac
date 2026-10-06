@@ -153,13 +153,6 @@ function renderHome() {
 }
 
 const BRAND = {
-  perfil: [
-    ['Nome, idade e profissão', 'Alícia Carina, 27 anos, empresária, estilista de unhas e formadora.'],
-    ['O que vendo?', 'Formação sobre gestão financeira e precificação de serviços na área da beleza; formação teórica e prática de estilismo de unhas.'],
-    ['Para quem vendo?', 'Estilistas de unhas e profissionais de beleza que exercem funções em Portugal.'],
-    ['Qual o meu diferencial?', 'Converso honestamente sobre dinheiro e sobre as dificuldades de ter um negócio na área da beleza em Portugal, assim como a parte mais bonita. Partilho uma “vida real”, em vez de romantizar a área e a profissão. Além disso, a minha formação e prática em Psicologia permitem-me ter uma visão e comunicação mais empáticas e equilibradas.'],
-  ],
-  nicho: 'Estilismo de unhas e gestão financeira para profissionais de beleza',
   visuais: ['🌸 Flores', '📚 Livros ou cadernos', '☕️ Chávena de café com leite', '💻 MacBook, iPad ou iPhone', '☀️ Espaços iluminados com luz natural e sombras', '🏛️ Arquitetura antiga'],
   emojis: '🏛️ 🤌🏻 ☕️ 🗝️ 💸 ⏱️ 😮‍💨 🖋️ 🤞🏻 ⏳ 🔏 🔍 🔓 🤎',
   sensacao: 'Sofisticação serena com intimidade. A marca transmite calma, elegância e profundidade, o sentido de segurança de quem já caminhou o caminho. Há humanidade e vulnerabilidade honesta, mas sempre com compostura. É como estar numa conversa particular com alguém em quem se confia, numa sala iluminada por luz natural, onde se pode falar de dificuldades sem perder a dignidade.',
@@ -259,11 +252,6 @@ function renderBranding() {
   const B = BRAND, ul = (l) => `<ul class="brand-list">${l.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
   $('#home-body').innerHTML = `
     <div class="brandpage">
-      <div class="card"><h3>Perfil</h3>
-        ${B.perfil.map(([t, d]) => `<div class="brand-q"><div class="stat-l">${esc(t)}</div><p>${esc(d)}</p></div>`).join('')}
-        <div class="brand-q"><div class="stat-l">Nicho principal</div><p><strong>${esc(B.nicho)}</strong></p></div>
-      </div>
-
       <div class="grid cols-2">
         <div class="card"><h3>Elementos visuais</h3>${ul(B.visuais)}</div>
         <div class="card"><h3>Emojis</h3><p class="brand-emojis">${esc(B.emojis)}</p></div>
