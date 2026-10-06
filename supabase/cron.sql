@@ -31,3 +31,15 @@ select cron.schedule(
 );
 
 -- Para remover um agendamento: select cron.unschedule('ig-scheduler');
+
+-- Atualiza a análise de audiência (separador Audiência): 1 vez por semana (segundas, 05:00 UTC)
+select cron.schedule(
+  'ig-audience',
+  '0 5 * * 1',
+  $$ select net.http_post(
+       url := 'https://SEU_PROJETO.supabase.co/functions/v1/ig-audience',
+       headers := jsonb_build_object('Content-Type','application/json','x-sched-key','SEU_SCHED_SECRET_AQUI'),
+       body := '{"light":true}'::jsonb,
+       timeout_milliseconds := 120000
+     ) $$
+);

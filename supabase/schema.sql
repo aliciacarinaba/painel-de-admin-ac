@@ -231,3 +231,14 @@ create table if not exists ig_analysis (
 alter table ig_analysis enable row level security;
 drop policy if exists "admin_total" on ig_analysis;
 create policy "admin_total" on ig_analysis for all to authenticated using (true) with check (true);
+
+-- ---------- 6) AUDIÊNCIA (separador "Audiência" do Início) ----------
+-- "main" = último resultado da função ig-audience; "config" = {"competitors":["perfil1", ...]}
+create table if not exists ig_audience (
+  id text primary key,
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+alter table ig_audience enable row level security;
+drop policy if exists "admin_total" on ig_audience;
+create policy "admin_total" on ig_audience for all to authenticated using (true) with check (true);

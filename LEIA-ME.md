@@ -17,6 +17,7 @@ supabase/functions/ig-token-refresh    Renova o token (semanal)
 supabase/functions/ig-insights         Métricas em direto (já não usada pelo painel)
 supabase/functions/ig-media            Posts
 supabase/functions/ig-analysis         Métricas do painel (alcance, posts, quem mais comenta)
+supabase/functions/ig-audience         Análise da audiência (semanal) e de perfis concorrentes
 ```
 
 ## Passo 0: testar já, sem configurar nada
@@ -54,6 +55,7 @@ Os passos seguintes servem para colocar no ar de verdade.
    supabase functions deploy ig-insights
    supabase functions deploy ig-media
    supabase functions deploy ig-analysis
+   supabase functions deploy ig-audience --no-verify-jwt
    ```
    (`ig-scheduler` e `ig-token-refresh` ficam protegidas pelo `SCHED_SECRET`.)
 5. **Agendar os robôs:** edita `supabase/cron.sql` (troca `SEU_PROJETO` e

@@ -141,12 +141,13 @@ async function safeCount(table, filter) {
 // ---------- Início ----------
 function renderHome() {
   $('#view').innerHTML = `
-    <div class="page-head"><h1>👋 Bem-vindo ao teu painel</h1><p class="muted">Um resumo rápido do que está a acontecer.</p></div>
+    <div class="page-head"><h1>👋 Bem-vinda ao teu Painel de Administração</h1><p class="muted">Um resumo rápido do que está a acontecer.</p></div>
     <div class="tabs">
       <button class="tab" data-tab="general">Informação Geral</button>
       <button class="tab" data-tab="branding">Branding</button>
       <button class="tab" data-tab="foundations">Fundamentos da Marca</button>
       <button class="tab" data-tab="voice">Tom de Voz</button>
+      <button class="tab" data-tab="audience">Audiência</button>
     </div>
     <div id="home-body"></div>`;
   $$('.tab').forEach((t) => t.addEventListener('click', () => { state.homeTab = t.dataset.tab; renderHome(); }));
@@ -154,6 +155,7 @@ function renderHome() {
   if (state.homeTab === 'branding') renderBranding();
   else if (state.homeTab === 'foundations') renderFundamentos();
   else if (state.homeTab === 'voice') renderTom();
+  else if (state.homeTab === 'audience') renderAudience();
   else renderGeneral();
 }
 
@@ -381,6 +383,223 @@ function renderFundamentos() {
         </div>
       </div>
     </div>`;
+}
+
+// ---------- Audiência ----------
+const AU = { data: null, updated: null, loading: false, loaded: false, sec: 'resumo', bucket: 'duvidas' };
+const AU_SECS = [['resumo', 'Resumo'], ['dizem', 'O que dizem'], ['conteudo', 'Conteúdo'], ['concorrencia', 'Concorrência'], ['linguagem', 'Linguagem'], ['pesquisa', 'Pesquisa']];
+const AU_COLORS = ['#8F5B5F', '#C8A49F', '#5D3C3E', '#AF8386', '#D7C1C3'];
+const AU_BUCKETS = { duvidas: ['❓', 'Dúvidas', 'perguntas diretas'], dores: ['💔', 'Dores', 'frustrações e bloqueios'], objecoes: ['🚧', 'Objeções', 'o que as faz hesitar'], desejos: ['✨', 'Desejos', 'o que querem alcançar'], pedidos: ['📩', 'Pedidos e palavras-chave', 'comentários de ação'] };
+const AU_WD = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+const AU_HR = ['0–4h', '4–8h', '8–12h', '12–16h', '16–20h', '20–24h'];
+const AU_RESEARCH = {
+  dores: ['Não sei quanto cobrar pelo meu trabalho', 'Tenho medo de perder clientes se aumentar os preços', 'Trabalho muito e no final do mês não fica quase nada', 'Não sei se estou a ganhar ou a perder dinheiro', 'Sinto que não consigo profissionalizar o meu negócio'],
+  desejos: ['Viver exclusivamente do estilismo de unhas de forma sustentável', 'Ter um negócio organizado e profissional, não apenas um biscate', 'Cobrar o que o trabalho vale sem culpa', 'Ter estabilidade financeira e não depender de mês para mês', 'Evoluir nas técnicas e destacar-me pela qualidade e não pelo preço'],
+  objecoes: ['Os preços das formações são altos para o que ganho', 'Não sei se vou conseguir aplicar o que aprendo', 'Já vi muita coisa online de graça, não sei se vale a pena pagar', 'Tenho medo de investir e não ter retorno', 'A minha zona não tem mercado para cobrar mais caro'],
+  linguagem: ['“Estou a começar”', '“Ainda estou a dar os primeiros passos”', '“A minha zona não deixa”', '“Aqui as pessoas não pagam”', '“Trabalho muito mas não consigo escalar”', '“Adoro o que faço mas não sei gerir o negócio”', '“Quero ser profissional a sério”'],
+  surpresas: [['🧠', 'A insegurança no preço não desaparece com o tempo', 'Estilistas com anos de experiência têm as mesmas dores das iniciantes: desaparece com formação.'], ['💭', 'O bloqueio é emocional, não técnico', 'Muitas sabem que cobram pouco, mas travam por dentro.'], ['🔎', 'Há abertura para conteúdo honesto', 'A audiência valoriza a transparência sobre o lado difícil do negócio.']],
+  contexto: [['👩', 'Maioritariamente mulheres a exercer em Portugal'], ['🌱', 'Mix de iniciantes (menos de 2 anos) e estabelecidas (3-5+ anos)'], ['🏠', 'Por conta própria, muitas em casa ou em espaços alugados'], ['📱', 'Consomem sobretudo Instagram e TikTok'], ['🪞', 'Valorizam criadores que mostram a realidade, sem filtros excessivos']],
+  resultados: ['Aumentar os preços sem perder clientes', 'Perceber quanto ganham por hora/serviço', 'Ter uma tabela de preços com sentido financeiro', 'Sentir confiança ao apresentar os preços', 'Ter o negócio organizado com ferramentas práticas'],
+};
+
+async function loadAudience() {
+  if (!sb) { AU.loaded = true; return; }
+  try {
+    const { data } = await sb.from('ig_audience').select('data, updated_at').eq('id', 'main').maybeSingle();
+    if (data) { AU.data = data.data; AU.updated = data.updated_at; }
+  } catch (e) { console.error(e); }
+  AU.loaded = true;
+}
+
+async function runAudience() {
+  if (!sb) return toast('Liga o Instagram e o Supabase para atualizar a audiência.', true);
+  if (AU.loading) return;
+  AU.loading = true; drawAudience();
+  try {
+    const r = await sb.functions.invoke('ig-audience');
+    const err = r.error?.message || r.data?.error;
+    if (err) throw new Error(err);
+    AU.data = r.data.data; AU.updated = r.data.updated_at;
+    toast('Audiência atualizada.');
+  } catch (e) { console.error(e); toast('Não foi possível atualizar a audiência. Tenta outra vez daqui a pouco.', true); }
+  AU.loading = false;
+  if (state.route === 'home' && state.homeTab === 'audience') drawAudience();
+}
+
+async function renderAudience() {
+  $('#home-body').innerHTML = '<div class="card empty" style="margin-top:16px"><p>A carregar…</p></div>';
+  if (!AU.loaded) await loadAudience();
+  if (state.route === 'home' && state.homeTab === 'audience') drawAudience();
+}
+
+// --- pequenos componentes gráficos ---
+const auPct = (n, d) => (d ? Math.round((n / d) * 100) : 0);
+function hbars(rows, { suffix = '', max, color = 'var(--accent)' } = {}) {
+  const m = max ?? Math.max(1, ...rows.map((r) => r.value));
+  return `<div class="au-bars">${rows.map((r) => `
+    <div class="au-bar"><span class="au-bar-l">${esc(r.label)}</span>
+      <span class="au-bar-t"><span class="au-bar-f" style="width:${Math.max(2, (r.value / m) * 100)}%;background:${r.color || color}"></span></span>
+      <span class="au-bar-v">${r.text ?? fmt(r.value) + suffix}</span></div>`).join('')}</div>`;
+}
+function donut(items, centerTop, centerBottom) {
+  const tot = items.reduce((s, i) => s + i.value, 0) || 1;
+  let acc = 0;
+  const stops = items.map((i, k) => { const a = (acc / tot) * 100; acc += i.value; return `${AU_COLORS[k % 5]} ${a}% ${(acc / tot) * 100}%`; });
+  return `<div class="au-donut-wrap">
+    <div class="au-donut" style="background:conic-gradient(${stops.join(',')})"><div><strong>${esc(centerTop)}</strong><span>${esc(centerBottom)}</span></div></div>
+    <div class="au-legend">${items.map((i, k) => `<div><span class="au-dot" style="background:${AU_COLORS[k % 5]}"></span>${esc(i.label)} <strong>${i.text ?? auPct(i.value, tot) + '%'}</strong></div>`).join('')}</div></div>`;
+}
+const auStat = (icon, label, value, sub) => `<div class="card au-kpi"><div class="au-ico">${icon}</div><div class="stat-l">${esc(label)}</div><div class="stat-n">${value}</div><div class="muted small">${sub ?? ''}</div></div>`;
+
+function drawAudience() {
+  const body = $('#home-body'); if (!body) return;
+  const d = AU.data;
+  const age = AU.updated ? Math.floor((Date.now() - Date.parse(AU.updated)) / 864e5) : null;
+  const head = `
+    <div class="au-head">
+      <div>${AU.updated ? `<strong>Atualizado em ${fmtDateTime(AU.updated)}</strong> <span class="chip ${age > 7 ? 'au-warn' : ''}">${age > 7 ? `Desatualizado há ${age} dias` : 'Em dia'}</span>` : '<strong>Ainda sem dados</strong>'}
+        <div class="muted small">Atualização automática todas as segundas-feiras. Também podes atualizar já.</div></div>
+      <button class="btn primary" id="au-refresh" ${AU.loading ? 'disabled' : ''}>${AU.loading ? 'A atualizar…' : '↻ Atualizar'}</button>
+    </div>
+    <div class="au-pills">${AU_SECS.map(([k, l]) => `<button class="au-pill ${AU.sec === k ? 'active' : ''}" data-sec="${k}">${l}</button>`).join('')}</div>`;
+  let inner;
+  if (AU.sec === 'pesquisa') inner = auPesquisa();
+  else if (!d) inner = `<div class="card empty"><div class="big">🎯</div><h2>${sb ? 'Ainda não há análise de audiência' : 'Liga o Instagram para ver a audiência'}</h2><p>${sb ? 'Carrega em “Atualizar” para analisar os comentários do teu perfil.' : 'Em modo de teste local não há dados do Instagram.'}</p></div>`;
+  else inner = { resumo: auResumo, dizem: auDizem, conteudo: auConteudo, concorrencia: auConcorrencia, linguagem: auLinguagem }[AU.sec](d);
+  body.innerHTML = `<div class="au">${head}${inner}</div>`;
+  $('#au-refresh')?.addEventListener('click', runAudience);
+  $$('.au-pill').forEach((b) => b.addEventListener('click', () => { AU.sec = b.dataset.sec; drawAudience(); }));
+  $$('.au-bk').forEach((b) => b.addEventListener('click', () => { AU.bucket = b.dataset.bk; drawAudience(); }));
+}
+
+function auResumo(d) {
+  const A = d.audience, B = A.buckets, own = d.profiles[0], L = d.topic_labels;
+  const bestF = own.formats[0], tt = A.topics[0];
+  const heat = d.heat; let bd = null;
+  heat.forEach((r, i) => r.forEach((v, j) => { if (v != null && (!bd || v > bd.v)) bd = { v, i, j }; }));
+  const types = Object.entries(B).map(([k, v]) => ({ label: v.label, value: v.count }));
+  return `
+    <div class="grid cols-4">
+      ${auStat('💬', 'Comentários analisados', fmt(A.comments_analyzed), `de ${fmt(A.comments_total)} lidos nos últimos posts`)}
+      ${auStat('❓', 'Dúvidas', fmt(B.duvidas.count), `${B.duvidas.share}% dos comentários`)}
+      ${auStat('🏷️', 'Tema mais falado', tt ? esc(L[tt.key]) : '—', tt ? `${fmt(tt.n)} comentários` : '')}
+      ${auStat('🎬', 'Melhor formato', bestF ? esc(bestF.format) : '—', bestF ? `${fmt(bestF.avg)} interações por post` : '')}
+    </div>
+    <div class="grid cols-2">
+      <div class="card"><h3>Que tipo de mensagens deixam</h3>
+        ${donut(types, fmt(A.comments_analyzed), 'comentários')}</div>
+      <div class="card"><h3>Sobre o que falam</h3>
+        ${A.topics.length ? hbars(A.topics.slice(0, 8).map((t) => ({ label: L[t.key], value: t.n })), { suffix: '' }) : '<p class="muted">Sem temas detetados.</p>'}</div>
+    </div>
+    <div class="grid cols-2">
+      <div class="card"><h3>Temas que geram mais interação</h3><p class="muted small">Interações por post em % dos seguidores, nos posts que falam de cada tema.</p>
+        ${d.topics_eng.length ? hbars(d.topics_eng.slice(0, 8).map((t) => ({ label: t.label, value: t.own ?? t.comp ?? 0, text: (t.own ?? t.comp ?? 0).toFixed(2).replace('.', ',') + '%' }))) : '<p class="muted">Sem dados.</p>'}</div>
+      <div class="card"><h3>Melhor momento para publicar</h3>
+        ${bd ? `<div class="au-best"><strong>${AU_WD[bd.i]}</strong><span>${AU_HR[bd.j]}</span></div><p class="muted small">${bd.v.toFixed(1).replace('.', ',')}× a interação média. Vê o mapa completo em “Conteúdo”.</p>` : '<p class="muted">Sem dados.</p>'}</div>
+    </div>`;
+}
+
+function auDizem(d) {
+  const A = d.audience, L = d.topic_labels, cur = A.buckets[AU.bucket];
+  const cards = Object.entries(AU_BUCKETS).map(([k, [ic, lb, sub]]) => {
+    const b = A.buckets[k];
+    return `<button class="card au-bk ${AU.bucket === k ? 'sel' : ''}" data-bk="${k}"><div class="au-ico">${ic}</div><div class="stat-l">${lb}</div><div class="stat-n">${b.share.toString().replace('.', ',')}%</div><div class="muted small">${fmt(b.count)} comentários · ${sub}</div></button>`;
+  }).join('');
+  const [ic, lb] = AU_BUCKETS[AU.bucket];
+  return `
+    <div class="grid cols-5 au-bks">${cards}</div>
+    <div class="grid cols-2">
+      <div class="card"><h3>${ic} ${lb}: sobre que temas</h3>
+        ${cur.topics.length ? hbars(cur.topics.map((t) => ({ label: L[t.key], value: t.n }))) : '<p class="muted">Ainda não há comentários suficientes desta categoria para identificar temas.</p>'}</div>
+      <div class="card"><h3>Exemplos reais</h3>
+        ${cur.samples.length ? `<div class="au-quotes">${cur.samples.slice(0, 6).map((s) => `<blockquote>${esc(s)}</blockquote>`).join('')}</div>` : '<p class="muted">Sem exemplos nesta categoria. Faz sentido: quanto menos comentários, menos padrões.</p>'}</div>
+    </div>
+    <p class="muted small">Análise por palavras-chave sobre os comentários públicos dos teus posts. Os nomes de quem comenta não são guardados nesta análise.</p>`;
+}
+
+function auHeat(heat) {
+  const mx = Math.max(0.01, ...heat.flat().filter((v) => v != null));
+  return `<div class="au-heat"><div></div>${AU_HR.map((h) => `<div class="au-hh">${h}</div>`).join('')}
+    ${heat.map((row, i) => `<div class="au-hh">${AU_WD[i]}</div>${row.map((v, j) => `<div class="au-hc" title="${AU_WD[i]} ${AU_HR[j]}: ${v == null ? 'sem posts' : v.toFixed(1).replace('.', ',') + '× a média'}" style="${v == null ? '' : `background:rgba(143,91,95,${(0.12 + 0.88 * (v / mx)).toFixed(2)});color:${v / mx > 0.55 ? '#fff' : 'var(--text)'}`}">${v == null ? '' : v.toFixed(1).replace('.', ',')}</div>`).join('')}`).join('')}</div>`;
+}
+function auPosts(list) {
+  return `<div class="au-posts">${list.map((p) => `<a class="au-post" href="${esc(p.permalink)}" target="_blank" rel="noopener">
+    <span class="au-thumb" style="${p.thumb ? `background-image:url('${esc(p.thumb)}')` : ''}"></span>
+    <span class="au-post-b"><strong>❤ ${fmt(p.likes)} · 💬 ${fmt(p.comments)}</strong><span class="muted small">${fmtDate(String(p.ts).slice(0, 10))}</span></span></a>`).join('')}</div>`;
+}
+
+function auConteudo(d) {
+  const own = d.profiles[0];
+  return `
+    <div class="grid cols-2">
+      <div class="card"><h3>Interações por formato</h3><p class="muted small">Média de gostos + comentários por post.</p>
+        ${hbars(own.formats.map((f) => ({ label: `${f.format} (${f.n})`, value: f.avg })))}</div>
+      <div class="card"><h3>Hashtags mais usadas</h3>
+        ${own.hashtags.length ? `<div class="au-tags">${own.hashtags.map((h) => `<span class="chip">${esc(h.tag)} <small>${h.n}</small></span>`).join('')}</div>` : '<p class="muted">Poucas hashtags nos teus posts.</p>'}
+        <div class="stat-l" style="margin-top:16px">Ritmo de publicação</div><div class="stat-n">${own.posts_per_week != null ? String(own.posts_per_week).replace('.', ',') : '—'}<small class="muted"> posts/semana</small></div></div>
+    </div>
+    <div class="card"><h3>Mapa de calor: quando a interação é maior</h3>
+      <p class="muted small">Cada célula mostra quantas vezes a interação do post ficou acima (ou abaixo) da média. Quanto mais escuro, melhor. Hora de Portugal. Com poucos posts por célula, usa como indicação.</p>
+      ${auHeat(d.heat)}</div>
+    <div class="card"><h3>Os teus posts com mais interação</h3>${auPosts(own.best)}</div>`;
+}
+
+function auConcorrencia(d) {
+  const comps = d.sources.competitors, okc = comps.filter((c) => c.ok);
+  const status = `<div class="card"><h3>Perfis acompanhados</h3><div class="au-tags">${comps.map((c) => `<span class="chip ${c.ok ? '' : 'au-warn'}">@${esc(c.username)} ${c.ok ? '✓' : '✕'}</span>`).join('')}</div></div>`;
+  if (!okc.length) {
+    return `${status}
+      <div class="card empty"><div class="big">🔌</div><h2>Os perfis concorrentes ainda não estão ligados</h2>
+        <p>O Instagram só deixa ler outros perfis através da ligação por Facebook (Business Discovery). A ligação atual do painel (Instagram Login) não o permite.</p>
+        <p class="muted small">Estado: ${esc(comps[0]?.error ?? 'sem perfis configurados')}</p></div>`;
+  }
+  const P = d.profiles, mx = (k) => Math.max(1, ...P.map((p) => Number(p[k]) || 0));
+  const row = (p) => `<tr class="${p.own ? 'au-own' : ''}"><td><strong>@${esc(p.username)}</strong>${p.own ? ' <span class="chip">tu</span>' : ''}</td>
+    <td>${hbars([{ label: '', value: p.followers }], { max: mx('followers') })}</td>
+    <td>${hbars([{ label: '', value: p.posts_per_week || 0, text: String(p.posts_per_week ?? '—').replace('.', ',') }], { max: mx('posts_per_week') })}</td>
+    <td>${hbars([{ label: '', value: p.avg_likes }], { max: mx('avg_likes') })}</td>
+    <td>${hbars([{ label: '', value: p.eng_rate || 0, text: String(p.eng_rate ?? '—').replace('.', ',') + '%' }], { max: mx('eng_rate') })}</td>
+    <td>${esc(p.formats[0]?.format ?? '—')}</td></tr>`;
+  const comp = P.filter((p) => !p.own);
+  return `${status}
+    <div class="card"><h3>Comparação de perfis</h3><div class="tbl-wrap"><table class="tbl au-tbl"><thead><tr><th>Perfil</th><th>Seguidores</th><th>Posts/semana</th><th>Gostos/post</th><th>Interação</th><th>Melhor formato</th></tr></thead><tbody>${P.map(row).join('')}</tbody></table></div></div>
+    <div class="card"><h3>Temas: tu vs concorrentes</h3><p class="muted small">Interação média (% dos seguidores) nos posts de cada tema.</p>
+      ${d.topics_eng.map((t) => `<div class="au-duo"><span>${esc(t.label)}</span>${hbars([{ label: 'Tu', value: t.own ?? 0, text: t.own != null ? String(t.own).replace('.', ',') + '%' : '—' }, { label: 'Conc.', value: t.comp ?? 0, text: t.comp != null ? String(t.comp).replace('.', ',') + '%' : '—', color: 'var(--accent-mid)' }], { max: Math.max(1, ...d.topics_eng.map((x) => Math.max(x.own ?? 0, x.comp ?? 0))) })}</div>`).join('')}</div>
+    ${comp.map((p) => `<div class="card"><h3>@${esc(p.username)}: posts com mais interação</h3>${auPosts(p.best)}</div>`).join('')}`;
+}
+
+function auLinguagem(d) {
+  const A = d.audience, mx = Math.max(1, ...A.words.map((w) => w.n));
+  const cloud = A.words.slice(0, 40).map((w) => `<span class="au-w" style="font-size:${(13 + (w.n / mx) * 22).toFixed(0)}px;opacity:${(0.55 + 0.45 * (w.n / mx)).toFixed(2)}" title="${w.n}×">${esc(w.w)}</span>`).join('');
+  return `
+    <div class="grid cols-2">
+      <div class="card"><h3>Palavras mais usadas</h3><div class="au-cloud">${cloud || '<p class="muted">Sem dados.</p>'}</div></div>
+      <div class="card"><h3>Palavras-chave comentadas</h3><p class="muted small">Comentários curtos que pedem algo (ex.: o código de uma campanha).</p>
+        ${A.keywords.length ? hbars(A.keywords.map((k) => ({ label: k.k, value: k.n }))) : '<p class="muted">Sem palavras-chave repetidas.</p>'}</div>
+    </div>
+    <div class="grid cols-2">
+      <div class="card"><h3>Emojis da audiência</h3><div class="au-emojis">${A.emojis.map((e) => `<span title="${e.n}×"><b>${e.e}</b><small>${e.n}</small></span>`).join('') || '<p class="muted">Sem emojis.</p>'}</div></div>
+      <div class="card"><h3>Expressões que se repetem</h3>
+        ${A.phrases.length ? `<div class="au-tags">${A.phrases.map((p) => `<span class="chip">${esc(p.p)} <small>${p.n}</small></span>`).join('')}</div>` : '<p class="muted">Ainda sem expressões repetidas.</p>'}</div>
+    </div>`;
+}
+
+function auPesquisa() {
+  const R = AU_RESEARCH;
+  const col = (cls, icon, titulo, list) => `<div class="card au-col ${cls}"><h3>${icon} ${titulo}</h3><ol class="au-list">${list.map((x) => `<li>${esc(x)}</li>`).join('')}</ol></div>`;
+  return `
+    <div class="grid cols-3">
+      ${col('c1', '💔', 'Dores mais mencionadas', R.dores)}
+      ${col('c2', '✨', 'Desejos e sonhos', R.desejos)}
+      ${col('c3', '🚧', 'Objeções que aparecem', R.objecoes)}
+    </div>
+    <div class="card"><h3>🗣️ Padrões de linguagem</h3><div class="au-tags">${R.linguagem.map((x) => `<span class="chip au-q">${esc(x)}</span>`).join('')}</div></div>
+    <div class="grid cols-3">${R.surpresas.map(([i, t, s]) => `<div class="card au-sur"><div class="au-ico">${i}</div><strong>${esc(t)}</strong><p class="muted">${esc(s)}</p></div>`).join('')}</div>
+    <div class="grid cols-2">
+      <div class="card"><h3>👥 Contexto da audiência</h3><div class="au-ctx">${R.contexto.map(([i, t]) => `<div><span>${i}</span>${esc(t)}</div>`).join('')}</div></div>
+      <div class="card"><h3>🎯 Resultado que esperam</h3><ol class="au-list">${R.resultados.map((x) => `<li>${esc(x)}</li>`).join('')}</ol></div>
+    </div>
+    <p class="muted small">Esta secção vem da tua pesquisa de audiência no Notion e não se atualiza sozinha.</p>`;
 }
 
 const TOM = {
