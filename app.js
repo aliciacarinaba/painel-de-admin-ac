@@ -146,12 +146,14 @@ function renderHome() {
       <button class="tab" data-tab="general">Informação Geral</button>
       <button class="tab" data-tab="branding">Branding</button>
       <button class="tab" data-tab="foundations">Fundamentos da Marca</button>
+      <button class="tab" data-tab="voice">Tom de Voz</button>
     </div>
     <div id="home-body"></div>`;
   $$('.tab').forEach((t) => t.addEventListener('click', () => { state.homeTab = t.dataset.tab; renderHome(); }));
   $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === state.homeTab));
   if (state.homeTab === 'branding') renderBranding();
   else if (state.homeTab === 'foundations') renderFundamentos();
+  else if (state.homeTab === 'voice') renderTom();
   else renderGeneral();
 }
 
@@ -377,6 +379,137 @@ function renderFundamentos() {
           <div><div class="stat-l">O que a minha marca nunca faz</div>${ol(F.nunca)}</div>
           <div><div class="stat-l">O que não negoceio, mesmo que traga dinheiro</div>${ol(F.naoNegocio)}</div>
         </div>
+      </div>
+    </div>`;
+}
+
+const TOM = {
+  adjetivos: [
+    ['Direta', 'vai direta ao ponto, sem rodeios. Entra logo na dor ou frustração, nomeando o problema pelo seu nome real. Nada de linguagem fluida ou genérica.'],
+    ['Empática', 'reconhece emoções antes de dar informação. Não é “sinto o teu problema”, é validar o bloqueio (emocional, psicológico, financeiro) e reconhecer que é legítimo. Liga-se à pessoa, não ao resultado.'],
+    ['Descomplicada', 'tira o jargão e torna tudo acessível. Transforma conceitos complexos (gestão financeira, psicologia do preço, técnicas de nail art) em explicações simples, com exemplos reais e, frequentemente, com humor seco português.'],
+  ],
+  expressoes: [
+    ['“Quantas vezes já deste por ti a pensar…”', 'questão retórica que abre com empatia, criando um momento de autorreflexão na pessoa antes de revelar a verdade'],
+    ['“Eu percebo…” / “Eu percebo-te…”', 'validação empática que vem SEMPRE antes da informação; nunca me atiro de cabeça à solução sem primeiro nomear o sentimento'],
+    ['“Ps.” seguido de informação extra', 'confissão humorística ou curiosidade que torna o tom mais próximo e menos corporativo (ex.: “Ps. Isto é difícil de dizer em voz alta, mas…”)'],
+    ['“Comenta [palavra-chave]” como CTA', 'convida à participação sem parecer venda e torna o seguidor coautor (ex.: “Comenta CÊNTIMOS se te identificas”)'],
+    ['“Responde ‘quero saber mais’ a este story”', 'CTA conversacional, sem parecer que estou a empurrar, apenas deixando a porta aberta'],
+    ['“A verdade é que…” / “Vou ser honesta…”', 'marca a transição da validação para a revelação honesta, frequentemente seguida de uma confissão pessoal ou de um dado real que contradiz mitos'],
+    ['“Feitas bem as contas…” / “Isto vai-te custar…” / “Simples, rápido e eficaz.”', 'linguagem prática, concreta, com números; nada de abstrato'],
+    ['“Hoje desafio-te a…”', 'convite ativo à ação ou reflexão, sempre para mover a pessoa, nunca só para informar'],
+    ['“Observa onde consegui chegar.” / “Isto foi o que aprendi…”', 'partilha de conquista pessoal sem soar arrogante, sempre com reconhecimento do caminho e das dificuldades passadas'],
+    ['“Não é culpa tua, mas só tu podes mudar, é da tua responsabilidade.”', 'frase característica de Psicologia aplicada; diferencia o que é bloqueio emocional do que é ação prática'],
+  ],
+  proibidas: ['Incrível', 'Transformador/a', 'Jornada', 'Empoderamento', 'Game changer', 'Autêntica (como adjetivo genérico)', 'Inspiradora (como adjetivo vago)', 'Linguagem em “você” (usar sempre “tu” e formas de segunda pessoa do singular em português europeu)', 'Falsas promessas (garantir resultados, 100%, nunca…)'],
+  nunca: [
+    'Usar linguagem em “você” ou “vocês” (português europeu)',
+    'Usar palavras vazias como “incrível”, “transformador” ou “game changer”',
+    'Ser excessivamente formal ou usar linguagem corporativa fria',
+    'Apresentar a Alícia como perfeita ou como alguém que sempre soube fazer tudo: ela partilha as suas dificuldades reais',
+    'Usar CTAs genéricos como “Clica no link da bio” sem contexto conversacional',
+    'Fazer promessas exageradas ou usar linguagem de “guru”',
+    'Ignorar o lado emocional/motivacional: o negócio e o bem-estar pessoal caminham juntos na comunicação dela',
+    'Deixar tudo explicado: deve sempre haver espaço para perguntas',
+    'Ser superficial: conteúdo mais intimista, real e aprofundado é a assinatura',
+  ],
+  sempre: [
+    'Usar “tu”, “te”, “teu/tua”, “tens”: formas de segunda pessoa do singular em português europeu',
+    'Partir de uma dor ou frustração real do público antes de dar a solução (estrutura empatia → educação → CTA)',
+    'Começar com uma provocação, pergunta ou observação',
+    'Basear a informação em dados, padrões e tendências que viu, e não em meras opiniões',
+    'Incluir storytelling pessoal (experiências reais da Alícia como profissional e como pessoa)',
+    'Usar exemplos práticos com números reais (valores em €, horas, quantidades) ou mostrar antes de explicar (com imagens, exemplos e/ou casos reais)',
+    'Usar CTAs conversacionais e personalizados (ex.: “Comenta [palavra]”, “Responde ‘quero saber mais’ a este story”) ou que provoquem uma reflexão; não devem ser considerados um botão',
+    'Escrever em português europeu (vocabulário PT, conjugações PT, referências locais como MB Way, preçário, saneamento)',
+    'Equilibrar o tom educativo com o motivacional/aspiracional: conteúdo prático mas com coração',
+  ],
+  frases: [
+    '“Estás a perder dinheiro com os teus serviços (e não é por causa do material)”',
+    '“Eu odiava o baby boomer. Muitas pessoas podem acreditar que eu sempre adorei e sempre soube fazer um baby boomer… Mas isso não é verdade.”',
+    '“Quantas vezes dás por ti a pensar no que ainda não tens? Naquilo que ainda te falta atingir? Quantas vezes dás por ti a comparar-te com outras colegas, com o que elas têm e que tu ainda não tens?”',
+    '“O dinheiro não é tudo. Mas amor pela área não paga contas a ninguém.”',
+    '“Quando aluguei o espaço onde hoje está a Belrose, não tinha clientes todos os dias, nem fazia ideia de como iria conseguir pagar tudo. E isto foi o que consegui alcançar.”',
+  ],
+  porObjetivo: [
+    ['Conteúdo educativo/técnico', 'Tom professoral, mas nunca pedante. Acessível, com exemplos concretos e números reais. Desmistifica mitos (“A marca não importa, mas…”, “Claro que se cobras 10€ por verniz de gel…”). Frases curtas, estrutura sujeito-verbo-objeto, sem subordinadas complexas. Frequentemente acompanhado de imagens, vídeos ou exemplos que mostram antes de explicar.'],
+    ['Conteúdo motivacional/aspiracional', 'Tom mais suave, reflexivo, poético. Usa perguntas abertas (“O que é que tens hoje que um dia foi um sonho?”), apela ao crescimento pessoal e ao “porquê” por trás da ação. Mais espaço em branco, frases mais longas permitidas quando lidam com emoção. Inclui sempre a vulnerabilidade da autora: não é coaching genérico.'],
+    ['Venda de formações', 'Tom informativo e transparente, lista conteúdos e benefícios práticos e mensuráveis. Sem hype, sem “transformação garantida”. Termina sempre com um CTA conversacional específico (“Responde ‘quero saber mais’”, “Comenta FORMAÇÃO”). Frequentemente inclui o testemunho ou resultado real de uma aluna anterior.'],
+    ['Storytelling pessoal', 'Tom íntimo, vulnerável, confessional. Usa a 1.ª pessoa do singular extensivamente e partilha dúvidas e medos reais ANTES de revelar a superação. Começa frequentemente com “Não te vou mentir…” ou “Isto é difícil de contar, mas…”. Pode incluir um “Ps.” humorístico ou reflexivo no final, que torna o todo mais humano.'],
+    ['Conteúdo provocador/de choque', 'Frase de impacto que nomeia o problema honestamente (ex.: “Estás a gastar mais dinheiro e nem percebes”). Tom direto e até irreverente, com ironia seca portuguesa (ex.: “O DINHEIRO NÃO É TUDO. Mas amor pela área não paga contas a ninguém.”). Frequentemente confronta mitos ou expectativas da indústria. Sempre seguido de uma explicação que mostra os dados por trás da provocação.'],
+    ['Conteúdo sobre Psicologia/bloqueios emocionais', 'Tom compreensivo mas claro, que diferencia entre sentimento legítimo e responsabilidade de ação. Usa construções como “Não é culpa tua, mas é responsabilidade tua.” Enquadra os bloqueios (medo, culpa, síndrome do impostor) como normais e comuns, não como defeito pessoal. Oferece estratégia psicológica prática além da técnica.'],
+  ],
+  estrutura: 'Empatia/validação → Educação/informação → CTA/ação (estrutura base para todos os tipos de conteúdo). A voz é consistente, mas o tom muda consoante o objetivo.',
+  psicologia: [
+    'A formação em Psicologia não aparece como jargão: aparece como compreensão profunda dos bloqueios emocionais que impedem a ação.',
+    'Quando alguém diz “Tenho medo de perder clientes”, reconheço que isto não é um problema técnico de preço, é um problema de mentalidade, crenças e inseguranças.',
+    'Quando alguém diz “Não sei se mereço ganhar mais”, “Ainda estou a começar e não posso cobrar mais” ou “Trabalho em casa, por isso não posso cobrar tão caro quanto um salão”, isto é síndrome do impostor e bloqueios mentais ligados a crenças e padrões de pensamento, não falta de habilidade.',
+    'O tom nunca é clínico ou de diagnóstico, mas compassivo e educador: nomeio a emoção, valido-a e depois ofereço uma ferramenta prática para a atravessar.',
+    'Uso frequentemente construções como “Isto não é preguiça, é medo.” ou “Não é que não saibas, é que tens uma crença que te bloqueia.”',
+    'Nunca patologizo: não falo em diagnósticos concretos, nem tenho resposta para problemas clínicos. Mas reconheço que empreender é também uma jornada emocional e psicológica.',
+  ],
+  vidaReal: {
+    intro: 'O tom balanceia constantemente entre o que é real e pessoal (dificuldades, medos e fracassos da Alícia como pessoa e como profissional) e o que é expertise e conhecimento (dados que recolheu, padrões que viu, formações que pode dar).',
+    exemplos: [
+      '“Eu odiava fazer baby boomer” (pessoal) + “Mas descobri estes 3 passos” (expertise)',
+      '“Quando comecei, não tinha clientes todos os dias” (real) + “Feitas as contas bem feitas, isto foi o que funcionou” (dados)',
+      '“Ainda tenho bloqueios com dinheiro” (honestidade contínua) + “Mas desenvolvi esta tabela de precificação que posso partilhar contigo” (oferecimento prático)',
+    ],
+    fecho: 'Isto diferencia-me de gurus que parecem nunca ter tido dificuldades, de coaches que dão dicas genéricas e de criadores que romantizam a profissão. O tom diz: “Eu sou como tu, mas aprendi isto, e posso ajudar-te a aprender também.”',
+  },
+  transparencia: [
+    ['Nomear o desconfortável', 'não é “desafios da profissão”, é “trabalhar 10 horas e ganhar 40€”'],
+    ['Mostrar o processo, não só o resultado', 'não é “tenho um estúdio de unhas”, é “isto é o que investi, isto é o quanto ganho por hora agora, isto é o que mudei”'],
+    ['Reconhecer o que não sei', '“Não tenho resposta para isso.” ou “Isto varia muito pela tua zona.”'],
+    ['Questionar a indústria', '“Se dizem que unhas são um bom negócio, porque é que a maioria das estilistas ganha tão pouco?”'],
+    ['Incluir números reais', 'não é “ganha bem”, é “Com esta tabela de preços, passaste de 15€/hora para 25€/hora.”'],
+  ],
+  transparenciaFecho: 'A transparência radical não é desculpa para ser negativa: é honestidade que empodera, não que desmoraliza.',
+  teste: ['Eu diria isto?', 'As minhas seguidoras reconheceriam que sou eu?', 'Foi usada alguma palavra proibida?'],
+  testeFecho: 'Se as 3 respostas forem sim, sim, não, está pronto. Pergunta extra: se remover todo o “açúcar” motivacional, o conteúdo continua a ser valioso tecnicamente? Se sim, bom sinal.',
+};
+
+function renderTom() {
+  const T = TOM;
+  const ul = (l) => `<ul class="brand-list">${l.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
+  const ol = (l) => `<ol class="brand-list">${l.map(([t, d]) => `<li><strong>${esc(t)}</strong>${d ? ': ' + esc(d) : ''}</li>`).join('')}</ol>`;
+  $('#home-body').innerHTML = `
+    <div class="brandpage">
+      <div class="card"><h3>Como é que eu escrevo: 3 adjetivos</h3>${ol(T.adjetivos)}</div>
+
+      <div class="card"><h3>Expressões que uso com frequência</h3>
+        <p class="muted">Palavras, gírias ou construções de frase que aparecem naturalmente nos meus textos.</p>${ol(T.expressoes)}</div>
+
+      <div class="grid cols-2">
+        <div class="card"><h3>Palavras proibidas</h3>
+          <p class="muted">Expressões que nunca saem da minha boca e que, quando aparecem, parecem falsas.</p>${ul(T.proibidas)}</div>
+        <div class="card"><h3>Exemplos de frases que soam como eu</h3>${ul(T.frases)}</div>
+      </div>
+
+      <div class="card"><h3>Regras de comportamento</h3>
+        <p class="muted">O que a Claude nunca deve fazer ao escrever como eu, e o que deve fazer sempre.</p>
+        <div class="grid cols-2">
+          <div class="brand-box"><div class="stat-l">Nunca</div>${ul(T.nunca)}</div>
+          <div class="brand-box"><div class="stat-l">Sempre</div>${ul(T.sempre)}</div>
+        </div>
+      </div>
+
+      <div class="card"><h3>Como a minha voz muda por objetivo</h3>
+        <p class="muted">${esc(T.estrutura)}</p>
+        <div class="grid cols-2">${T.porObjetivo.map(([t, d]) => `<div class="brand-box"><strong>${esc(t)}</strong><p>${esc(d)}</p></div>`).join('')}</div>
+      </div>
+
+      <div class="grid cols-2">
+        <div class="card"><h3>O papel da Psicologia no meu tom de voz</h3>${ul(T.psicologia)}</div>
+        <div class="card"><h3>A estrutura de “vida real” vs. “profissional”</h3>
+          <p>${esc(T.vidaReal.intro)}</p><div class="stat-l">Exemplos</div>${ul(T.vidaReal.exemplos)}<p>${esc(T.vidaReal.fecho)}</p></div>
+      </div>
+
+      <div class="grid cols-2">
+        <div class="card"><h3>Transparência radical: o que significa no tom</h3>${ol(T.transparencia)}<p>${esc(T.transparenciaFecho)}</p></div>
+        <div class="card"><h3>Teste das 3 perguntas</h3>
+          <p class="muted">A usar antes de publicar qualquer texto gerado pela Claude.</p>
+          <ol class="brand-list">${T.teste.map((x) => `<li>${esc(x)}</li>`).join('')}</ol><p>${esc(T.testeFecho)}</p></div>
       </div>
     </div>`;
 }
