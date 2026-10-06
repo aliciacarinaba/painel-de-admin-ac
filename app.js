@@ -144,13 +144,7 @@ async function renderHome() {
       <div class="card hl"><div class="stat-l">Leads captados</div><div class="stat-n" id="n-leads">0</div></div>
       <div class="card"><div class="stat-l">Automações ativas</div><div class="stat-n" id="n-autos">0</div></div>
       <div class="card"><div class="stat-l">DMs enviadas (7 dias)</div><div class="stat-n" id="n-dms">0</div></div>
-    </div>
-    <h3 style="margin-top:28px">Atalhos</h3>
-    <div class="row">
-      <button class="btn primary" data-go="instagram">Ir para o Instagram</button>
-      <button class="btn" data-go="calendar">Ir para o Calendário</button>
     </div>`;
-  $$('[data-go]', v).forEach((b) => b.addEventListener('click', () => go(b.dataset.go)));
   const since = new Date(Date.now() - 7 * 864e5).toISOString();
   const [leads, autos, dms] = await Promise.all([
     safeCount('ig_leads'),
