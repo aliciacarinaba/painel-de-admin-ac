@@ -109,7 +109,7 @@ if (sb) sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') showLogin()
 // ============================================================
 // 3) NAVEGAÇÃO E ECRÃS
 // ============================================================
-const state = { route: 'home', igTab: 'metrics' };
+const state = { route: 'home', igTab: 'metrics', homeTab: 'general' };
 
 $$('.nav-item').forEach((b) => b.addEventListener('click', () => { go(b.dataset.route); $('#sidebar').classList.remove('open'); }));
 $('#menu-toggle').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
@@ -117,6 +117,7 @@ $('#menu-toggle').addEventListener('click', () => $('#sidebar').classList.toggle
 function go(route) {
   // Sempre que se entra no Instagram vindo de outra secção, abre primeiro nas Métricas
   if (route === 'instagram' && state.route !== 'instagram') state.igTab = 'metrics';
+  if (route === 'home' && state.route !== 'home') state.homeTab = 'general';
   state.route = route;
   $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.route === route));
   if (route === 'home') renderHome();
@@ -138,10 +139,31 @@ async function safeCount(table, filter) {
 }
 
 // ---------- Início ----------
-async function renderHome() {
-  const v = $('#view');
-  v.innerHTML = `
+function renderHome() {
+  $('#view').innerHTML = `
     <div class="page-head"><h1>👋 Bem-vindo ao teu painel</h1><p class="muted">Um resumo rápido do que está a acontecer.</p></div>
+    <div class="tabs">
+      <button class="tab" data-tab="general">Informação Geral</button>
+      <button class="tab" data-tab="branding">Branding</button>
+    </div>
+    <div id="home-body"></div>`;
+  $$('.tab').forEach((t) => t.addEventListener('click', () => { state.homeTab = t.dataset.tab; renderHome(); }));
+  $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === state.homeTab));
+  if (state.homeTab === 'branding') renderBranding(); else renderGeneral();
+}
+
+function renderBranding() {
+  $('#home-body').innerHTML = `
+    <div class="card empty" style="margin-top:16px">
+      <div class="big">🎨</div>
+      <h2>Branding</h2>
+      <p>Aqui vais poder reunir a identidade da tua marca. Esta área vai chegar em breve.</p>
+    </div>`;
+}
+
+async function renderGeneral() {
+  const v = $('#home-body');
+  v.innerHTML = `
     <div class="grid cols-3">
       <div class="card hl"><div class="stat-l">Leads captados</div><div class="stat-n" id="n-leads">0</div></div>
       <div class="card"><div class="stat-l">Automações ativas</div><div class="stat-n" id="n-autos">0</div></div>
@@ -153,7 +175,7 @@ async function renderHome() {
     safeCount('ig_automations', (q) => q.eq('active', true)),
     safeCount('ig_deliveries', (q) => q.eq('status', 'ok').gte('ts', since)),
   ]);
-  if (state.route !== 'home') return;
+  if (state.route !== 'home' || !$('#n-leads')) return;
   $('#n-leads').textContent = leads; $('#n-autos').textContent = autos; $('#n-dms').textContent = dms;
 }
 
