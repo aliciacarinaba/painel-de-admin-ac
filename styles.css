@@ -3,9 +3,9 @@
    altera só a variável --accent aqui em baixo.
    ============================================================ */
 :root {
-  /* Paleta (Coolors): E8E3DF, C8A49F, 8F5B5F, 190506. Fundo suavizado a partir de F2F2F2 */
+  /* Paleta (Coolors): E8E3DF, C8A49F, 8F5B5F, 190506. Fundo muito claro (FAF9F8) */
   --bg: #FFFFFF;
-  --bg-app: #F7F6F5;
+  --bg-app: #FAF9F8;
   --bg-side: #FFFFFF;
   --track: #F2F2F2;           /* fundo das barras dos gráficos */
   --text: #190506;
