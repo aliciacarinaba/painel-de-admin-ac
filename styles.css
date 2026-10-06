@@ -264,3 +264,9 @@ textarea.url-box { min-height: 64px; word-break: break-all; font-family: ui-mono
 .swatches.tints { gap: 10px; margin-top: 8px; }
 .swatches.tints .swatch { width: 84px; }
 .swatches.tints .chip { height: 56px; }
+
+.palette .swatch { width: 96px; }
+.palette .swatches { gap: 12px; margin-top: 10px; }
+.palette .swatches.tints .swatch { width: 68px; }
+.palette .swatches.tints .chip { height: 48px; }
+.palette .swatch .muted { font-size: 12px; }

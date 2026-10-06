@@ -268,10 +268,15 @@ function renderBranding() {
         <div class="grid cols-2">${B.maisQue.map(([t, d]) => `<div class="brand-box"><strong>${esc(t)}</strong><p>${esc(d)}</p></div>`).join('')}</div>
       </div>
 
-      <div class="card"><h3>2. Paleta de cores</h3>
-        <div class="swatches">${B.cores.map(([n, h]) => `<div class="swatch"><span class="chip" style="background:${h}"></span><strong>${esc(n)}</strong><span class="muted">${h}</span></div>`).join('')}</div>
-        <div class="stat-l" style="margin-top:20px">Variações de cor</div>
-        <div class="swatches tints">${B.variacoes.map(([n, h]) => `<div class="swatch"><span class="chip" style="background:${h}"></span><strong>${n}</strong><span class="muted">${h}</span></div>`).join('')}</div>
+      <div class="grid cols-2 palette">
+        <div class="card"><h3>2. Paleta de cores</h3>
+          <div class="stat-l">Cores principais</div>
+          <div class="swatches">${B.cores.map(([n, h]) => `<div class="swatch"><span class="chip" style="background:${h}"></span><strong>${esc(n)}</strong><span class="muted">${h}</span></div>`).join('')}</div>
+        </div>
+        <div class="card"><h3>Variações de cor</h3>
+          <div class="stat-l">Tons de 50 a 950</div>
+          <div class="swatches tints">${B.variacoes.map(([n, h]) => `<div class="swatch"><span class="chip" style="background:${h}"></span><strong>${n}</strong><span class="muted">${h}</span></div>`).join('')}</div>
+        </div>
       </div>
 
       <div class="card"><h3>3. Tipografia</h3>
