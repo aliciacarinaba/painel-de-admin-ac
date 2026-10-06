@@ -206,3 +206,11 @@ textarea.url-box { min-height: 64px; word-break: break-all; font-family: ui-mono
 .src { white-space: nowrap; }
 .tags-cell { cursor: pointer; display: inline-block; min-width: 40px; }
 .tbl .chip.gray { font-size: 12px; }
+
+/* ---------- Miniatura do post nas automações ---------- */
+.auto-main { display: flex; gap: 14px; align-items: center; min-width: 0; }
+.thumb { position: relative; width: 56px; height: 56px; flex: none; border-radius: 12px; border: 1px solid var(--border); background: var(--track) center / cover no-repeat; display: grid; place-items: center; color: var(--text-2); text-decoration: none; cursor: pointer; }
+.thumb.all { cursor: default; background: var(--accent-soft); color: var(--accent); }
+.thumb.has-img { color: transparent; }
+.thumb .more { position: absolute; right: -6px; bottom: -6px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 7px; border: 2px solid var(--bg); }
+.auto-item strong { display: block; }

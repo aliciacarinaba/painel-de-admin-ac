@@ -225,6 +225,32 @@ async function renderMetrics() {
     </div>`;
 }
 
+
+// Miniatura do post ligado à automação (1.º post + "+N" se houver mais; ícone se for para todos)
+function thumbHTML(ids) {
+  if (!ids.length) return '<span class="thumb all" title="Todos os posts"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>';
+  return `<a class="thumb" data-m="${esc(ids[0])}" target="_blank" rel="noopener" title="Ver o post no Instagram"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg>${ids.length > 1 ? `<span class="more">+${ids.length - 1}</span>` : ''}</a>`;
+}
+
+// Vai buscar as fotos dos posts (as ligações do Instagram expiram, por isso pede-se de cada vez)
+async function fillThumbs(box, list) {
+  const ids = [...new Set(list.flatMap((a) => a.media_ids || []))];
+  if (!sb || !ids.length) return;
+  let map = {};
+  try {
+    const r = await sb.functions.invoke('ig-media', { body: { ids } });
+    (r.data?.posts || []).forEach((p) => { map[p.id] = p; });
+  } catch { return; }
+  $$('.thumb[data-m]', box).forEach((el) => {
+    const post = map[el.dataset.m]; if (!post) return;
+    const img = post.thumbnail_url || post.media_url; if (!img) return;
+    el.style.backgroundImage = `url("${img}")`;
+    el.classList.add('has-img'); el.innerHTML = el.innerHTML.replace(/<svg[\s\S]*?<\/svg>/, '');
+    if (post.permalink) el.href = post.permalink; else el.removeAttribute('href');
+    el.title = (post.caption || 'Ver o post no Instagram').slice(0, 120);
+  });
+}
+
 // ---------- Lista de automações ----------
 async function renderAutomations() {
   const body = $('#ig-body');
@@ -245,18 +271,25 @@ async function renderAutomations() {
       <p>Cria a primeira para responder por direct a quem comentar uma palavra.</p></div>`;
     return;
   }
-  box.innerHTML = list.map((a) => `
+  box.innerHTML = list.map((a) => {
+    const ids = a.media_ids || [];
+    return `
     <div class="auto-item" data-id="${esc(a.id)}">
-      <div>
-        <strong>${esc(a.nome || 'Sem nome')}</strong><br>
-        ${a.match_any ? '<span class="chip gray">qualquer palavra</span>' : (a.keyword || '').split(',').filter(Boolean).map((k) => `<span class="chip">${esc(k.trim())}</span>`).join('')}
+      <div class="auto-main">
+        ${thumbHTML(ids)}
+        <div>
+          <strong>${esc(a.nome || 'Sem nome')}</strong>
+          <div class="muted small">${ids.length ? `${ids.length} ${ids.length === 1 ? 'post' : 'posts'}` : 'Todos os posts'}</div>
+          <div>${a.match_any ? '<span class="chip gray">qualquer palavra</span>' : (a.keyword || '').split(',').filter(Boolean).map((k) => `<span class="chip">${esc(k.trim())}</span>`).join('')}</div>
+        </div>
       </div>
       <div class="row">
         <label class="switch" title="Ligar ou desligar"><input type="checkbox" data-act="toggle" ${a.active ? 'checked' : ''}><span class="slider"></span></label>
         <button class="btn sm" data-act="edit">Editar</button>
         <button class="btn sm danger" data-act="del">Apagar</button>
       </div>
-    </div>`).join('');
+    </div>`; }).join('');
+  fillThumbs(box, list);
   box.addEventListener('click', async (e) => {
     const act = e.target.dataset.act; if (!act) return;
     const id = e.target.closest('.auto-item').dataset.id;
