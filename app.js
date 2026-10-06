@@ -121,7 +121,7 @@ function go(route) {
   $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.route === route));
   if (route === 'home') renderHome();
   else if (route === 'calendar') renderCalendar();
-  else if (route === 'proposals') renderSoon('Propostas', '▤', 'Aqui vais poder gerir as tuas propostas.');
+  else if (route === 'partnerships') renderSoon('Parcerias', '🤝', 'Aqui vais poder gerir as tuas parcerias.');
   else if (route === 'courses') renderSoon('Oferta Formativa', '🎓', 'Aqui vais poder gerir a tua oferta formativa.');
   else renderInstagram();
 }
@@ -167,7 +167,7 @@ function renderCalendar() {
     </div>`;
 }
 
-// ---------- Propostas e Oferta Formativa (placeholders) ----------
+// ---------- Parcerias e Oferta Formativa (placeholders) ----------
 function renderSoon(titulo, icone, texto) {
   $('#view').innerHTML = `
     <div class="card empty" style="margin-top:40px">
