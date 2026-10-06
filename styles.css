@@ -25,7 +25,10 @@
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html, body { margin: 0; height: 100%; }
+html, body { margin: 0; height: 100%; background: var(--bg-app); color: var(--text); color-scheme: light; }
+/* Botões e campos herdam a cor do texto (por defeito o navegador usa preto) */
+button, input, select, textarea { color: var(--text); }
+.app, .content, .login-wrap { background: var(--bg-app); }
 body { font-family: var(--font); color: var(--text); background: var(--bg-app); font-size: 15px; line-height: 1.5; }
 h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; }
 h2 { font-size: 18px; margin: 0 0 4px; }
