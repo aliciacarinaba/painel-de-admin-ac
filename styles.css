@@ -3,9 +3,9 @@
    altera só a variável --accent aqui em baixo.
    ============================================================ */
 :root {
-  /* Paleta (Coolors): F2F2F2, E8E3DF, C8A49F, 8F5B5F, 190506 */
+  /* Paleta (Coolors): E8E3DF, C8A49F, 8F5B5F, 190506. Fundo suavizado a partir de F2F2F2 */
   --bg: #FFFFFF;
-  --bg-app: #F2F2F2;
+  --bg-app: #F7F6F5;
   --bg-side: #FFFFFF;
   --track: #F2F2F2;           /* fundo das barras dos gráficos */
   --text: #190506;
@@ -200,7 +200,7 @@ textarea.url-box { min-height: 64px; word-break: break-all; font-family: ui-mono
 .tbl td { padding: 13px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
 .tbl .chip { white-space: nowrap; }
 .tbl tr:last-child td { border-bottom: 0; }
-.tbl tbody tr:hover td { background: #FAF8F7; }
+.tbl tbody tr:hover td { background: #FBFAF9; }
 .tbl a.acct { color: var(--accent); font-weight: 600; text-decoration: none; }
 .tbl a.acct:hover { text-decoration: underline; }
 .src { white-space: nowrap; }
