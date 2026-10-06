@@ -179,12 +179,14 @@ function renderInstagram() {
       <button class="tab" data-tab="metrics">Métricas</button>
       <button class="tab" data-tab="automations">Automações</button>
       <button class="tab" data-tab="interactions">Interações</button>
+      <button class="tab" data-tab="analysis">Análise</button>
     </div>
     <div id="ig-body"></div>`;
   $$('.tab').forEach((t) => t.addEventListener('click', () => { state.igTab = t.dataset.tab; renderInstagram(); }));
   $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === state.igTab));
   if (state.igTab === 'metrics') renderMetrics();
   else if (state.igTab === 'interactions') renderLeads();
+  else if (state.igTab === 'analysis') renderAnalysis();
   else renderAutomations();
 }
 
@@ -196,7 +198,7 @@ const fmtDate = (iso) => (/^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.split('-').rever
 
 function bars(series) {
   const max = Math.max(1, ...series.map((p) => p.value));
-  return `<div class="bars">${series.map((p) => `<div class="bar-col" data-tip="${esc(fmtDate(p.date))}: ${p.value}"><div class="bar" style="height:${Math.max(2, (p.value / max) * 100)}%"></div></div>`).join('')}</div>`;
+  return `<div class="bars${series.length > 60 ? ' dense' : ''}">${series.map((p) => `<div class="bar-col" data-tip="${esc(fmtDate(p.date))}: ${p.value}"><div class="bar" style="height:${Math.max(2, (p.value / max) * 100)}%"></div></div>`).join('')}</div>`;
 }
 
 async function renderMetrics() {
@@ -487,6 +489,117 @@ function exportLeadsCSV() {
   const blob = new Blob(['﻿' + [head.map(cell).join(';'), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = `interacoes-${new Date().toISOString().slice(0, 10)}.csv`; a.click(); URL.revokeObjectURL(a.href);
+}
+
+
+// ============================================================
+// ANÁLISE: métricas por período, alcance por dia, melhores posts e quem mais comenta
+// (o resultado fica guardado na tabela ig_analysis e só atualiza quando se carrega em "Atualizar")
+// ============================================================
+const AN = { data: null, updated: null, period: '30', sort: 'best', loading: false };
+const AN_PERIODS = [['7', '7 dias'], ['30', '30 dias'], ['90', '90 dias'], ['all', 'Tudo']];
+const AN_SORTS = [['best', 'Melhores'], ['likes', 'Mais curtidos'], ['comments', 'Mais comentados'], ['saves', 'Mais guardados'], ['views', 'Mais vistos']];
+const anDays = () => (AN.period === 'all' ? null : Number(AN.period));
+const anLabel = () => (AN.period === 'all' ? 'Tudo' : `${AN.period} dias`);
+
+async function renderAnalysis() {
+  $('#ig-body').innerHTML = '<div class="card muted">A carregar análise...</div>';
+  if (sb) {
+    try {
+      const { data } = await sb.from('ig_analysis').select('data,updated_at').eq('id', 'main').maybeSingle();
+      if (data) { AN.data = data.data; AN.updated = data.updated_at; }
+    } catch (e) { console.error(e); }
+  }
+  if (state.route !== 'instagram' || state.igTab !== 'analysis') return;
+  drawAnalysis();
+}
+
+// Pede à função para recalcular tudo (pode demorar cerca de 1 minuto)
+async function runAnalysis() {
+  if (!sb) return toast('Liga o Instagram e o Supabase para atualizar a análise.', true);
+  if (AN.loading) return;
+  AN.loading = true; drawAnalysis();
+  try {
+    const r = await sb.functions.invoke('ig-analysis');
+    const err = r.error?.message || r.data?.error;
+    if (err) throw new Error(err);
+    AN.data = r.data.data; AN.updated = r.data.updated_at;
+    toast('Análise atualizada.');
+  } catch (e) { console.error(e); toast('Não foi possível atualizar a análise. Tenta outra vez daqui a pouco.', true); }
+  AN.loading = false;
+  if (state.route === 'instagram' && state.igTab === 'analysis') drawAnalysis();
+}
+
+function drawAnalysis() {
+  const body = $('#ig-body');
+  const d = AN.data;
+  const btn = `<button class="btn" id="an-refresh" ${AN.loading ? 'disabled' : ''}>${AN.loading ? 'A atualizar...' : '↻ Atualizar'}</button>`;
+  const bind = () => $('#an-refresh')?.addEventListener('click', runAnalysis);
+
+  if (!d) {
+    body.innerHTML = `<div class="card empty"><div class="big">📊</div><h2>Ainda não há análise</h2>
+      <p>${sb ? 'Carrega em Atualizar para analisar os teus posts, o alcance e quem mais comenta.<br>Pode demorar cerca de 1 minuto.' : 'Liga o teu Instagram (ver LEIA-ME) para ver a análise.'}</p>
+      ${sb ? `<div style="margin-top:14px">${btn.replace('class="btn"', 'class="btn primary"')}</div>` : ''}</div>`;
+    return bind();
+  }
+
+  // Cartões: totais de 7 ou 30 dias (a API só calcula contas únicas até 30 dias)
+  const w = d.windows[AN.period === '7' ? '7' : '30'] || {};
+  const wd = AN.period === '7' ? 7 : 30;
+  const dash = (v) => (v == null ? '-' : fmt(v));
+
+  // Alcance por dia
+  const n = anDays();
+  const serie = n ? d.reach_daily.slice(-n) : d.reach_daily;
+
+  // Melhores posts do período
+  const cutoff = n ? Date.now() - n * 864e5 : 0;
+  const key = { best: 'interactions', likes: 'likes', comments: 'comments', saves: 'saves', views: 'views' }[AN.sort];
+  const posts = d.posts.filter((p) => new Date(p.ts).getTime() >= cutoff).sort((a, b) => (b[key] || 0) - (a[key] || 0)).slice(0, 12);
+
+  body.innerHTML = `
+    <div class="row between" style="margin-bottom:16px">
+      <div class="pills">${AN_PERIODS.map(([v, t]) => `<button class="${AN.period === v ? 'on' : ''}" data-period="${v}">${t}</button>`).join('')}</div>
+      ${btn}
+    </div>
+    <div class="grid cols-5">
+      <div class="card"><div class="stat-l">Seguidores</div><div class="stat-n">${fmt(d.followers)}</div><div class="stat-sub">Total atual</div></div>
+      <div class="card"><div class="stat-l">Novos seg.</div><div class="stat-n">${dash(w.new_followers)}</div><div class="stat-sub">Últimos ${wd} dias</div></div>
+      <div class="card"><div class="stat-l">Alcance</div><div class="stat-n">${dash(w.reach)}</div><div class="stat-sub">Contas alcançadas · ${wd} dias</div></div>
+      <div class="card"><div class="stat-l">Contas engajadas</div><div class="stat-n">${dash(w.engaged)}</div><div class="stat-sub">Últimos ${wd} dias</div></div>
+      <div class="card"><div class="stat-l">Interações</div><div class="stat-n">${dash(w.interactions)}</div><div class="stat-sub">Últimos ${wd} dias</div></div>
+    </div>
+    <div class="card" style="margin-top:16px"><h3>📈 Alcance por dia <span class="muted small">(passa o rato para ver os números)</span></h3>${bars(serie)}</div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="row between" style="margin-bottom:14px">
+        <h3 style="margin:0">🔥 Melhores posts (${anLabel()})</h3>
+        <div class="pills">${AN_SORTS.map(([v, t]) => `<button class="${AN.sort === v ? 'on' : ''}" data-sort-post="${v}">${t}</button>`).join('')}</div>
+      </div>
+      ${posts.length ? `<div class="post-grid">${posts.map((p) => `
+        <a class="pcard" href="${esc(p.permalink || '#')}" target="_blank" rel="noopener" title="${esc(p.caption)}">
+          <div class="pimg" ${p.thumb ? `style="background-image:url('${esc(p.thumb)}')"` : ''}></div>
+          <div class="pstats"><span>❤️ ${fmt(p.likes)} · 💬 ${fmt(p.comments)}</span><span>🔖 ${fmt(p.saves)} · 👀 ${fmt(p.views)}</span></div>
+        </a>`).join('')}</div>` : '<p class="muted">Sem posts neste período.</p>'}
+      <p class="muted small" style="margin:14px 0 0">Só aparecem posts publicados por ti. Posts em colaboração publicados por outra conta não vêm pela API do Instagram.</p>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3 style="margin:0">🕒 Última atualização: ${fmtDateTime(AN.updated)}</h3>
+      <p class="muted small" style="margin:4px 0 0">${fmt(d.stats.posts_analyzed)} posts e ${fmt(d.stats.comments_analyzed)} comentários analisados. Só atualiza quando carregas em Atualizar.</p>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3 style="margin:0">🏆 Quem mais comenta <span class="muted small">(nos 60 posts mais recentes)</span></h3>
+      <p class="muted small" style="margin:4px 0 12px">Quem mais interage nos teus posts, somando comentários e respostas.</p>
+      ${d.commenters.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>Perfil</th><th>Comentários</th><th>Última vez</th></tr></thead><tbody>
+        ${d.commenters.slice(0, 10).map((c, i) => `<tr><td>${i + 1}</td><td><a class="acct" href="https://instagram.com/${encodeURIComponent(c.username)}" target="_blank" rel="noopener">@${esc(c.username)}</a></td><td>${fmt(c.count)}</td><td>${fmtDateTime(c.last)}</td></tr>`).join('')}
+      </tbody></table></div>` : '<p class="muted">Ainda não há comentários para analisar.</p>'}
+    </div>`;
+
+  $$('[data-period]', body).forEach((b) => b.addEventListener('click', () => { AN.period = b.dataset.period; drawAnalysis(); }));
+  $$('[data-sort-post]', body).forEach((b) => b.addEventListener('click', () => { AN.sort = b.dataset.sortPost; drawAnalysis(); }));
+  bind();
 }
 
 // ============================================================

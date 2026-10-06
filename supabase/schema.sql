@@ -220,3 +220,14 @@ left join (
 
 revoke all on ig_leads_view from anon;
 grant select on ig_leads_view to authenticated, service_role;
+
+-- ---------- 5) ANÁLISE (separador "Análise") ----------
+-- Guarda o último resultado calculado pela função ig-analysis (só atualiza quando se carrega em "Atualizar").
+create table if not exists ig_analysis (
+  id text primary key,                       -- "main"
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+alter table ig_analysis enable row level security;
+drop policy if exists "admin_total" on ig_analysis;
+create policy "admin_total" on ig_analysis for all to authenticated using (true) with check (true);

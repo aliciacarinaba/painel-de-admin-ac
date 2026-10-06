@@ -86,6 +86,7 @@ textarea.url-box { min-height: 64px; word-break: break-all; font-family: ui-mono
 /* ---------- Cartões e grelhas ---------- */
 .grid { display: grid; gap: 16px; }
 .grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+.grid.cols-5 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
 .grid.cols-4 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
 .grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); }
 .card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; }
@@ -215,3 +216,17 @@ textarea.url-box { min-height: 64px; word-break: break-all; font-family: ui-mono
 .thumb.has-img { color: transparent; }
 .thumb .more { position: absolute; right: -7px; bottom: -7px; background: var(--accent); color: #fff; font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 0 6px; line-height: 16px; border: 2px solid var(--bg); }
 .auto-item strong { display: block; margin-bottom: 4px; }
+
+/* ---------- Análise ---------- */
+.pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.pills button { border: 0; background: transparent; padding: 7px 14px; border-radius: 999px; font: inherit; font-size: 14px; font-weight: 600; color: var(--text-2); cursor: pointer; }
+.pills button:hover { background: var(--accent-soft); }
+.pills button.on { background: var(--accent); color: #fff; }
+.bars.dense { gap: 1px; }
+.bars.dense .bar-col { border-radius: 2px; }
+.bars.dense .bar { border-radius: 2px; }
+.post-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.pcard { display: block; text-decoration: none; color: var(--text); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--bg); }
+.pcard:hover { border-color: var(--accent); }
+.pimg { aspect-ratio: 4 / 5; background: var(--track) center / cover no-repeat; }
+.pstats { display: grid; gap: 2px; padding: 9px 11px; font-size: 12.5px; color: var(--text-2); white-space: nowrap; }

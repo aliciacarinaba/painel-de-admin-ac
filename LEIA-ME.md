@@ -16,6 +16,7 @@ supabase/functions/ig-scheduler        Esvazia a fila (1 min)
 supabase/functions/ig-token-refresh    Renova o token (semanal)
 supabase/functions/ig-insights         Métricas
 supabase/functions/ig-media            Posts
+supabase/functions/ig-analysis         Análise (posts, alcance, quem mais comenta)
 ```
 
 ## Passo 0: testar já, sem configurar nada
@@ -52,6 +53,7 @@ Os passos seguintes servem para colocar no ar de verdade.
    supabase functions deploy ig-token-refresh --no-verify-jwt
    supabase functions deploy ig-insights
    supabase functions deploy ig-media
+   supabase functions deploy ig-analysis
    ```
    (`ig-scheduler` e `ig-token-refresh` ficam protegidas pelo `SCHED_SECRET`.)
 5. **Agendar os robôs:** edita `supabase/cron.sql` (troca `SEU_PROJETO` e
