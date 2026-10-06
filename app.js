@@ -468,7 +468,7 @@ function exportLeadsCSV() {
 // (o resultado fica guardado na tabela ig_analysis e só atualiza quando se carrega em "Atualizar")
 // ============================================================
 const AN = { data: null, updated: null, period: '30', sort: 'best', loading: false };
-const AN_PERIODS = [['7', '7 dias'], ['30', '30 dias'], ['90', '90 dias'], ['all', 'Tudo']];
+const AN_PERIODS = [['7', '7 dias'], ['15', '15 dias'], ['30', '30 dias'], ['90', '90 dias'], ['all', 'Tudo']];
 const AN_SORTS = [['best', 'Melhores'], ['likes', 'Mais curtidos'], ['comments', 'Mais comentados'], ['saves', 'Mais guardados'], ['views', 'Mais vistos']];
 const anDays = () => (AN.period === 'all' ? null : Number(AN.period));
 const anLabel = () => (AN.period === 'all' ? 'Tudo' : `${AN.period} dias`);
@@ -517,8 +517,8 @@ function drawAnalysis() {
   }
 
   // Cartões: totais de 7 ou 30 dias (a API só calcula contas únicas até 30 dias)
-  const w = d.windows[AN.period === '7' ? '7' : '30'] || {};
-  const wd = AN.period === '7' ? 7 : 30;
+  const wd = ['7', '15'].includes(AN.period) ? Number(AN.period) : 30;
+  const w = d.windows[wd] || d.windows['30'] || {};
   const dash = (v) => (v == null ? '-' : fmt(v));
 
   // Alcance por dia

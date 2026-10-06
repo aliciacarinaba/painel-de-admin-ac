@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     if (!me.ok) return json({ error: me.data?.error?.message ?? "Erro ao ler o Instagram" });
     const ownUser = String(me.data.username ?? "").toLowerCase();
 
-    // 2) Totais por janela (7 e 30 dias): cada conta conta uma só vez
+    // 2) Totais por janela (7, 15 e 30 dias): cada conta conta uma só vez
     const total = async (metric: string, days: number) => {
       const r = await retry(`/${id}/insights?metric=${metric}&metric_type=total_value&period=day&since=${until - days * DAY}&until=${until}`);
       return r.ok ? (r.data?.data?.[0]?.total_value?.value ?? null) : null;
@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     const sum = (a: number[]) => a.reduce((x, y) => x + y, 0);
 
     const windows: Record<string, any> = {};
-    for (const days of [7, 30]) {
+    for (const days of [7, 15, 30]) {
       const [reach, engaged, interactions] = await Promise.all([total("reach", days), total("accounts_engaged", days), total("total_interactions", days)]);
       windows[days] = { reach, engaged, interactions, new_followers: fv.length ? sum(fv.slice(-days)) : null };
     }
