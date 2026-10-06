@@ -564,11 +564,6 @@ function drawAnalysis() {
     </div>
 
     <div class="card" style="margin-top:16px">
-      <h3 style="margin:0">🕒 Última atualização: ${fmtDateTime(AN.updated)}</h3>
-      <p class="muted small" style="margin:4px 0 0">${fmt(d.stats.posts_analyzed)} posts e ${fmt(d.stats.comments_analyzed)} comentários analisados. Só atualiza quando carregas em Atualizar.</p>
-    </div>
-
-    <div class="card" style="margin-top:16px">
       <h3 style="margin:0">🏆 Quem mais comenta <span class="muted small">(nos 60 posts mais recentes)</span></h3>
       <p class="muted small" style="margin:4px 0 12px">Quem mais interage nos teus posts, somando comentários e respostas.</p>
       ${d.commenters.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>Perfil</th><th>Comentários</th><th>Última vez</th></tr></thead><tbody>
