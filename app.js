@@ -183,6 +183,9 @@ function renderInstagram() {
   if (state.igTab === 'metrics') renderMetrics(); else renderAutomations();
 }
 
+// Número com separador de milhares em português (ex: 1.721)
+const fmt = (n) => Number(n).toLocaleString('pt-PT');
+
 function bars(series) {
   const max = Math.max(1, ...series.map((p) => p.value));
   return `<div class="bars">${series.map((p) => `<div class="bar-col" data-tip="${esc(p.date)}: ${p.value}"><div class="bar" style="height:${Math.max(2, (p.value / max) * 100)}%"></div></div>`).join('')}</div>`;
@@ -204,8 +207,9 @@ async function renderMetrics() {
   }
   body.innerHTML = `
     <div class="grid cols-3">
-      <div class="card"><div class="stat-l">Seguidores</div><div class="stat-n">${data.followers ?? 0}</div></div>
+      <div class="card"><div class="stat-l">Seguidores</div><div class="stat-n">${fmt(data.followers ?? 0)}</div></div>
       <div class="card hl"><div class="stat-l">Leads captados</div><div class="stat-n">${leads}</div></div>
+      <div class="card"><div class="stat-l">Alcance</div><div class="stat-n">${data.reach_30d == null ? '-' : fmt(data.reach_30d)}</div><div class="stat-sub">contas alcançadas · 30 dias</div></div>
     </div>
     <div class="grid cols-2" style="margin-top:16px">
       <div class="card"><h3>Crescimento do perfil <span class="muted small">novos seguidores por dia</span></h3>${bars(data.followers_by_day || [])}</div>
