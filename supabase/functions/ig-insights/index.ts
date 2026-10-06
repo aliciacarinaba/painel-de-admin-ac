@@ -7,9 +7,9 @@ import { env, ig, json, corsHeaders } from "../_shared/ig.ts";
 const DAYS = 15;        // gráficos diários
 const REACH_DAYS = 30;  // cartão de alcance total
 
-// Converte a resposta de insights numa lista { date, value }
+// Converte a resposta de insights numa lista { date (AAAA-MM-DD), value }
 const series = (resp: any) =>
-  (resp?.data?.[0]?.values ?? []).map((v: any) => ({ date: String(v.end_time ?? "").slice(5, 10), value: v.value ?? 0 }));
+  (resp?.data?.[0]?.values ?? []).map((v: any) => ({ date: String(v.end_time ?? "").slice(0, 10), value: v.value ?? 0 }));
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });

@@ -188,9 +188,12 @@ function renderInstagram() {
 // Número com separador de milhares em português (ex: 1.721)
 const fmt = (n) => Number(n).toLocaleString('pt-PT');
 
+// Data AAAA-MM-DD para dia/mês/ano (ex: 09/09/2026)
+const fmtDate = (iso) => (/^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.split('-').reverse().join('/') : iso);
+
 function bars(series) {
   const max = Math.max(1, ...series.map((p) => p.value));
-  return `<div class="bars">${series.map((p) => `<div class="bar-col" data-tip="${esc(p.date)}: ${p.value}"><div class="bar" style="height:${Math.max(2, (p.value / max) * 100)}%"></div></div>`).join('')}</div>`;
+  return `<div class="bars">${series.map((p) => `<div class="bar-col" data-tip="${esc(fmtDate(p.date))}: ${p.value}"><div class="bar" style="height:${Math.max(2, (p.value / max) * 100)}%"></div></div>`).join('')}</div>`;
 }
 
 async function renderMetrics() {
