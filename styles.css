@@ -270,3 +270,5 @@ textarea.url-box { min-height: 64px; word-break: break-all; font-family: ui-mono
 .palette .swatches.tints .swatch { width: 68px; }
 .palette .swatches.tints .chip { height: 48px; }
 .palette .swatch .muted { font-size: 12px; }
+.palette .swatches:not(.tints) { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); }
+.palette .swatches:not(.tints) .swatch { width: auto; min-width: 0; }
