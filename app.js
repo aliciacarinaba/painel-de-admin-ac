@@ -109,12 +109,14 @@ if (sb) sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') showLogin()
 // ============================================================
 // 3) NAVEGAÇÃO E ECRÃS
 // ============================================================
-const state = { route: 'home', igTab: 'automations' };
+const state = { route: 'home', igTab: 'metrics' };
 
 $$('.nav-item').forEach((b) => b.addEventListener('click', () => { go(b.dataset.route); $('#sidebar').classList.remove('open'); }));
 $('#menu-toggle').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
 
 function go(route) {
+  // Sempre que se entra no Instagram vindo de outra secção, abre primeiro nas Métricas
+  if (route === 'instagram' && state.route !== 'instagram') state.igTab = 'metrics';
   state.route = route;
   $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.route === route));
   if (route === 'home') renderHome();
