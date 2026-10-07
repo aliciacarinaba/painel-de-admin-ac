@@ -1564,7 +1564,6 @@ function paOfertaHTML(c, seg) {
       ? `<div class="grid cols-3 co-props pa-item0" data-item="0" data-list="${list}">${fields(it)}</div>`
       : `<div class="pa-item" data-item="${n}" data-list="${list}"><div class="pa-item-h"><strong>${esc(it.produto || `Produto ou serviço ${n + 1}`)}</strong><button class="btn danger" data-del-item="${n}" data-list="${list}">Remover</button></div>
       <div class="grid cols-3 co-props">${fields(it)}</div></div>`).join('')}
-    <div class="pa-item-add"><button class="btn" data-add-item="${list}">+ Adicionar outro produto ou serviço</button></div>
     <div class="grid cols-3 co-props">${paField(c, [seg ? 'fatura_seg' : 'fatura', 'Fatura emitida', 'bool'])}</div>`;
 }
 
