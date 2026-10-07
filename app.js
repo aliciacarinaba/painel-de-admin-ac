@@ -1568,7 +1568,7 @@ function paOfertaHTML(c, seg) {
 }
 
 // "Informações": contrato, documentos (PDF/imagem), links, código de oferta e dados de faturação
-const PA_FILE_KEYS = [['contrato_ficheiros', 'Contrato', '+ Anexar contrato'], ['docs_ficheiros', 'Documentos sobre a proposta', '+ Anexar documentos']];
+const PA_FILE_KEYS = [['contrato_ficheiros', 'Contrato', '+ Anexar contrato'], ['docs_ficheiros', 'Documentos adicionais', '+ Anexar documentos']];
 function paTemComissao(c) {
   return [...(c.dados?.itens || []), ...(c.dados?.itens_seg || [])].some((i) => i.pag === 'Comissão e/ou Afiliação' || (i.pag === 'Misto' && i.m_com)
     || (i.pag === 'Permuta' && i.extra === 'Sim' && i.extra_tipo === 'Comissão e/ou Afiliação'));
