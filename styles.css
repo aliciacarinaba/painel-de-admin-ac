@@ -488,3 +488,6 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .pa-item0 { margin-top: 4px; }
 .pa-sec .grid.cols-3 { grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); }
 .tabs, .pills, .au-pills, .pa-pipe, .cm-multi, .cal-sum, .cm-files { align-items: center; }
+.pa-sec-h { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.pa-sec-h h3 { margin: 0; }
+.pa-sec-h .pa-bool { align-self: center !important; height: auto; min-height: 0; }

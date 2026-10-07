@@ -1589,7 +1589,7 @@ function drawPartnerDetail() {
     </div>
     <div class="card co-head"><input id="pa-nome" type="text" class="co-title" placeholder="Nome da marca ou pessoa" value="${esc(c.nome)}">
       <div class="grid cols-3 co-props">${PA_SECTIONS[0][1].map((f) => paField(c, f)).join('')}</div></div>
-    ${PA_SECTIONS.slice(1).map(([t, fields]) => `<div class="card co-sec pa-sec"><h3>${esc(t)}</h3>${Array.isArray(fields) ? `<div class="grid cols-3 co-props">${fields.map((f) => paField(c, f)).join('')}</div>` : fields === 'seg' ? `<div class="grid cols-3 co-props">${paField(c, ['tem_seguimento', 'Há uma proposta de seguimento', 'bool'])}</div>${c.dados?.tem_seguimento ? paOfertaHTML(c, true) : ''}` : paOfertaHTML(c)}</div>`).join('')}`;
+    ${PA_SECTIONS.slice(1).map(([t, fields]) => `<div class="card co-sec pa-sec">${fields === 'seg' ? `<div class="pa-sec-h"><h3>${esc(t)}</h3>${paField(c, ['tem_seguimento', 'Existe proposta de seguimento?', 'bool'])}</div>` : `<h3>${esc(t)}</h3>`}${Array.isArray(fields) ? `<div class="grid cols-3 co-props">${fields.map((f) => paField(c, f)).join('')}</div>` : fields === 'seg' ? (c.dados?.tem_seguimento ? paOfertaHTML(c, true) : '') : paOfertaHTML(c)}</div>`).join('')}`;
   const mark = () => { PA.dirty = true; $('#pa-state').textContent = 'Alterações por guardar'; };
   $('#pa-nome').addEventListener('input', (e) => { c.nome = e.target.value; mark(); });
   $$('[data-k]').forEach((el) => {
