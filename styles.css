@@ -579,3 +579,4 @@ input[type=date]::-webkit-datetime-edit-day-field:focus, input[type=date]::-webk
 .cm-lk-go:hover { background: var(--accent-soft); }
 .file-del-inline { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--danger, #A33A3A); cursor: pointer; }
 .file-del-inline:hover { background: var(--accent-soft); }
+select { pointer-events: none; }

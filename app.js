@@ -1841,10 +1841,16 @@ document.addEventListener('click', (e) => {
     pop.style.maxHeight = Math.max(140, Math.min(320, up ? r.top - 16 : below)) + 'px';
     pop.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
   };
-  ['pointerdown', 'mouseup', 'click'].forEach((t) => document.addEventListener(t, (e) => { if (e.target.closest?.('select')) e.preventDefault(); }, true));
+  // As listas nativas ficam sem rato (CSS); o clique é detetado pela posição, igual em todos os browsers
+  const hit = (e) => [...document.querySelectorAll('select')].find((sl) => {
+    if (sl.disabled || !sl.offsetParent) return false;
+    const r = sl.getBoundingClientRect();
+    return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom
+      && (e.target === sl || e.target.contains(sl) || sl.parentElement?.contains(e.target) && !e.target.closest('button,a,input,textarea,select,.sel-pop,.dp-pop'));
+  });
   document.addEventListener('mousedown', (e) => {
-    const sel = e.target.closest?.('select');
-    if (sel && !sel.disabled) { e.preventDefault(); sel.focus(); cur === sel ? close() : open(sel); return; }
+    const sel = hit(e);
+    if (sel) { e.preventDefault(); sel.focus(); cur === sel ? close() : open(sel); return; }
     if (pop && !e.target.closest('.sel-pop')) close();
   }, true);
   document.addEventListener('keydown', (e) => {
