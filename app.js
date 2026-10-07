@@ -387,7 +387,7 @@ function renderFundamentos() {
 
 // ---------- Audiência ----------
 const AU = { data: null, updated: null, loading: false, loaded: false, sec: 'resumo', bucket: 'duvidas' };
-const AU_SECS = [['resumo', 'Resumo'], ['dizem', 'O que dizem'], ['conteudo', 'Conteúdo'], ['linguagem', 'Linguagem'], ['pesquisa', 'Pesquisa']];
+const AU_SECS = [['resumo', 'Resumo'], ['pesquisa', 'Pesquisa'], ['linguagem', 'Linguagem'], ['conteudo', 'Conteúdo']];
 const AU_COLORS = ['#8F5B5F', '#C8A49F', '#5D3C3E', '#AF8386', '#D7C1C3'];
 const AU_BUCKETS = { duvidas: ['❓', 'Dúvidas', 'perguntas diretas'], dores: ['💔', 'Dores', 'frustrações e bloqueios'], objecoes: ['🚧', 'Objeções', 'o que as faz hesitar'], desejos: ['✨', 'Desejos', 'o que querem alcançar'], pedidos: ['📩', 'Pedidos e palavras-chave', 'comentários de ação'] };
 const AU_WD = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
@@ -465,7 +465,7 @@ function drawAudience() {
   let inner;
   if (AU.sec === 'pesquisa') inner = auPesquisa();
   else if (!d) inner = `<div class="card empty"><div class="big">🎯</div><h2>${sb ? 'Ainda não há análise de audiência' : 'Liga o Instagram para ver a audiência'}</h2><p>${sb ? 'Carrega em “Atualizar” para analisar os comentários do teu perfil.' : 'Em modo de teste local não há dados do Instagram.'}</p></div>`;
-  else inner = { resumo: auResumo, dizem: auDizem, conteudo: auConteudo, linguagem: auLinguagem }[AU.sec](d);
+  else inner = { resumo: auResumo, linguagem: (x) => auDizem(x) + auLinguagem(x), conteudo: auConteudo }[AU.sec](d);
   body.innerHTML = `<div class="au">${head}${inner}</div>`;
   $('#au-refresh')?.addEventListener('click', runAudience);
   $$('.au-pill').forEach((b) => b.addEventListener('click', () => { AU.sec = b.dataset.sec; drawAudience(); }));
