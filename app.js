@@ -1106,7 +1106,7 @@ function drawCalRefs() {
       ${CAL_REF_CATS.map((c) => `<button class="au-pill ${CA.refCat === c ? 'active' : ''}" data-c="${esc(c)}">${esc(c)} <span class="count">${counts[c]}</span></button>`).join('')}
     </div>
     <div class="co-bar"><span></span><button class="btn primary" id="cr-new">${CA.refCat === 'Criadores' ? '+ Novo criador' : '+ Nova referência'}</button></div>
-    ${CA.refCat === 'Criadores' && rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl"><colgroup><col style="width:18%"><col style="width:20%"><col style="width:12%"><col></colgroup><thead><tr><th>Criador</th><th>Redes</th><th>Compraria?</th><th>Porque é que acompanho</th></tr></thead><tbody>
+    ${CA.refCat === 'Criadores' && rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl"><colgroup><col style="width:13%"><col style="width:16%"><col style="width:9%"><col></colgroup><thead><tr><th>Criador</th><th>Redes</th><th>Compraria?</th><th>Porque é que acompanho</th></tr></thead><tbody>
       ${rows.map((r) => `<tr class="pa-row cal-row" data-id="${r.id}"><td><strong class="cal-clamp">${esc(r.titulo)}</strong></td>
         <td>${[['instagram', 'Instagram', igHandle(r.dados?.instagram)], ['tiktok', 'TikTok', 'TikTok'], ['youtube', 'YouTube', 'YouTube']].filter(([k]) => r.dados?.[k]).map(([k, , t]) => `<a class="cal-link-a" href="${esc(r.dados[k])}" target="_blank" rel="noopener">${esc(t || k)}</a>`).join(' ') || '—'}</td>
         <td>${r.dados?.compraria ? `<span class="chip ${CRIADOR_CHIP[r.dados.compraria] || ''}">${esc(r.dados.compraria)}</span>` : '—'}</td>
