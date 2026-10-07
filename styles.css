@@ -472,3 +472,5 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .cr-name .chip { flex: none; margin: 0; }
 .cr-tbl th, .cr-tbl td { padding-left: 10px; padding-right: 10px; }
 .cr-tbl th:first-child, .cr-tbl td:first-child { padding-left: 16px; }
+.cr-tbl th:first-child, .cr-tbl td:first-child { padding-right: 2px; }
+.cr-tbl th:nth-child(2), .cr-tbl td:nth-child(2) { padding-left: 2px; }

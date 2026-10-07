@@ -1107,7 +1107,7 @@ function drawCalRefs() {
       ${CAL_REF_CATS.map((c) => `<button class="au-pill ${CA.refCat === c ? 'active' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}
     </div>
     <div class="co-bar"><span></span><button class="btn primary" id="cr-new">${CA.refCat === 'Criadores' ? '+ Novo criador' : '+ Nova referência'}</button></div>
-    ${CA.refCat === 'Criadores' && rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl cr-tbl"><colgroup><col style="width:11%"><col style="width:12%"><col style="width:7%"><col></colgroup><thead><tr><th>Criador</th><th>Redes</th><th>Compraria?</th><th>Porque é que acompanho</th></tr></thead><tbody>
+    ${CA.refCat === 'Criadores' && rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl cr-tbl"><colgroup><col style="width:9%"><col style="width:12%"><col style="width:7%"><col></colgroup><thead><tr><th>Criador</th><th>Redes</th><th>Compraria?</th><th>Porque é que acompanho</th></tr></thead><tbody>
       ${rows.map((r) => `<tr class="pa-row cal-row" data-id="${r.id}"><td><div class="cr-name"><strong>${esc(r.titulo)}</strong>${(r.dados?.links_conteudos || []).length ? `<span class="chip gray" title="Links de conteúdos guardados">🔗 ${r.dados.links_conteudos.length}</span>` : ''}</div></td>
         <td>${[['instagram', 'Instagram', igHandle(r.dados?.instagram)], ['tiktok', 'TikTok', 'TikTok'], ['youtube', 'YouTube', 'YouTube']].filter(([k]) => r.dados?.[k]).map(([k, , t]) => `<a class="cal-link-a" href="${esc(r.dados[k])}" target="_blank" rel="noopener">${esc(t || k)}</a>`).join(' ') || '—'}</td>
         <td>${r.dados?.compraria ? `<span class="chip ${CRIADOR_CHIP[r.dados.compraria] || ''}">${esc(r.dados.compraria)}</span>` : '—'}</td>
