@@ -474,3 +474,5 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .cr-tbl th:first-child, .cr-tbl td:first-child { padding-left: 16px; }
 .cr-tbl th:first-child, .cr-tbl td:first-child { padding-right: 2px; }
 .cr-tbl th:nth-child(2), .cr-tbl td:nth-child(2) { padding-left: 2px; }
+.pa-tbl th:first-child, .pa-tbl td:first-child { width: 1%; min-width: 150px; padding-right: 4px; }
+.pa-tbl th:nth-child(2), .pa-tbl td:nth-child(2) { padding-left: 4px; }
