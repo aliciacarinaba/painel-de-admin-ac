@@ -284,3 +284,19 @@ create table if not exists parcerias (
 alter table parcerias enable row level security;
 drop policy if exists "admin_total" on parcerias;
 create policy "admin_total" on parcerias for all to authenticated using (true) with check (true);
+
+-- ---------- 9) CALENDÁRIO (secção "Calendário") ----------
+-- Uma só tabela para: conteudo (calendário de conteúdo), data (datas relevantes),
+-- rubrica (ideias por linha editorial/rubrica) e referencia (banco de referências).
+create table if not exists calendario (
+  id uuid primary key default gen_random_uuid(),
+  tipo text not null check (tipo in ('conteudo','data','rubrica','referencia')),
+  titulo text not null default '',
+  dados jsonb not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists calendario_tipo on calendario (tipo);
+alter table calendario enable row level security;
+drop policy if exists "admin_total" on calendario;
+create policy "admin_total" on calendario for all to authenticated using (true) with check (true);

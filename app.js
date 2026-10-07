@@ -3,7 +3,7 @@
    ------------------------------------------------------------
    1) Configuração (SUPABASE_URL e SUPABASE_ANON_KEY)
    2) Início de sessão (modo local ou Supabase)
-   3) Navegação e ecrãs (Início, Calendário, Instagram)
+   3) Navegação e ecrãs (Início, Calendário, Instagram, Oferta Formativa, Parcerias)
    4) Editor de automação + pré-visualização em direto
    ============================================================ */
 
@@ -118,6 +118,7 @@ function go(route) {
   // Sempre que se entra no Instagram vindo de outra secção, abre primeiro nas Métricas
   if (route === 'instagram' && state.route !== 'instagram') state.igTab = 'metrics';
   if (route === 'home' && state.route !== 'home') state.homeTab = 'general';
+  if (route === 'calendar' && state.route !== 'calendar') CA.sub = null;
   if (route === 'partnerships' && state.route !== 'partnerships') { PA.open = null; PA.draft = null; PA.dirty = false; }
   if (route === 'courses' && state.route !== 'courses') { state.courseTab = 'draft'; CO.open = null; CO.draft = null; CO.dirty = false; }
   state.route = route;
@@ -782,14 +783,256 @@ async function renderGeneral() {
   $('#n-leads').textContent = leads; $('#n-autos').textContent = autos; $('#n-dms').textContent = dms;
 }
 
-// ---------- Calendário (placeholder) ----------
-function renderCalendar() {
+// ---------- Calendário ----------
+const CAL_SUBS = [['dates', 'Datas Relevantes'], ['lines', 'Linhas Editoriais e Rubricas'], ['refs', 'Banco de Referências']];
+const CAL_FORMATOS = { 'Reels': '🎬', 'Carrossel': '🎠', 'Estático': '🖼️', 'Stories': '📱', 'Live': '🔴' };
+const CAL_STATUS = ['Em rascunho', 'Em progresso', 'Agendado', 'Publicado'];
+const CAL_STATUS_CLS = { 'Em rascunho': 'st-rasc', 'Em progresso': 'st-prog', 'Agendado': 'st-agen', 'Publicado': 'st-publ' };
+const CAL_RUBRICAS = ['Clínica das Unhas', 'Perguntas e Respostas', 'Gestão e Finanças', 'Loja Online', 'Vblog'];
+const CAL_TEMAS = ['Geral', 'Gestão Financeira', 'Manciure', 'Loja Online', 'Psicologia e Saúde Mental'];
+const CAL_PLATAFORMAS = ['Instagram', 'TikTok', 'YouTube', 'Facebook', 'Blog', 'Newsletter'];
+const CAL_REF_CATS = ['Criadores', 'Conteúdos', 'Blogs, websites e livros', 'Podcasts', 'Histórias da Marca', 'Radar Semanal', 'Chuva de ideias'];
+const CAL_WD = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+const CA = { list: [], loaded: false, month: null, sub: null, fRub: '', fStatus: '', fFormato: '', refCat: '', rubSel: '' };
+const LS_CAL = 'painel_calendario';
+const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+async function calLoad() {
+  if (sb) {
+    const { data, error } = await sb.from('calendario').select('*').order('created_at', { ascending: true });
+    if (error) throw error;
+    CA.list = data || [];
+  } else {
+    try { CA.list = JSON.parse(localStorage.getItem(LS_CAL) || '[]'); } catch { CA.list = []; }
+  }
+  CA.loaded = true;
+}
+const calPersist = () => { if (!sb) { try { localStorage.setItem(LS_CAL, JSON.stringify(CA.list)); } catch { /* sem armazenamento */ } } };
+async function calSave(r) {
+  r.updated_at = new Date().toISOString();
+  if (sb) { const { error } = await sb.from('calendario').upsert(r); if (error) throw error; }
+  const i = CA.list.findIndex((x) => x.id === r.id);
+  if (i >= 0) CA.list[i] = r; else CA.list.push(r);
+  calPersist();
+}
+async function calDelete(id) {
+  if (sb) { const { error } = await sb.from('calendario').delete().eq('id', id); if (error) throw error; }
+  CA.list = CA.list.filter((x) => x.id !== id); calPersist();
+}
+const calOf = (tipo) => CA.list.filter((r) => r.tipo === tipo);
+const calRubricas = () => [...new Set([...CAL_RUBRICAS, ...calOf('rubrica').map((r) => r.dados?.rubrica).filter(Boolean)])];
+
+// --- Janela de edição genérica ---
+// fields: [chave, rótulo, tipo, opções]. A chave "titulo" fica na coluna titulo; as restantes em dados.
+function calModal({ heading, rec, fields, onDone }) {
+  const draft = JSON.parse(JSON.stringify(rec)); draft.dados ||= {};
+  const isNew = !CA.list.some((x) => x.id === rec.id);
+  const get = (k) => (k === 'titulo' ? draft.titulo : draft.dados[k]);
+  const fld = ([k, label, type, opts]) => {
+    const v = get(k), id = 'cm-' + k;
+    if (type === 'bool') return `<label class="co-field pa-bool"><input type="checkbox" data-k="${k}" data-type="bool" ${v ? 'checked' : ''}><span>${esc(label)}</span></label>`;
+    if (type === 'longtext') return `<label class="co-field cm-wide"><span>${esc(label)}</span><textarea data-k="${k}" data-type="text">${esc(v ?? '')}</textarea></label>`;
+    if (type === 'multi') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="cm-multi">${opts.map((o) => `<label class="cm-opt"><input type="checkbox" data-k="${k}" data-type="multi" value="${esc(o)}" ${(v || []).includes(o) ? 'checked' : ''}>${esc(o)}</label>`).join('')}</div></div>`;
+    if (type === 'select') return `<label class="co-field"><span>${esc(label)}</span><select data-k="${k}" data-type="text">${opts.map((o) => `<option value="${esc(o)}" ${String(v ?? '') === o ? 'selected' : ''}>${esc(o || '—')}</option>`).join('')}</select></label>`;
+    if (type === 'combo') return `<label class="co-field"><span>${esc(label)}</span><input type="text" list="${id}" data-k="${k}" data-type="text" value="${esc(v ?? '')}"><datalist id="${id}">${opts.map((o) => `<option value="${esc(o)}">`).join('')}</datalist></label>`;
+    return `<label class="co-field ${k === 'titulo' ? 'cm-wide' : ''}"><span>${esc(label)}</span><input type="${type}" data-k="${k}" data-type="${type}" value="${esc(v ?? '')}"></label>`;
+  };
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><h3>${esc(heading)}</h3>
+    <div class="cm-grid">${fields.map(fld).join('')}</div>
+    <div class="cm-foot">${isNew ? '<span></span>' : '<button class="btn danger" id="cm-del">Apagar</button>'}<div><button class="btn" id="cm-cancel">Cancelar</button> <button class="btn primary" id="cm-save">Guardar</button></div></div></div>`;
+  document.body.appendChild(bg);
+  const close = () => bg.remove();
+  const first = bg.querySelector('input,select,textarea'); first?.focus();
+  bg.addEventListener('mousedown', (e) => { if (e.target === bg) close(); });
+  bg.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  $('#cm-cancel', bg).addEventListener('click', close);
+  $('#cm-save', bg).addEventListener('click', async () => {
+    $$('[data-k]', bg).forEach((el) => {
+      const k = el.dataset.k, t = el.dataset.type;
+      if (t === 'multi') { if (!Array.isArray(draft.dados[k])) draft.dados[k] = []; return; }
+      const v = t === 'bool' ? el.checked : (t === 'date' ? (el.value || null) : el.value);
+      if (k === 'titulo') draft.titulo = v; else draft.dados[k] = v;
+    });
+    fields.filter((f) => f[2] === 'multi').forEach(([k]) => { draft.dados[k] = $$(`[data-k="${k}"]:checked`, bg).map((e) => e.value); });
+    if (!String(draft.titulo || '').trim()) { toast('Preenche o título antes de guardar.', true); return; }
+    draft.titulo = draft.titulo.trim();
+    try { await calSave(draft); close(); toast('Guardado.'); onDone?.(); } catch (e) { console.error(e); toast('Não foi possível guardar. Tenta outra vez.', true); }
+  });
+  $('#cm-del', bg)?.addEventListener('click', async () => {
+    if (!confirm('Apagar este registo? Esta ação não se pode desfazer.')) return;
+    try { await calDelete(draft.id); close(); toast('Apagado.'); onDone?.(); } catch (e) { console.error(e); toast('Não foi possível apagar.', true); }
+  });
+}
+const calNew = (tipo, dados = {}, titulo = '') => ({ id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())), tipo, titulo, dados, created_at: new Date().toISOString() });
+
+// --- Página ---
+async function renderCalendar() {
+  if (!CA.month) { const n = new Date(); CA.month = new Date(n.getFullYear(), n.getMonth(), 1); }
   $('#view').innerHTML = `
-    <div class="card empty" style="margin-top:40px">
-      <div class="big">▦</div>
-      <h2>Calendário</h2>
-      <p>Esta área vai chegar em breve para planeares os teus conteúdos.</p>
-    </div>`;
+    <div class="page-head"><h1>🗓️ Calendário</h1></div>
+    <div class="tabs">${CAL_SUBS.map(([k, l]) => `<button class="tab" data-sub="${k}">${l}</button>`).join('')}</div>
+    <div id="cal-body"><div class="card empty"><p>A carregar…</p></div></div>`;
+  $$('.tab[data-sub]').forEach((t) => {
+    t.classList.toggle('active', CA.sub === t.dataset.sub);
+    t.addEventListener('click', () => { CA.sub = CA.sub === t.dataset.sub ? null : t.dataset.sub; renderCalendar(); });
+  });
+  if (!CA.loaded) {
+    try { await calLoad(); } catch (e) { console.error(e); return ($('#cal-body').innerHTML = '<div class="card empty"><p>Não foi possível carregar o calendário.</p></div>'); }
+    if (state.route !== 'calendar') return;
+  }
+  drawCalBody();
+}
+const redrawCal = () => { if (state.route === 'calendar') drawCalBody(); };
+function drawCalBody() {
+  if (CA.sub === 'dates') return drawCalDates();
+  if (CA.sub === 'lines') return drawCalLines();
+  if (CA.sub === 'refs') return drawCalRefs();
+  drawCalGrid();
+}
+
+// Calendário mensal
+function calDatesOn(day) {
+  const key = ymd(day), md = key.slice(5);
+  return calOf('data').filter((r) => { const d = r.dados?.data; return d && (d === key || (r.dados.recorrente && d.slice(5) === md)); });
+}
+function drawCalGrid() {
+  const m = CA.month, first = new Date(m.getFullYear(), m.getMonth(), 1);
+  const start = new Date(first); start.setDate(1 - ((first.getDay() + 6) % 7));
+  const todayKey = ymd(new Date());
+  const all = calOf('conteudo');
+  const pass = (r) => (!CA.fRub || (r.dados?.rubricas || []).includes(CA.fRub)) && (!CA.fStatus || r.dados?.status === CA.fStatus) && (!CA.fFormato || r.dados?.formato === CA.fFormato);
+  const byDay = {};
+  all.filter(pass).forEach((r) => { const d = r.dados?.data; if (d) (byDay[d] ||= []).push(r); });
+  const inMonth = all.filter((r) => String(r.dados?.data || '').startsWith(`${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, '0')}`));
+  const cnt = (s) => inMonth.filter((r) => r.dados?.status === s).length;
+  const title = m.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
+  let cells = '';
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    const key = ymd(d), items = byDay[key] || [], dts = calDatesOn(d);
+    const rows = [...dts.map((r) => ({ t: 'd', r })), ...items.map((r) => ({ t: 'c', r }))];
+    const shown = rows.slice(0, 3), more = rows.length - shown.length;
+    cells += `<div class="cal-cell ${d.getMonth() !== m.getMonth() ? 'out' : ''} ${key === todayKey ? 'today' : ''}" data-day="${key}">
+      <span class="cal-n">${d.getDate()}</span>
+      ${shown.map(({ t, r }) => t === 'd'
+        ? `<button class="cal-it cal-date" data-d="${r.id}" title="${esc(r.titulo)}">📌 ${esc(r.titulo)}</button>`
+        : `<button class="cal-it ${CAL_STATUS_CLS[r.dados?.status] || 'st-rasc'}" data-c="${r.id}" title="${esc(r.titulo)} · ${esc(r.dados?.status || '')}">${CAL_FORMATOS[r.dados?.formato] || '▫️'} ${esc(r.titulo)}</button>`).join('')}
+      ${more > 0 ? `<span class="cal-more">+${more} mais</span>` : ''}</div>`;
+  }
+  $('#cal-body').innerHTML = `
+    <div class="cal-bar">
+      <div class="cal-nav"><button class="btn" id="cal-prev" aria-label="Mês anterior">‹</button><button class="btn" id="cal-today">Hoje</button><button class="btn" id="cal-next" aria-label="Mês seguinte">›</button>
+        <h2 class="cal-title">${esc(title.charAt(0).toUpperCase() + title.slice(1))}</h2></div>
+      <button class="btn primary" id="cal-new">+ Novo conteúdo</button>
+    </div>
+    <div class="toolbar">
+      <select id="cal-frub"><option value="">Rubrica: todas</option>${calRubricas().map((x) => `<option ${CA.fRub === x ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>
+      <select id="cal-fstatus"><option value="">Estado: todos</option>${CAL_STATUS.map((x) => `<option ${CA.fStatus === x ? 'selected' : ''}>${x}</option>`).join('')}</select>
+      <select id="cal-fform"><option value="">Formato: todos</option>${Object.keys(CAL_FORMATOS).map((x) => `<option ${CA.fFormato === x ? 'selected' : ''}>${x}</option>`).join('')}</select>
+      <span class="cal-sum"><span class="cal-it st-rasc">Rascunho ${cnt('Em rascunho')}</span><span class="cal-it st-prog">Em progresso ${cnt('Em progresso')}</span><span class="cal-it st-agen">Agendado ${cnt('Agendado')}</span><span class="cal-it st-publ">Publicado ${cnt('Publicado')}</span></span>
+    </div>
+    <div class="cal-grid"><div class="cal-head">${CAL_WD.map((w) => `<div>${w}</div>`).join('')}</div><div class="cal-days">${cells}</div></div>
+    <p class="muted small">Clica num dia para planear um conteúdo nessa data. 📌 são as tuas datas relevantes.</p>`;
+  const go = (n) => { CA.month = new Date(m.getFullYear(), m.getMonth() + n, 1); drawCalGrid(); };
+  $('#cal-prev').addEventListener('click', () => go(-1)); $('#cal-next').addEventListener('click', () => go(1));
+  $('#cal-today').addEventListener('click', () => { const n = new Date(); CA.month = new Date(n.getFullYear(), n.getMonth(), 1); drawCalGrid(); });
+  $('#cal-new').addEventListener('click', () => editConteudo(calNew('conteudo', { status: 'Em rascunho', data: todayKey })));
+  $('#cal-frub').addEventListener('change', (e) => { CA.fRub = e.target.value; drawCalGrid(); });
+  $('#cal-fstatus').addEventListener('change', (e) => { CA.fStatus = e.target.value; drawCalGrid(); });
+  $('#cal-fform').addEventListener('change', (e) => { CA.fFormato = e.target.value; drawCalGrid(); });
+  $$('.cal-cell').forEach((c) => c.addEventListener('click', () => editConteudo(calNew('conteudo', { status: 'Em rascunho', data: c.dataset.day }))));
+  $$('.cal-it[data-c]').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); editConteudo(CA.list.find((x) => x.id === b.dataset.c)); }));
+  $$('.cal-it[data-d]').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); editData(CA.list.find((x) => x.id === b.dataset.d)); }));
+}
+function editConteudo(rec) {
+  calModal({ heading: rec.titulo ? 'Editar conteúdo' : 'Novo conteúdo', rec, onDone: redrawCal, fields: [
+    ['titulo', 'Novo conteúdo (título)', 'text'],
+    ['data', 'Data da publicação', 'date'],
+    ['status', 'Estado', 'select', CAL_STATUS],
+    ['formato', 'Formato', 'select', ['', ...Object.keys(CAL_FORMATOS)]],
+    ['plataforma', 'Plataforma', 'combo', CAL_PLATAFORMAS],
+    ['tema', 'Tema', 'combo', CAL_TEMAS],
+    ['rubricas', 'Rubrica', 'multi', calRubricas()],
+    ['referencia', 'Referência (link)', 'url'],
+    ['notas', 'Notas', 'longtext'],
+  ] });
+}
+
+// Datas Relevantes
+function editData(rec) {
+  calModal({ heading: rec.titulo ? 'Editar data relevante' : 'Nova data relevante', rec, onDone: redrawCal, fields: [
+    ['titulo', 'Data / evento (ex.: Dia da Mãe, Black Friday)', 'text'],
+    ['data', 'Dia no calendário', 'date'],
+    ['recorrente', 'Repete todos os anos', 'bool'],
+    ['descritivo', 'Descritivo', 'longtext'],
+    ['exemplos', 'Exemplos de adaptação e utilização', 'longtext'],
+  ] });
+}
+function drawCalDates() {
+  const rows = calOf('data').sort((a, b) => String(a.dados?.data || '9999').slice(5).localeCompare(String(b.dados?.data || '9999').slice(5)));
+  $('#cal-body').innerHTML = `
+    <div class="co-bar"><span class="muted">${rows.length} ${rows.length === 1 ? 'data' : 'datas'} · aparecem no calendário com 📌</span><button class="btn primary" id="cd-new">+ Nova data</button></div>
+    ${rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl"><thead><tr><th>Data / evento</th><th>Dia</th><th>Descritivo</th><th>Exemplos de adaptação e utilização</th></tr></thead><tbody>
+      ${rows.map((r) => `<tr class="pa-row" data-id="${r.id}"><td><strong>${esc(r.titulo)}</strong></td>
+        <td>${r.dados?.data ? esc(new Date(r.dados.data + 'T12:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', ...(r.dados.recorrente ? {} : { year: 'numeric' }) })) + (r.dados.recorrente ? ' <span class="chip gray">todos os anos</span>' : '') : '—'}</td>
+        <td class="pa-oferta" title="${esc(r.dados?.descritivo || '')}">${esc(r.dados?.descritivo || '—')}</td>
+        <td class="pa-oferta" title="${esc(r.dados?.exemplos || '')}">${esc(r.dados?.exemplos || '—')}</td></tr>`).join('')}</tbody></table></div>`
+    : '<div class="card empty"><div class="big">🗓️</div><h2>Ainda não há datas relevantes</h2><p>Regista aqui as datas que importam para o teu conteúdo (Dia da Mãe, Black Friday, Dia do Trabalhador…) com ideias de como as aproveitar.</p></div>'}`;
+  $('#cd-new').addEventListener('click', () => editData(calNew('data', { recorrente: true })));
+  $$('.pa-row').forEach((r) => r.addEventListener('click', () => editData(CA.list.find((x) => x.id === r.dataset.id))));
+}
+
+// Linhas Editoriais e Rubricas
+function editRubrica(rec) {
+  calModal({ heading: rec.titulo ? 'Editar ideia' : 'Nova ideia de conteúdo', rec, onDone: redrawCal, fields: [
+    ['titulo', 'Nome da ideia / formato', 'text'],
+    ['rubrica', 'Rubrica', 'combo', calRubricas()],
+    ['notas', 'Notas (estrutura, ganchos, exemplos)', 'longtext'],
+  ] });
+}
+function drawCalLines() {
+  const items = calOf('rubrica'), rubs = calRubricas();
+  const counts = Object.fromEntries(rubs.map((r) => [r, items.filter((i) => i.dados?.rubrica === r).length]));
+  const sel = CA.rubSel, rows = items.filter((i) => !sel || i.dados?.rubrica === sel);
+  const posts = calOf('conteudo');
+  $('#cal-body').innerHTML = `
+    <div class="grid cols-5 pa-kpis">${rubs.map((r) => `<button class="card au-bk ${sel === r ? 'sel' : ''}" data-r="${esc(r)}"><div class="stat-l">${esc(r)}</div><div class="stat-n">${counts[r]}</div><div class="muted small">ideias · ${posts.filter((p) => (p.dados?.rubricas || []).includes(r)).length} no calendário</div></button>`).join('')}</div>
+    <div class="co-bar"><span class="muted">${sel ? esc(sel) : 'Todas as rubricas'} · ${rows.length} ${rows.length === 1 ? 'ideia' : 'ideias'}</span><button class="btn primary" id="cl-new">+ Nova ideia</button></div>
+    ${rows.length ? `<div class="grid cols-3">${rows.map((r) => `<button class="card co-card" data-id="${r.id}"><strong>${esc(r.titulo)}</strong><div class="co-meta">${r.dados?.rubrica ? `<span class="chip">${esc(r.dados.rubrica)}</span>` : ''}</div><div class="muted small cal-note">${esc(r.dados?.notas || '')}</div></button>`).join('')}</div>`
+    : '<div class="card empty"><div class="big">📍</div><h2>Ainda não há ideias nesta rubrica</h2><p>Cada rubrica é uma linha editorial recorrente. Junta aqui as ideias e formatos de cada uma para as usares ao planear o calendário.</p></div>'}`;
+  $('#cl-new').addEventListener('click', () => editRubrica(calNew('rubrica', { rubrica: sel })));
+  $$('.au-bk[data-r]').forEach((b) => b.addEventListener('click', () => { CA.rubSel = CA.rubSel === b.dataset.r ? '' : b.dataset.r; drawCalLines(); }));
+  $$('.co-card').forEach((b) => b.addEventListener('click', () => editRubrica(CA.list.find((x) => x.id === b.dataset.id))));
+}
+
+// Banco de Referências
+function editRef(rec) {
+  calModal({ heading: rec.titulo ? 'Editar referência' : 'Nova referência', rec, onDone: redrawCal, fields: [
+    ['titulo', 'Título / nome', 'text'],
+    ['categoria', 'Categoria', 'select', CAL_REF_CATS],
+    ['link', 'Link', 'url'],
+    ['notas', 'Notas (porque é uma boa referência, o que aproveitar)', 'longtext'],
+  ] });
+}
+function drawCalRefs() {
+  const items = calOf('referencia');
+  const counts = Object.fromEntries(CAL_REF_CATS.map((c) => [c, items.filter((i) => i.dados?.categoria === c).length]));
+  const rows = items.filter((i) => !CA.refCat || i.dados?.categoria === CA.refCat);
+  $('#cal-body').innerHTML = `
+    <div class="pa-pipe">
+      <button class="au-pill ${CA.refCat === '' ? 'active' : ''}" data-c="">Tudo <span class="count">${items.length}</span></button>
+      ${CAL_REF_CATS.map((c) => `<button class="au-pill ${CA.refCat === c ? 'active' : ''}" data-c="${esc(c)}">${esc(c)} <span class="count">${counts[c]}</span></button>`).join('')}
+    </div>
+    <div class="co-bar"><span class="muted">${rows.length} ${rows.length === 1 ? 'referência' : 'referências'}</span><button class="btn primary" id="cr-new">+ Nova referência</button></div>
+    ${rows.length ? `<div class="grid cols-3">${rows.map((r) => `<button class="card co-card" data-id="${r.id}"><strong>${esc(r.titulo)}</strong><div class="co-meta">${r.dados?.categoria ? `<span class="chip">${esc(r.dados.categoria)}</span>` : ''}</div>
+      <div class="muted small cal-note">${esc(r.dados?.notas || '')}</div>${r.dados?.link ? `<span class="small cal-link" data-href="${esc(r.dados.link)}">Abrir link ↗</span>` : ''}</button>`).join('')}</div>`
+    : '<div class="card empty"><div class="big">💡</div><h2>Ainda não há referências</h2><p>Guarda aqui criadores, conteúdos, blogs, livros, podcasts e ideias que te inspiram.</p></div>'}`;
+  $('#cr-new').addEventListener('click', () => editRef(calNew('referencia', { categoria: CA.refCat || CAL_REF_CATS[0] })));
+  $$('.pa-pipe .au-pill').forEach((b) => b.addEventListener('click', () => { CA.refCat = b.dataset.c; drawCalRefs(); }));
+  $$('.co-card').forEach((b) => b.addEventListener('click', () => editRef(CA.list.find((x) => x.id === b.dataset.id))));
+  $$('.cal-link').forEach((l) => l.addEventListener('click', (e) => { e.stopPropagation(); const u = l.dataset.href; if (/^https?:\/\//i.test(u)) window.open(u, '_blank', 'noopener'); }));
 }
 
 // ---------- Oferta Formativa ----------
