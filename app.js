@@ -1363,9 +1363,9 @@ async function saveCourse() {
 }
 
 // ---------- Parcerias ----------
-const PA_ESTADOS = ['Nova', 'Em conversa', 'Em negociação', 'Aceite', 'Em curso', 'Concluída', 'Recusada'];
-const PA_ABERTO = ['Nova', 'Em conversa', 'Em negociação'], PA_ATIVO = ['Aceite', 'Em curso'], PA_FECHADO_OK = ['Aceite', 'Em curso', 'Concluída'];
-const PA_ESTADO_CHIP = { 'Nova': 'gray', 'Em conversa': 'au-warn', 'Em negociação': 'au-warn', 'Aceite': '', 'Em curso': '', 'Concluída': 'ok', 'Recusada': 'err' };
+const PA_ESTADOS = ['Nova', 'Em negociação', 'Aceite', 'Em curso', 'Concluída', 'Recusada'];
+const PA_ABERTO = ['Nova', 'Em negociação'], PA_ATIVO = ['Aceite', 'Em curso'], PA_FECHADO_OK = ['Aceite', 'Em curso', 'Concluída'];
+const PA_ESTADO_CHIP = { 'Nova': 'gray', 'Em negociação': 'au-warn', 'Aceite': '', 'Em curso': '', 'Concluída': 'ok', 'Recusada': 'err' };
 const PA_PAG_CHIP = { 'Por pagar': 'au-warn', 'Parcial': 'au-warn', 'Pago': 'ok', 'N/A': 'gray' };
 const PA_TIPOS = ['Conteúdo patrocinado', 'Afiliação', 'Embaixadora', 'Permuta de produtos', 'Evento / Workshop', 'Cocriação', 'Outro'];
 const PA_CANAIS = ['Instagram (DM)', 'E-mail', 'WhatsApp', 'Evento', 'Outro'];
@@ -1419,6 +1419,7 @@ async function paLoad() {
   } else {
     try { PA.list = JSON.parse(localStorage.getItem(LS_PA) || '[]'); } catch { PA.list = []; }
   }
+  PA.list.forEach((c) => { if (c.estado === 'Em conversa') c.estado = 'Em negociação'; });
   PA.loaded = true;
 }
 async function paSave(c) {
@@ -1460,7 +1461,7 @@ function drawPartnerList() {
   $('#pa-body').innerHTML = `
     <div class="grid cols-5 pa-kpis">
       <div class="card"><div class="stat-l">Parcerias</div><div class="stat-n">${fmt(L.length)}</div></div>
-      <div class="card"><div class="stat-l">Em aberto</div><div class="stat-n">${fmt(L.filter((c) => PA_ABERTO.includes(c.estado)).length)}</div><div class="muted small">novas, em conversa ou negociação</div></div>
+      <div class="card"><div class="stat-l">Em aberto</div><div class="stat-n">${fmt(L.filter((c) => PA_ABERTO.includes(c.estado)).length)}</div><div class="muted small">novas ou em negociação</div></div>
       <div class="card"><div class="stat-l">Ativas</div><div class="stat-n">${fmt(L.filter((c) => PA_ATIVO.includes(c.estado)).length)}</div><div class="muted small">aceites ou em curso</div></div>
       <div class="card"><div class="stat-l">Valor acordado</div><div class="stat-n">${eur(acordado) || '0 €'}</div><div class="muted small">em dinheiro</div></div>
       <div class="card"><div class="stat-l">Por receber</div><div class="stat-n">${eur(porReceber) || '0 €'}</div><div class="muted small">ainda não pago</div></div>
