@@ -1507,13 +1507,15 @@ function closePartner() {
 
 // "Oferta Inicial": uma ou mais linhas (produto/serviço), cada uma com o seu tipo de pagamento e valores
 const PA_ESTADO_PAG = ['', 'Por pagar', 'Parcial', 'Pago', 'N/A'];
-function paItemFields(it) {
+function paItemFields(it, multi) {
   const estadoData = [['estado_pag', 'Estado do pagamento', 'select', PA_ESTADO_PAG], ['data_pag', 'Data prevista de pagamento', 'date']];
   const dinheiro = (lbl) => [['val', lbl, 'number'], ['forma', 'Forma de pagamento', 'select', ['', ...PA_FORMAS]], ['freq', 'Datas de pagamento', 'select', PA_FREQ], ...estadoData, ['prazo', 'Condições / prazo de pagamento', 'text']];
   const permuta = (extra) => [['val_oferta', 'Valor da oferta (€)', 'number'],
     ...(extra ? [['extra', 'Existe pagamento além da oferta?', 'select', ['', 'Sim', 'Não']], ...(it.extra === 'Sim' ? dinheiro('Valor do pagamento (€)') : [])] : [])];
   const comissao = (estado) => [['comissao', 'Valor da comissão (€ ou %)', 'text'], ['cm_forma', 'Forma de pagamento', 'select', ['', ...PA_FORMAS]], ['cm_freq', 'Datas de pagamento', 'select', PA_FREQ], ...(estado ? estadoData : [])];
-  const f = [['produto', 'Produto ou serviço', 'text'], ['pag', 'Tipo de pagamento', 'select', ['', ...PA_PAGAMENTO]]];
+  const comPermuta = it.pag === 'Permuta' || (it.pag === 'Misto' && it.m_per);
+  const f = [['pag', 'Tipo de pagamento', 'select', ['', ...PA_PAGAMENTO]]];
+  if (multi || comPermuta) f.push(['produto', comPermuta && !multi ? 'Produto ou serviço oferecido' : 'Produto ou serviço', 'text']);
   if (it.pag === 'Dinheiro') f.push(...dinheiro('Valor (€)'));
   else if (it.pag === 'Permuta') f.push(...permuta(true));
   else if (it.pag === 'Comissão / afiliação') f.push(...comissao(true));
@@ -1549,11 +1551,14 @@ function paMigrate(c) {
   }
 }
 function paOfertaHTML(c, seg) {
-  const list = seg ? 'itens_seg' : 'itens', its = c.dados?.[list] || [];
+  const list = seg ? 'itens_seg' : 'itens', its = c.dados?.[list] || [], multi = its.length > 1;
+  const fields = (it) => paItemFields(it, multi).map((f) => paField({ dados: it }, f)).join('');
   return `<div class="grid cols-3 co-props">${paField(c, [seg ? 'oferta_seg' : 'oferta', 'Oferta', 'longtext'])}</div>
-    ${its.map((it, n) => `<div class="pa-item" data-item="${n}" data-list="${list}"><div class="pa-item-h"><strong>${esc(it.produto || `Produto ou serviço ${n + 1}`)}</strong><button class="btn danger" data-del-item="${n}" data-list="${list}">Remover</button></div>
-      <div class="grid cols-3 co-props">${paItemFields(it).map((f) => paField({ dados: it }, f)).join('')}</div></div>`).join('')}
-    <div class="pa-item-add"><button class="btn" data-add-item="${list}">+ Adicionar produto ou serviço</button></div>
+    ${its.map((it, n) => n === 0
+      ? `<div class="grid cols-3 co-props pa-item0" data-item="0" data-list="${list}">${fields(it)}</div>`
+      : `<div class="pa-item" data-item="${n}" data-list="${list}"><div class="pa-item-h"><strong>${esc(it.produto || `Produto ou serviço ${n + 1}`)}</strong><button class="btn danger" data-del-item="${n}" data-list="${list}">Remover</button></div>
+      <div class="grid cols-3 co-props">${fields(it)}</div></div>`).join('')}
+    <div class="pa-item-add"><button class="btn" data-add-item="${list}">+ Adicionar outro produto ou serviço</button></div>
     <div class="grid cols-3 co-props">${paField(c, [seg ? 'fatura_seg' : 'fatura', 'Fatura emitida', 'bool'])}</div>`;
 }
 

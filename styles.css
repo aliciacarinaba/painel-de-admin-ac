@@ -484,3 +484,5 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .pa-item { border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 16px; }
 .pa-item-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .pa-item-add { margin: 16px 0; }
+.pa-item0 { margin-top: 4px; }
+.pa-item0 { margin-top: 4px; }
