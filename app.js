@@ -867,6 +867,10 @@ function calModal({ heading, rec, fields, onDone }) {
     if (type === 'files') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="cm-files" id="cm-files"></div><div class="cm-filebar"><label class="btn cm-attach">+ Anexar imagens<input type="file" id="cm-file" accept="image/png,image/jpeg" multiple hidden></label><span class="muted small">PNG ou JPEG, até 5 MB cada</span></div></div>`;
     if (type === 'multi') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="cm-multi">${opts.map((o) => `<label class="cm-opt"><input type="checkbox" data-k="${k}" data-type="multi" value="${esc(o)}" ${(v || []).includes(o) ? 'checked' : ''}>${esc(o)}</label>`).join('')}</div></div>`;
     if (type === 'rich') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="rt"><div class="rt-bar"><button type="button" class="rt-b" data-cmd="bold" title="Negrito"><b>N</b></button><button type="button" class="rt-b" data-cmd="italic" title="Itálico"><i>I</i></button><button type="button" class="rt-b" data-cmd="underline" title="Sublinhado"><u>S</u></button><button type="button" class="rt-b" data-cmd="insertUnorderedList" title="Lista com marcas">• Lista</button><button type="button" class="rt-b" data-cmd="insertOrderedList" title="Lista numerada">1. Lista</button></div><div class="rt-ed" contenteditable="true" data-k="${k}" data-type="rich">${rtHtml(v)}</div></div></div>`;
+    if (type === 'parc') {
+      const sim = draft.dados.tem_parceria ?? (draft.dados.parceria ? true : null);
+      return `<div class="co-field cm-wide cm-parc"><div class="pa-sec-h"><span>${esc(label)}</span>${[['sim', 'Sim', true], ['nao', 'Não', false]].map(([kk, l, val]) => `<label class="pa-bool pa-opt"><input type="checkbox" data-pr="${kk}" ${sim === val ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div><label class="co-field cm-parc-sel" ${sim ? '' : 'hidden'}><select data-k="parceria" data-type="text">${opts.map((o) => `<option value="${esc(o)}" ${String(v ?? '') === o ? 'selected' : ''}>${esc(o || 'Escolhe a parceria')}</option>`).join('')}</select></label></div>`;
+    }
     if (type === 'tipos') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="cm-multi" id="cm-tipos"></div></div>`;
     if (type === 'select') return `<label class="co-field"><span>${esc(label)}</span><select data-k="${k}" data-type="text">${opts.map((o) => `<option value="${esc(o)}" ${String(v ?? '') === o ? 'selected' : ''}>${esc(o || empty || '—')}</option>`).join('')}</select></label>`;
     if (type === 'combo') return `<label class="co-field"><span>${esc(label)}</span><input type="text" list="${id}" data-k="${k}" data-type="text" value="${esc(v ?? '')}"><datalist id="${id}">${opts.map((o) => `<option value="${esc(o)}">`).join('')}</datalist></label>`;
@@ -888,6 +892,12 @@ function calModal({ heading, rec, fields, onDone }) {
   bg.addEventListener('mousedown', (e) => { if (e.target === bg) close(); });
   bg.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
   $('#cm-cancel', bg).addEventListener('click', close);
+  // Sim / Não: parceria
+  const prs = $$('[data-pr]', bg);
+  prs.forEach((c) => c.addEventListener('change', () => {
+    if (c.checked) prs.forEach((o) => { if (o !== c) o.checked = false; });
+    $('.cm-parc-sel', bg).hidden = !$('[data-pr="sim"]', bg).checked;
+  }));
   // editor de texto formatado
   $$('.rt-b', bg).forEach((b) => {
     b.addEventListener('mousedown', (e) => e.preventDefault());
@@ -960,6 +970,11 @@ function calModal({ heading, rec, fields, onDone }) {
       if (k === 'titulo') draft.titulo = v; else draft.dados[k] = v;
     });
     fields.filter((f) => f[2] === 'multi' || f[2] === 'tipos').forEach(([k]) => { draft.dados[k] = $$(`[data-k="${k}"]:checked`, bg).map((e) => e.value); });
+    if ($('[data-pr]', bg)) {
+      const sim = $('[data-pr="sim"]', bg).checked, nao = $('[data-pr="nao"]', bg).checked;
+      draft.dados.tem_parceria = sim ? true : nao ? false : null;
+      if (!sim) draft.dados.parceria = '';
+    }
     if (!String(draft.titulo || '').trim()) { toast('Preenche o título antes de guardar.', true); return; }
     draft.titulo = draft.titulo.trim();
     if (draft.dados.anexos) draft.dados.anexos = draft.dados.anexos.map(({ nome, path, dataUrl }) => (path ? { nome, path } : { nome, dataUrl }));
@@ -1139,7 +1154,7 @@ async function editRubrica(rec) {
     ['rubricas', 'Rubrica', 'multi', calRubricas()],
     ['redes', 'Redes sociais', 'multi', CAL_REDES],
     ['tipos', 'Tipo de conteúdo', 'tipos'],
-    ['parceria', 'Relacionada com uma parceria?', 'select', ['', ...pars], 'Não'],
+    ['parceria', 'Relacionada com uma parceria?', 'parc', ['', ...pars]],
     ['data', 'Data de publicação', 'date'],
     ['notas', 'Descritivo', 'rich'],
   ] });

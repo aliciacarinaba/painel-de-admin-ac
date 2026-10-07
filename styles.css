@@ -519,3 +519,7 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .rt-ed { min-height: 150px; max-height: 360px; overflow: auto; padding: 12px 14px; font-size: 14px; line-height: 1.5; font-weight: 400; outline: none; }
 .rt-ed ul, .rt-ed ol { margin: 4px 0; padding-left: 22px; }
 .rt-ed p, .rt-ed div { margin: 0 0 6px; }
+.cm-parc .pa-sec-h > span { font-size: 13px; font-weight: 600; color: var(--muted); }
+.cm-parc .pa-sec-h { gap: 18px; }
+.cm-parc-sel { margin-top: 10px; max-width: 420px; }
+.cm-parc-sel[hidden] { display: none; }
