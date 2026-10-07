@@ -1383,7 +1383,7 @@ const PA_SECTIONS = [
     ['canal', 'Canal do contacto', 'combo', PA_CANAIS],
     ['contacto', 'Contacto (@, e-mail ou telefone)', 'text'],
   ]],
-  ['Oferta', null],
+  ['Proposta', null],
   ['Proposta de Seguimento', 'seg'],
   ['O que tenho de fazer', [
     ['tarefas', 'O que é necessário da minha parte (um por linha)', 'list'],
@@ -1553,7 +1553,7 @@ function paMigrate(c) {
 function paOfertaHTML(c, seg) {
   const list = seg ? 'itens_seg' : 'itens', its = c.dados?.[list] || [], multi = its.length > 1;
   const fields = (it) => paItemFields(it, multi).map((f) => paField({ dados: it }, f)).join('');
-  return `<div class="grid cols-3 co-props">${paField(c, [seg ? 'oferta_seg' : 'oferta', 'Oferta', 'longtext'])}</div>
+  return `<div class="grid cols-3 co-props">${paField(c, [seg ? 'oferta_seg' : 'oferta', 'Proposta', 'longtext'])}</div>
     ${its.map((it, n) => n === 0
       ? `<div class="grid cols-3 co-props pa-item0" data-item="0" data-list="${list}">${fields(it)}</div>`
       : `<div class="pa-item" data-item="${n}" data-list="${list}"><div class="pa-item-h"><strong>${esc(it.produto || `Produto ou serviço ${n + 1}`)}</strong><button class="btn danger" data-del-item="${n}" data-list="${list}">Remover</button></div>
