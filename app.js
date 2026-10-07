@@ -1384,6 +1384,7 @@ const PA_SECTIONS = [
     ['contacto', 'Contacto (@, e-mail ou telefone)', 'text'],
   ]],
   ['Proposta', null],
+  ['Informações', 'info'],
   ['Proposta de Seguimento', 'seg'],
   ['O que tenho de fazer', [
     ['tarefas', 'O que é necessário da minha parte (um por linha)', 'list'],
@@ -1427,7 +1428,10 @@ async function paSave(c) {
   if (!sb) { try { localStorage.setItem(LS_PA, JSON.stringify(PA.list)); } catch { /* sem armazenamento */ } }
 }
 async function paDelete(id) {
+  const old = PA.list.find((x) => x.id === id);
+  const paths = PA_FILE_KEYS.flatMap(([k]) => (old?.dados?.[k] || []).map((f) => f.path).filter(Boolean));
   if (sb) { const { error } = await sb.from('parcerias').delete().eq('id', id); if (error) throw error; }
+  if (sb && paths.length) sb.storage.from('anexos').remove(paths).catch(() => {});
   PA.list = PA.list.filter((x) => x.id !== id);
   if (!sb) { try { localStorage.setItem(LS_PA, JSON.stringify(PA.list)); } catch { /* sem armazenamento */ } }
 }
@@ -1503,6 +1507,8 @@ function openPartner(id) {
 }
 function closePartner() {
   if (PA.dirty && !confirm('Tens alterações por guardar. Sair mesmo assim?')) return;
+  if (sb && PA.added?.length) sb.storage.from('anexos').remove(PA.added).catch(() => {});
+  PA.added = []; PA.removed = [];
   PA.open = null; PA.draft = null; PA.dirty = false; renderPartnerships();
 }
 
@@ -1566,6 +1572,58 @@ function paOfertaHTML(c, seg) {
       <div class="grid cols-3 co-props">${fields(it)}</div></div>`).join('')}`;
 }
 
+// "Informações": contrato, documentos (PDF/imagem), links, código de oferta e dados de faturação
+const PA_FILE_KEYS = [['contrato_ficheiros', 'Contrato (se existir)', '+ Anexar contrato'], ['docs_ficheiros', 'Documentos sobre a proposta', '+ Anexar documentos']];
+function paTemComissao(c) {
+  return [...(c.dados?.itens || []), ...(c.dados?.itens_seg || [])].some((i) => i.pag === 'Comissão e/ou Afiliação' || (i.pag === 'Misto' && i.m_com)
+    || (i.pag === 'Permuta' && i.extra === 'Sim' && i.extra_tipo === 'Comissão e/ou Afiliação'));
+}
+function paInfoHTML(c) {
+  const files = PA_FILE_KEYS.map(([k, l, b]) => `<div class="co-field pa-wide"><span>${esc(l)}</span><div class="pa-files" data-fk="${k}"></div>
+    <div class="cm-filebar"><label class="btn cm-attach">${b}<input type="file" data-fu="${k}" accept="application/pdf,image/png,image/jpeg" multiple hidden></label><span class="muted small">PDF, PNG ou JPEG, até 10 MB cada</span></div></div>`).join('');
+  const com = paTemComissao(c) ? paField(c, ['link_afiliacao', 'Link de afiliação', 'url']) + paField(c, ['codigo_oferta', 'Código de oferta para o meu público', 'text']) : '';
+  return `<div class="grid cols-3 co-props">${files}${paField(c, ['site', 'Link do site', 'url'])}${com}${paField(c, ['dados_faturacao', 'Dados da empresa para faturação', 'longtext'])}</div>`;
+}
+function paFilesInit(c, mark) {
+  PA.added ||= []; PA.removed ||= [];
+  const draw = () => {
+    $$('[data-fk]').forEach((box) => {
+      const list = c.dados[box.dataset.fk] || [];
+      box.innerHTML = list.length ? list.map((f, i) => `<div class="pa-file"><a href="${esc(f.url || f.dataUrl || '#')}" target="_blank" rel="noopener">📎 ${esc(f.nome)}</a><button class="btn" data-frm="${box.dataset.fk}:${i}" aria-label="Remover ficheiro">✕</button></div>`).join('') : '<span class="muted small">Sem ficheiros.</span>';
+    });
+    $$('[data-frm]').forEach((b) => b.addEventListener('click', () => {
+      const [k, i] = b.dataset.frm.split(':'); const f = c.dados[k].splice(+i, 1)[0];
+      if (f?.path) { const ai = PA.added.indexOf(f.path); if (ai >= 0) { PA.added.splice(ai, 1); sb?.storage.from('anexos').remove([f.path]).catch(() => {}); } else PA.removed.push(f.path); }
+      mark(); draw();
+    }));
+  };
+  draw();
+  const paths = PA_FILE_KEYS.flatMap(([k]) => (c.dados[k] || []).filter((f) => f.path && !f.url));
+  if (sb && paths.length) sb.storage.from('anexos').createSignedUrls(paths.map((f) => f.path), 3600).then(({ data }) => { (data || []).forEach((d) => { const f = paths.find((x) => x.path === d.path); if (f) f.url = d.signedUrl; }); draw(); }).catch(() => {});
+  $$('[data-fu]').forEach((inp) => inp.addEventListener('change', async (e) => {
+    const k = inp.dataset.fu;
+    for (const file of [...e.target.files]) {
+      if (!['application/pdf', 'image/png', 'image/jpeg'].includes(file.type)) { toast(`“${file.name}” não é PDF, PNG nem JPEG.`, true); continue; }
+      if (file.size > 10 * 1024 * 1024) { toast(`“${file.name}” tem mais de 10 MB.`, true); continue; }
+      try {
+        if (sb) {
+          const path = `parcerias/${c.id}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, '_')}`;
+          const up = await sb.storage.from('anexos').upload(path, file, { contentType: file.type });
+          if (up.error) throw up.error;
+          const sg = await sb.storage.from('anexos').createSignedUrl(path, 3600);
+          (c.dados[k] ||= []).push({ nome: file.name, path, url: sg.data?.signedUrl }); PA.added.push(path);
+        } else {
+          if (file.size > 1024 * 1024) { toast('Em modo de teste local, o limite é 1 MB.', true); continue; }
+          const dataUrl = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); });
+          (c.dados[k] ||= []).push({ nome: file.name, dataUrl });
+        }
+        mark();
+      } catch (err) { console.error(err); toast(`Não foi possível anexar “${file.name}”.`, true); }
+    }
+    e.target.value = ''; draw();
+  }));
+}
+
 function paField(c, [k, label, type, opts]) {
   const v = paGet(c, k);
   const lbl = label ? `<span>${esc(label)}</span>` : '';
@@ -1589,7 +1647,7 @@ function drawPartnerDetail() {
     </div>
     <div class="card co-head"><input id="pa-nome" type="text" class="co-title" placeholder="Nome da marca ou pessoa" value="${esc(c.nome)}">
       <div class="grid cols-3 co-props">${PA_SECTIONS[0][1].map((f) => paField(c, f)).join('')}</div></div>
-    ${PA_SECTIONS.slice(1).map(([t, fields]) => `<div class="card co-sec pa-sec">${fields === 'seg' ? `<div class="pa-sec-h"><h3>${esc(t)}</h3>${paField(c, ['tem_seguimento', 'Existe proposta de seguimento?', 'bool'])}</div>` : `<h3>${esc(t)}</h3>`}${Array.isArray(fields) ? `<div class="grid cols-3 co-props">${fields.map((f) => paField(c, f)).join('')}</div>` : fields === 'seg' ? (c.dados?.tem_seguimento ? paOfertaHTML(c, true) : '') : paOfertaHTML(c)}</div>`).join('')}`;
+    ${PA_SECTIONS.slice(1).map(([t, fields]) => `<div class="card co-sec pa-sec">${fields === 'seg' ? `<div class="pa-sec-h"><h3>${esc(t)}</h3>${paField(c, ['tem_seguimento', 'Existe proposta de seguimento?', 'bool'])}</div>` : `<h3>${esc(t)}</h3>`}${Array.isArray(fields) ? `<div class="grid cols-3 co-props">${fields.map((f) => paField(c, f)).join('')}</div>` : fields === 'info' ? paInfoHTML(c) : fields === 'seg' ? (c.dados?.tem_seguimento ? paOfertaHTML(c, true) : '') : paOfertaHTML(c)}</div>`).join('')}`;
   const mark = () => { PA.dirty = true; $('#pa-state').textContent = 'Alterações por guardar'; };
   $('#pa-nome').addEventListener('input', (e) => { c.nome = e.target.value; mark(); });
   $$('[data-k]').forEach((el) => {
@@ -1608,6 +1666,7 @@ function drawPartnerDetail() {
     };
     el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', upd);
   });
+  paFilesInit(c, mark);
   $$('[data-add-item]').forEach((b) => b.addEventListener('click', () => { (c.dados[b.dataset.addItem] ||= []).push({ pag: '' }); mark(); drawPartnerDetail(); }));
   $$('[data-del-item]').forEach((b) => b.addEventListener('click', () => { c.dados[b.dataset.list].splice(+b.dataset.delItem, 1); if (b.dataset.list === 'itens') paSyncResumo(c); mark(); drawPartnerDetail(); }));
   $('#pa-back').addEventListener('click', closePartner);
@@ -1623,7 +1682,11 @@ async function savePartner() {
   const c = PA.draft;
   if (!c.nome.trim()) { toast('Dá um nome à marca ou pessoa antes de guardar.', true); $('#pa-nome').focus(); return; }
   try {
-    await paSave({ ...c, nome: c.nome.trim() });
+    const copy = JSON.parse(JSON.stringify({ ...c, nome: c.nome.trim() }));
+    PA_FILE_KEYS.forEach(([k]) => { if (copy.dados[k]) copy.dados[k] = copy.dados[k].map(({ nome, path, dataUrl }) => (path ? { nome, path } : { nome, dataUrl })); });
+    await paSave(copy);
+    if (sb && PA.removed?.length) sb.storage.from('anexos').remove(PA.removed).catch(() => {});
+    PA.added = []; PA.removed = [];
     PA.isNew = false; PA.dirty = false; $('#pa-state').textContent = 'Guardado'; toast('Parceria guardada.');
   } catch (e) { console.error(e); toast('Não foi possível guardar. Tenta outra vez.', true); }
 }

@@ -491,3 +491,7 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .pa-sec-h { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
 .pa-sec-h h3 { margin: 0; }
 .pa-sec-h .pa-bool { align-self: center !important; height: auto; min-height: 0; }
+.pa-files { display: flex; flex-direction: column; gap: 6px; font-weight: 400; }
+.pa-file { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--ctl-h); padding: 0 8px 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); }
+.pa-file a { color: var(--accent); font-weight: 600; font-size: 14px; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pa-file a:hover { text-decoration: underline; }
