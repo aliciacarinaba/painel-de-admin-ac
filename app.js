@@ -1852,6 +1852,54 @@ document.addEventListener('click', (e) => {
   document.addEventListener('scroll', (e) => { if (pop && Date.now() - t0 > 250 && !e.target.closest?.('.sel-pop')) close(); }, true);
 })();
 
+// Calendário (escolha de datas) no estilo da marca
+(() => {
+  let pop = null, cur = null, view = null, t0 = 0;
+  const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  const DIAS = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+  const key = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const close = () => { pop?.remove(); pop = null; cur = null; };
+  const set = (inp, v) => { inp.value = v; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true })); };
+  const place = () => {
+    const r = cur.getBoundingClientRect(), h = pop.offsetHeight, w = pop.offsetWidth;
+    const below = innerHeight - r.bottom - 12, up = below < h && r.top > below;
+    pop.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
+    pop.style.top = up ? Math.max(8, r.top - h - 6) + 'px' : r.bottom + 6 + 'px';
+  };
+  const draw = () => {
+    const sel = cur.value, today = key(new Date()), y = view.getFullYear(), mo = view.getMonth();
+    const first = (new Date(y, mo, 1).getDay() + 6) % 7, n = new Date(y, mo + 1, 0).getDate();
+    const cells = [...Array(first).fill(''), ...Array.from({ length: n }, (_, i) => i + 1)];
+    pop.innerHTML = `<div class="dp-head"><button type="button" class="dp-nav" data-nav="-1" aria-label="Mês anterior">‹</button><strong>${MESES[mo]} ${y}</strong><button type="button" class="dp-nav" data-nav="1" aria-label="Mês seguinte">›</button></div>
+      <div class="dp-grid">${DIAS.map((d) => `<span class="dp-wd">${d}</span>`).join('')}${cells.map((d) => { if (!d) return '<span></span>'; const k = `${y}-${String(mo + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`; return `<button type="button" class="dp-day${k === sel ? ' on' : ''}${k === today ? ' today' : ''}" data-d="${k}">${d}</button>`; }).join('')}</div>
+      <div class="dp-foot"><button type="button" class="dp-link" data-clear>Limpar</button><button type="button" class="dp-link" data-today>Hoje</button></div>`;
+  };
+  const open = (inp) => {
+    close(); cur = inp; t0 = Date.now();
+    const d = inp.value ? new Date(inp.value + 'T12:00') : new Date(); view = new Date(d.getFullYear(), d.getMonth(), 1);
+    pop = document.createElement('div'); pop.className = 'dp-pop';
+    pop.addEventListener('mousedown', (e) => e.preventDefault());
+    pop.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.nav) { view = new Date(view.getFullYear(), view.getMonth() + +b.dataset.nav, 1); draw(); return; }
+      const inp2 = cur;
+      if (b.dataset.d) set(inp2, b.dataset.d); else if ('today' in b.dataset) set(inp2, key(new Date())); else if ('clear' in b.dataset) set(inp2, '');
+      close(); inp2.focus();
+    });
+    document.body.appendChild(pop); draw(); place();
+  };
+  document.addEventListener('mousedown', (e) => {
+    const inp = e.target.closest?.('input[type=date]');
+    if (inp && !inp.disabled && !inp.readOnly) { e.preventDefault(); inp.focus(); cur === inp ? close() : open(inp); return; }
+    if (pop && !e.target.closest('.dp-pop')) close();
+  }, true);
+  document.addEventListener('keydown', (e) => {
+    if (pop && e.key === 'Escape') { e.stopPropagation(); close(); }
+  }, true);
+  window.addEventListener('resize', close);
+  document.addEventListener('scroll', (e) => { if (pop && Date.now() - t0 > 250 && !e.target.closest?.('.dp-pop')) close(); }, true);
+})();
+
 // Número com separador de milhares em português (ex: 1.721)
 const fmt = (n) => Number(n).toLocaleString('pt-PT');
 
