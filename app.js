@@ -829,7 +829,7 @@ async function calDelete(id) {
 }
 const calOf = (tipo) => CA.list.filter((r) => r.tipo === tipo);
 const CAL_REDES = ['Instagram', 'TikTok', 'Threads', 'YouTube', 'Pinterest'];
-const CAL_TIPOS_REDE = { 'Stories': ['Instagram', 'TikTok', 'Threads', 'YouTube'], 'Post Estático': CAL_REDES, 'Carrossel': CAL_REDES, 'Reels': ['Instagram', 'TikTok', 'Pinterest'] };
+const CAL_TIPOS_REDE = { 'Stories': ['Instagram', 'TikTok'], 'Post Estático': ['Instagram', 'TikTok', 'Pinterest'], 'Texto': ['Threads'], 'Carrossel': ['Instagram', 'TikTok', 'Pinterest', 'Threads'], 'Reels': ['Instagram', 'TikTok', 'Pinterest'], 'Shorts': ['YouTube'], 'Normal': ['YouTube'] };
 const calTiposDisp = (redes) => Object.keys(CAL_TIPOS_REDE).filter((t) => (redes || []).some((r) => CAL_TIPOS_REDE[t].includes(r)));
 const ideiaRubs = (r) => r.dados?.rubricas || (r.dados?.rubrica ? [r.dados.rubrica] : []);
 const calRubricas = () => [...new Set([...CAL_RUBRICAS, ...calOf('rubrica').flatMap(ideiaRubs)])];
