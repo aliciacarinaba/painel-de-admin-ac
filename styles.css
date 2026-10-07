@@ -451,3 +451,7 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .cm-thumb { display: block; width: 110px; height: 110px; border-radius: 12px; background: var(--track) center / cover no-repeat; border: 1px solid var(--border); }
 .cm-filebar { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
 .cm-attach { cursor: pointer; }
+.cal-tbl .cal-row { height: 76px; }
+.cal-tbl .cal-row td { padding-top: 0; padding-bottom: 0; }
+.cal-clamp { -webkit-line-clamp: 2; }
+.cal-ex { -webkit-line-clamp: 2; }
