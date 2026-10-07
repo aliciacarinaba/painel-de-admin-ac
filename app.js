@@ -1073,7 +1073,22 @@ function drawCalLines() {
 }
 
 // Banco de Referências
+function editCriador(rec) {
+  rec.dados ||= {}; rec.dados.categoria = 'Criadores';
+  calModal({ heading: rec.titulo ? 'Editar criador' : 'Novo criador', rec, onDone: redrawCal, fields: [
+    ['titulo', 'Nome', 'text'],
+    ['compraria', 'Compraria?', 'select', ['', 'Não', 'Sim', 'Já comprei']],
+    ['instagram', 'Instagram (link)', 'url'],
+    ['tiktok', 'TikTok (link)', 'url'],
+    ['youtube', 'YouTube (link)', 'url'],
+    ['porque', 'Porque é que acompanho esta pessoa?', 'longtext'],
+    ['tipos_conteudo', 'Quais os tipos de conteúdos que mais gosto de ver?', 'longtext'],
+  ] });
+}
+const CRIADOR_CHIP = { 'Já comprei': 'ok', 'Sim': 'au-warn', 'Não': 'gray' };
+const igHandle = (u) => { const m = String(u || '').match(/instagram\.com\/([^/?#]+)/i); return m ? '@' + m[1] : ''; };
 function editRef(rec) {
+  if (rec.dados?.categoria === 'Criadores') return editCriador(rec);
   calModal({ heading: rec.titulo ? 'Editar referência' : 'Nova referência', rec, onDone: redrawCal, fields: [
     ['titulo', 'Título / nome', 'text'],
     ['categoria', 'Categoria', 'select', CAL_REF_CATS],
@@ -1090,13 +1105,19 @@ function drawCalRefs() {
       <button class="au-pill ${CA.refCat === '' ? 'active' : ''}" data-c="">Tudo <span class="count">${items.length}</span></button>
       ${CAL_REF_CATS.map((c) => `<button class="au-pill ${CA.refCat === c ? 'active' : ''}" data-c="${esc(c)}">${esc(c)} <span class="count">${counts[c]}</span></button>`).join('')}
     </div>
-    <div class="co-bar"><span class="muted">${rows.length} ${rows.length === 1 ? 'referência' : 'referências'}</span><button class="btn primary" id="cr-new">+ Nova referência</button></div>
-    ${rows.length ? `<div class="grid cols-3">${rows.map((r) => `<button class="card co-card" data-id="${r.id}"><strong>${esc(r.titulo)}</strong><div class="co-meta">${r.dados?.categoria ? `<span class="chip">${esc(r.dados.categoria)}</span>` : ''}</div>
+    <div class="co-bar"><span></span><button class="btn primary" id="cr-new">${CA.refCat === 'Criadores' ? '+ Novo criador' : '+ Nova referência'}</button></div>
+    ${CA.refCat === 'Criadores' && rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl"><colgroup><col style="width:18%"><col style="width:20%"><col style="width:12%"><col></colgroup><thead><tr><th>Criador</th><th>Redes</th><th>Compraria?</th><th>Porque é que acompanho</th></tr></thead><tbody>
+      ${rows.map((r) => `<tr class="pa-row cal-row" data-id="${r.id}"><td><strong class="cal-clamp">${esc(r.titulo)}</strong></td>
+        <td>${[['instagram', 'Instagram', igHandle(r.dados?.instagram)], ['tiktok', 'TikTok', 'TikTok'], ['youtube', 'YouTube', 'YouTube']].filter(([k]) => r.dados?.[k]).map(([k, , t]) => `<a class="cal-link-a" href="${esc(r.dados[k])}" target="_blank" rel="noopener">${esc(t || k)}</a>`).join(' ') || '—'}</td>
+        <td>${r.dados?.compraria ? `<span class="chip ${CRIADOR_CHIP[r.dados.compraria] || ''}">${esc(r.dados.compraria)}</span>` : '—'}</td>
+        <td><span class="cal-clamp cal-ex" title="${esc(r.dados?.porque || '')}">${esc(r.dados?.porque || '—')}</span></td></tr>`).join('')}</tbody></table></div>`
+    : rows.length ? `<div class="grid cols-3">${rows.map((r) => `<button class="card co-card" data-id="${r.id}"><strong>${esc(r.titulo)}</strong><div class="co-meta">${r.dados?.categoria ? `<span class="chip">${esc(r.dados.categoria)}</span>` : ''}</div>
       <div class="muted small cal-note">${esc(r.dados?.notas || '')}</div>${r.dados?.link ? `<span class="small cal-link" data-href="${esc(r.dados.link)}">Abrir link ↗</span>` : ''}</button>`).join('')}</div>`
     : '<div class="card empty"><div class="big">💡</div><h2>Ainda não há referências</h2><p>Guarda aqui criadores, conteúdos, blogs, livros, podcasts e ideias que te inspiram.</p></div>'}`;
-  $('#cr-new').addEventListener('click', () => editRef(calNew('referencia', { categoria: CA.refCat || CAL_REF_CATS[0] })));
+  $('#cr-new').addEventListener('click', () => (CA.refCat === 'Criadores' ? editCriador(calNew('referencia', { categoria: 'Criadores' })) : editRef(calNew('referencia', { categoria: CA.refCat || CAL_REF_CATS[0] }))));
   $$('.pa-pipe .au-pill').forEach((b) => b.addEventListener('click', () => { CA.refCat = b.dataset.c; drawCalRefs(); }));
-  $$('.co-card').forEach((b) => b.addEventListener('click', () => editRef(CA.list.find((x) => x.id === b.dataset.id))));
+  $$('.co-card, .cal-row').forEach((b) => b.addEventListener('click', () => editRef(CA.list.find((x) => x.id === b.dataset.id))));
+  $$('.cal-link-a').forEach((l) => l.addEventListener('click', (e) => e.stopPropagation()));
   $$('.cal-link').forEach((l) => l.addEventListener('click', (e) => { e.stopPropagation(); const u = l.dataset.href; if (/^https?:\/\//i.test(u)) window.open(u, '_blank', 'noopener'); }));
 }
 

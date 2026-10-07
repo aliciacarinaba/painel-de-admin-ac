@@ -465,3 +465,5 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .auto-item .chip { margin-top: 0; margin-bottom: 0; }
 .cal-tbl .cal-row, .cal-tbl .cal-row td { height: var(--row-h); }
 .cal-ex, .cal-clamp { line-height: 1.35; }
+.cal-link-a { display: inline-block; color: var(--accent); font-weight: 600; font-size: 13.5px; text-decoration: none; margin-right: 8px; }
+.cal-link-a:hover { text-decoration: underline; }
