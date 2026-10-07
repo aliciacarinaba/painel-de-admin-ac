@@ -1376,7 +1376,7 @@ const PA_COLS = ['nome', 'origem', 'data_sugestao', 'estado', 'tipo', 'oferta', 
 const PA_SECTIONS = [
   ['Quem e como', [
     ['origem', 'Quem sugeriu', 'select', [['recebida', 'Recebi o convite'], ['enviada', 'Eu própria sugeri']]],
-    ['data_sugestao', 'Data da sugestão / convite', 'date'],
+    ['data_sugestao', 'Data do convite', 'date'],
     ['estado', 'Estado', 'select', PA_ESTADOS],
     ['tipo', 'Tipo de parceria', 'combo', PA_TIPOS],
     ['canal', 'Canal do contacto', 'combo', PA_CANAIS],
