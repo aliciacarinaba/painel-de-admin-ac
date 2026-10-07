@@ -1642,7 +1642,7 @@ function drawPartnerDetail() {
     </div>
     <div class="card co-head"><input id="pa-nome" type="text" class="co-title" placeholder="Nome da marca ou pessoa" value="${esc(c.nome)}">
       <div class="grid cols-3 co-props">${PA_SECTIONS[0][1].map((f) => paField(c, f)).join('')}</div></div>
-    ${PA_SECTIONS.slice(1).map(([t, fields]) => `<div class="card co-sec pa-sec">${fields === 'seg' ? `<div class="pa-sec-h"><h3>${esc(t)}</h3>${paField(c, ['tem_seguimento', 'Existe proposta de seguimento?', 'bool'])}</div>` : `<h3>${esc(t)}</h3>`}${Array.isArray(fields) ? `<div class="grid cols-3 co-props">${fields.map((f) => paField(c, f)).join('')}</div>` : fields === 'info' ? paInfoHTML(c) : fields === 'seg' ? (c.dados?.tem_seguimento ? paOfertaHTML(c, true) : '') : paOfertaHTML(c)}</div>`).join('')}`;
+    ${PA_SECTIONS.slice(1).map(([t, fields]) => `<div class="card co-sec pa-sec">${fields === 'seg' ? `<div class="pa-sec-h"><h3>${esc(t)}</h3><span class="pa-q">Existe proposta de seguimento?</span>${[['sim', 'Sim', true], ['nao', 'Não', false]].map(([k, l, val]) => `<label class="pa-bool pa-opt"><input type="checkbox" data-sg="${k}" ${c.dados?.tem_seguimento === val ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div>` : `<h3>${esc(t)}</h3>`}${Array.isArray(fields) ? `<div class="grid cols-3 co-props">${fields.map((f) => paField(c, f)).join('')}</div>` : fields === 'info' ? paInfoHTML(c) : fields === 'seg' ? (c.dados?.tem_seguimento ? paOfertaHTML(c, true) : '') : paOfertaHTML(c)}</div>`).join('')}`;
   const mark = () => { PA.dirty = true; $('#pa-state').textContent = 'Alterações por guardar'; };
   $('#pa-nome').addEventListener('input', (e) => { c.nome = e.target.value; mark(); });
   $$('[data-k]').forEach((el) => {
@@ -1662,6 +1662,12 @@ function drawPartnerDetail() {
     el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', upd);
   });
   paFilesInit(c, mark);
+  $$('[data-sg]').forEach((el) => el.addEventListener('change', () => {
+    const sim = el.dataset.sg === 'sim';
+    c.dados.tem_seguimento = el.checked ? sim : null;
+    if (el.checked && sim && !(c.dados.itens_seg || []).length) c.dados.itens_seg = [{ pag: '' }];
+    mark(); drawPartnerDetail();
+  }));
   $$('[data-add-item]').forEach((b) => b.addEventListener('click', () => { (c.dados[b.dataset.addItem] ||= []).push({ pag: '' }); mark(); drawPartnerDetail(); }));
   $$('[data-del-item]').forEach((b) => b.addEventListener('click', () => { c.dados[b.dataset.list].splice(+b.dataset.delItem, 1); if (b.dataset.list === 'itens') paSyncResumo(c); mark(); drawPartnerDetail(); }));
   $('#pa-back').addEventListener('click', closePartner);

@@ -495,3 +495,5 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .pa-file { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--ctl-h); padding: 0 8px 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); }
 .pa-file a { color: var(--accent); font-weight: 600; font-size: 14px; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pa-file a:hover { text-decoration: underline; }
+.pa-q { font-size: 12.5px; font-weight: 700; color: var(--text-2); }
+.pa-sec-h .pa-opt { gap: 8px; }
