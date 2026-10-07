@@ -1575,7 +1575,7 @@ function paTemComissao(c) {
 }
 function paInfoHTML(c) {
   const files = PA_FILE_KEYS.map(([k, l, b]) => `<div class="co-field pa-wide"><span>${esc(l)}</span><div class="pa-files" data-fk="${k}"></div>
-    <div class="cm-filebar"><label class="btn cm-attach">${b}<input type="file" data-fu="${k}" accept="application/pdf,image/png,image/jpeg" multiple hidden></label><span class="muted small">PDF, PNG ou JPEG, até 10 MB cada</span></div></div>`).join('');
+    <div class="cm-filebar"><label class="btn cm-attach">${b}<input type="file" data-fu="${k}" accept="application/pdf,image/png,image/jpeg" multiple hidden></label></div></div>`).join('');
   const com = paTemComissao(c) ? paField(c, ['link_afiliacao', 'Link de afiliação', 'url']) + paField(c, ['codigo_oferta', 'Código de oferta para o meu público', 'text']) : '';
   return `<div class="grid cols-3 co-props">${files}${paField(c, ['site', 'Link do site', 'url'])}${com}${paField(c, ['dados_faturacao', 'Dados da empresa para faturação', 'longtext'])}</div>`;
 }
