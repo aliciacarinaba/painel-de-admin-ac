@@ -1568,7 +1568,7 @@ function paOfertaHTML(c, seg) {
 }
 
 // "Informações": contrato, documentos (PDF/imagem), links, código de oferta e dados de faturação
-const PA_FILE_KEYS = [['contrato_ficheiros', 'Contrato (se existir)', '+ Anexar contrato'], ['docs_ficheiros', 'Documentos sobre a proposta', '+ Anexar documentos']];
+const PA_FILE_KEYS = [['contrato_ficheiros', 'Contrato', '+ Anexar contrato'], ['docs_ficheiros', 'Documentos sobre a proposta', '+ Anexar documentos']];
 function paTemComissao(c) {
   return [...(c.dados?.itens || []), ...(c.dados?.itens_seg || [])].some((i) => i.pag === 'Comissão e/ou Afiliação' || (i.pag === 'Misto' && i.m_com)
     || (i.pag === 'Permuta' && i.extra === 'Sim' && i.extra_tipo === 'Comissão e/ou Afiliação'));
@@ -1584,7 +1584,7 @@ function paFilesInit(c, mark) {
   const draw = () => {
     $$('[data-fk]').forEach((box) => {
       const list = c.dados[box.dataset.fk] || [];
-      box.innerHTML = list.length ? list.map((f, i) => `<div class="pa-file"><a href="${esc(f.url || f.dataUrl || '#')}" target="_blank" rel="noopener">📎 ${esc(f.nome)}</a><button class="btn" data-frm="${box.dataset.fk}:${i}" aria-label="Remover ficheiro">✕</button></div>`).join('') : '<span class="muted small">Sem ficheiros.</span>';
+      box.innerHTML = list.length ? list.map((f, i) => `<div class="pa-file"><a href="${esc(f.url || f.dataUrl || '#')}" target="_blank" rel="noopener">📎 ${esc(f.nome)}</a><button class="btn" data-frm="${box.dataset.fk}:${i}" aria-label="Remover ficheiro">✕</button></div>`).join('') : '';
     });
     $$('[data-frm]').forEach((b) => b.addEventListener('click', () => {
       const [k, i] = b.dataset.frm.split(':'); const f = c.dados[k].splice(+i, 1)[0];
