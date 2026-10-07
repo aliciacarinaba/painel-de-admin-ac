@@ -1106,7 +1106,7 @@ function editRubrica(rec) {
     ['rubricas', 'Rubrica', 'multi', calRubricas()],
     ['redes', 'Redes sociais', 'multi', CAL_REDES],
     ['tipos', 'Tipo de conteúdo', 'tipos'],
-    ['notas', 'Notas (estrutura, ganchos, exemplos)', 'longtext'],
+    ['notas', 'Descritivo', 'longtext'],
   ] });
 }
 function drawCalLines() {
