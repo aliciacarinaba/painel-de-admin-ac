@@ -863,7 +863,7 @@ function calModal({ heading, rec, fields, onDone }) {
     const v = get(k), id = 'cm-' + k;
     if (type === 'bool') return `<label class="co-field pa-bool"><input type="checkbox" data-k="${k}" data-type="bool" ${v ? 'checked' : ''}><span>${esc(label)}</span></label>`;
     if (type === 'longtext') return `<label class="co-field cm-wide"><span>${esc(label)}</span><textarea data-k="${k}" data-type="text">${esc(v ?? '')}</textarea></label>`;
-    if (type === 'links') return `<div class="co-field cm-wide"><span>${esc(label)}</span><textarea data-k="${k}" data-type="links" placeholder="Cola um link por linha (reels, posts, vídeos, artigos…)">${esc(Array.isArray(v) ? v.join('\n') : '')}</textarea><div class="cm-linklist" id="cm-links"></div></div>`;
+    if (type === 'links') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="cm-lk" data-k="${k}" data-type="links"></div></div>`;
     if (type === 'files') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="cm-files" id="cm-files"></div><div class="cm-filebar"><label class="btn cm-attach">+ Anexar imagens<input type="file" id="cm-file" accept="image/png,image/jpeg" multiple hidden></label><span class="muted small">PNG ou JPEG, até 5 MB cada</span></div></div>`;
     if (type === 'multi') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="cm-multi">${opts.map((o) => `<label class="cm-opt"><input type="checkbox" data-k="${k}" data-type="multi" value="${esc(o)}" ${(v || []).includes(o) ? 'checked' : ''}>${esc(o)}</label>`).join('')}</div></div>`;
     if (type === 'rich') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="rt"><div class="rt-bar"><button type="button" class="rt-b" data-cmd="bold" title="Negrito"><b>N</b></button><button type="button" class="rt-b" data-cmd="italic" title="Itálico"><i>I</i></button><button type="button" class="rt-b" data-cmd="underline" title="Sublinhado"><u>S</u></button><button type="button" class="rt-b" data-cmd="insertUnorderedList" title="Lista com marcas">• Lista</button><button type="button" class="rt-b" data-cmd="insertOrderedList" title="Lista numerada">1. Lista</button></div><div class="rt-ed" contenteditable="true" data-k="${k}" data-type="rich">${rtHtml(v)}</div></div></div>`;
@@ -917,11 +917,19 @@ function calModal({ heading, rec, fields, onDone }) {
     drawTipos();
     $$('[data-k="redes"]', bg).forEach((c) => c.addEventListener('change', drawTipos));
   }
-  // links de referência
-  const links = $('[data-type="links"]', bg);
-  if (links) {
-    const showLinks = () => { $('#cm-links', bg).innerHTML = links.value.split('\n').map((x) => x.trim()).filter((x) => /^https?:\/\//i.test(x)).map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u.replace(/^https?:\/\/(www\.)?/i, '').slice(0, 60))} ↗</a>`).join(''); };
-    links.addEventListener('input', showLinks); showLinks();
+  // links de referência: um campo para cada link
+  const lkBox = $('.cm-lk', bg);
+  if (lkBox) {
+    const row = (v = '') => `<div class="cm-lk-row"><input type="url" class="cm-lk-in" placeholder="https://…" value="${esc(v)}"><a class="cm-lk-go" href="${/^https?:\/\//i.test(v) ? esc(v) : '#'}" target="_blank" rel="noopener" title="Abrir link" ${/^https?:\/\//i.test(v) ? '' : 'hidden'}>↗</a><button type="button" class="file-del-inline" title="Remover link" aria-label="Remover link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v6M14 11v6"/></svg></button></div>`;
+    const init = Array.isArray(draft.dados[lkBox.dataset.k]) ? draft.dados[lkBox.dataset.k] : [];
+    lkBox.innerHTML = `<div class="cm-lk-list">${(init.length ? init : ['']).map(row).join('')}</div><button type="button" class="btn cm-lk-add">+ Adicionar link</button>`;
+    const list = $('.cm-lk-list', lkBox);
+    lkBox.addEventListener('input', (e) => { const r = e.target.closest('.cm-lk-row'); if (!r) return; const v = e.target.value.trim(), go = $('.cm-lk-go', r); const ok = /^https?:\/\//i.test(v); go.hidden = !ok; go.href = ok ? v : '#'; });
+    lkBox.addEventListener('click', (e) => {
+      if (e.target.closest('.cm-lk-add')) { list.insertAdjacentHTML('beforeend', row()); list.lastElementChild.querySelector('input').focus(); return; }
+      const del = e.target.closest('.file-del-inline');
+      if (del) { del.closest('.cm-lk-row').remove(); if (!list.children.length) list.insertAdjacentHTML('beforeend', row()); }
+    });
   }
   // anexos (imagens)
   const filesBox = $('#cm-files', bg);
@@ -964,6 +972,7 @@ function calModal({ heading, rec, fields, onDone }) {
   $('#cm-save', bg).addEventListener('click', async () => {
     $$('[data-k]', bg).forEach((el) => {
       const k = el.dataset.k, t = el.dataset.type;
+      if (t === 'links') { draft.dados[k] = $$('.cm-lk-in', el).map((i) => i.value.trim()).filter(Boolean); return; }
       if (t === 'multi') { if (!Array.isArray(draft.dados[k])) draft.dados[k] = []; return; }
       if (t === 'rich') { draft.dados[k] = rtClean(el.innerHTML); return; }
       const v = t === 'bool' ? el.checked : (t === 'date' ? (el.value || null) : (t === 'links' ? el.value.split('\n').map((x) => x.trim()).filter(Boolean) : el.value));

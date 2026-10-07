@@ -570,3 +570,12 @@ input[type=date], input[type=number] { width: 100%; padding: 0 14px; border: 1px
 input[type=date]:focus, input[type=number]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 input[type=date]::-webkit-datetime-edit-fields-wrapper { padding: 0; }
 input[type=date]::-webkit-datetime-edit-day-field:focus, input[type=date]::-webkit-datetime-edit-month-field:focus, input[type=date]::-webkit-datetime-edit-year-field:focus { background: var(--accent-soft); color: var(--accent-strong); border-radius: 4px; outline: none; }
+
+/* Links: um campo por link */
+.cm-lk-list { display: grid; gap: 8px; margin-bottom: 10px; }
+.cm-lk-row { display: flex; align-items: center; gap: 8px; }
+.cm-lk-row .cm-lk-in { flex: 1; min-width: 0; }
+.cm-lk-go { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; color: var(--accent); text-decoration: none; font-size: 18px; }
+.cm-lk-go:hover { background: var(--accent-soft); }
+.file-del-inline { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--danger, #A33A3A); cursor: pointer; }
+.file-del-inline:hover { background: var(--accent-soft); }
