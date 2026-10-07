@@ -1,15 +1,12 @@
 // ============================================================
-// ig-audience: analisa a audiência (comentários do próprio perfil) e perfis concorrentes
-// (posts públicos via Business Discovery) e guarda o resultado em ig_audience ("main").
+// ig-audience: analisa a audiência (comentários e posts do próprio perfil) e guarda o resultado em ig_audience ("main").
 // Corre ao carregar em "Atualizar" no painel e 1 vez por semana (pg_cron, x-sched-key).
 // Sem "Verify JWT": aceita x-sched-key (cron) OU a sessão de um utilizador autenticado.
 // ============================================================
 import { env, ig, sb, json, corsHeaders, GRAPH } from "../_shared/ig.ts";
 
-const DEFAULT_COMPETITORS = ["neves.c.jessica", "ateliercamila.pt", "gicanails", "dianadias.naildesigner"];
 const COMMENT_POSTS = 40;   // posts próprios em que se leem comentários
 const COMMENT_PAGES = 2;    // páginas de 100 comentários por post
-const COMP_POSTS = 50;      // posts por concorrente
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function retry(path: string) {
@@ -74,7 +71,7 @@ function whenOf(ts: string) {
 const top = <T extends string>(m: Map<T, number>, n: number) =>
   [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n);
 
-// ---------- Perfil (próprio ou concorrente) ----------
+// ---------- Perfil próprio ----------
 function summarize(username: string, followers: number, mediaCount: number, posts: any[], own: boolean) {
   const eng = (p: any) => (p.like_count ?? 0) + (p.comments_count ?? 0);
   const dated = posts.filter((p) => p.timestamp);
@@ -121,20 +118,6 @@ function summarize(username: string, followers: number, mediaCount: number, post
   };
 }
 
-// O Business Discovery NÃO existe no "Instagram Login" (token IG...). Só funciona com um token do Facebook Login
-// (segredos opcionais FB_ACCESS_TOKEN e FB_IG_USER_ID = id da conta Instagram ligada a uma Página do Facebook).
-async function competitor(username: string) {
-  const fbToken = env("FB_ACCESS_TOKEN"), fbUser = env("FB_IG_USER_ID");
-  if (!fbToken || !fbUser) return { username, error: "Não ligado: requer token do Facebook Login (FB_ACCESS_TOKEN / FB_IG_USER_ID)" };
-  const fields = `business_discovery.username(${username}){username,name,followers_count,media_count,media.limit(${COMP_POSTS}){caption,like_count,comments_count,timestamp,media_type,permalink,media_url,thumbnail_url}}`;
-  const res = await fetch(`https://graph.facebook.com/${env("GRAPH_API_VERSION", "v21.0")}/${fbUser}?fields=${encodeURIComponent(fields)}&access_token=${fbToken}`);
-  const j: any = await res.json().catch(() => ({}));
-  if (!res.ok) return { username, error: j?.error?.message ?? `Erro ${res.status}` };
-  const bd = j?.business_discovery;
-  if (!bd) return { username, error: "Sem dados (a conta tem de ser profissional e pública)" };
-  return { username: bd.username ?? username, followers: bd.followers_count ?? 0, media_count: bd.media_count ?? 0, posts: bd.media?.data ?? [] };
-}
-
 // ---------- Autorização ----------
 async function authorized(req: Request) {
   const key = req.headers.get("x-sched-key");
@@ -153,8 +136,6 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { data: cfg } = await sb.from("ig_audience").select("data").eq("id", "config").maybeSingle();
-    const comps: string[] = (cfg?.data?.competitors ?? DEFAULT_COMPETITORS).map((u: string) => String(u).replace(/^@/, "").trim()).filter(Boolean);
 
     // 1) Perfil próprio e posts
     const me = await retry(`/${id}?fields=username,followers_count,media_count`);
@@ -234,27 +215,14 @@ Deno.serve(async (req) => {
       keywords: top(kwFreq, 10).filter(([, n]) => n >= 2).map(([k, n]) => ({ k, n })),
     };
 
-    // 4) Perfis: próprio + concorrentes
+    // 4) Perfil próprio
     const profiles: any[] = [summarize(ownUser, me.data.followers_count ?? 0, me.data.media_count ?? 0, ownPosts, true)];
-    const compStatus: any[] = [];
-    for (const u of comps) {                       // em série, para não esbarrar nos limites
-      const c: any = await competitor(u);
-      if (c.error) { compStatus.push({ username: u, ok: false, error: c.error }); continue; }
-      compStatus.push({ username: u, ok: true, posts: c.posts.length });
-      profiles.push(summarize(c.username, c.followers, c.media_count, c.posts, false));
-    }
 
-    // 5) Temas: interação média (taxa) comparando o teu perfil com os concorrentes
+    // 5) Temas: interação média (taxa) por tema nos teus posts
     const lab = Object.fromEntries(Object.entries(TOPICS).map(([k, v]) => [k, v.label]));
-    const agg: Record<string, { own: number[]; comp: number[]; n: number }> = {};
-    for (const p of profiles) for (const t of p.topic_eng) {
-      if (t.rate == null) continue;
-      const a = (agg[t.key] ??= { own: [], comp: [], n: 0 });
-      (p.own ? a.own : a.comp).push(t.rate); a.n += t.n;
-    }
-    const mean = (l: number[]) => (l.length ? +(l.reduce((a, b) => a + b, 0) / l.length).toFixed(2) : null);
-    const topics_eng = Object.entries(agg).map(([key, a]) => ({ key, label: lab[key], own: mean(a.own), comp: mean(a.comp), posts: a.n }))
-      .sort((x, y) => ((y.comp ?? 0) + (y.own ?? 0)) - ((x.comp ?? 0) + (x.own ?? 0)));
+    const topics_eng = profiles[0].topic_eng.filter((t: any) => t.rate != null)
+      .map((t: any) => ({ key: t.key, label: lab[t.key], own: t.rate, posts: t.n }))
+      .sort((x: any, y: any) => y.own - x.own);
 
     // 6) Mapa de calor global (índice de interação relativo à média de cada perfil)
     const heat: (number | null)[][] = Array.from({ length: 7 }, (_, d) => Array.from({ length: 6 }, (_, c) => {
@@ -265,7 +233,7 @@ Deno.serve(async (req) => {
     const out = {
       generated_at: new Date().toISOString(),
       topic_labels: lab,
-      sources: { own_posts: ownPosts.length, comments_read: texts.length, competitors: compStatus },
+      sources: { own_posts: ownPosts.length, comments_read: texts.length },
       audience, profiles, topics_eng, heat,
     };
     const updated_at = new Date().toISOString();

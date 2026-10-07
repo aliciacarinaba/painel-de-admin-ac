@@ -17,7 +17,7 @@ supabase/functions/ig-token-refresh    Renova o token (semanal)
 supabase/functions/ig-insights         Métricas em direto (já não usada pelo painel)
 supabase/functions/ig-media            Posts
 supabase/functions/ig-analysis         Métricas do painel (alcance, posts, quem mais comenta)
-supabase/functions/ig-audience         Análise da audiência (semanal) e de perfis concorrentes
+supabase/functions/ig-audience         Análise da audiência (semanal)
 ```
 
 ## Passo 0: testar já, sem configurar nada

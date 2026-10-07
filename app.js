@@ -387,7 +387,7 @@ function renderFundamentos() {
 
 // ---------- Audiência ----------
 const AU = { data: null, updated: null, loading: false, loaded: false, sec: 'resumo', bucket: 'duvidas' };
-const AU_SECS = [['resumo', 'Resumo'], ['dizem', 'O que dizem'], ['conteudo', 'Conteúdo'], ['concorrencia', 'Concorrência'], ['linguagem', 'Linguagem'], ['pesquisa', 'Pesquisa']];
+const AU_SECS = [['resumo', 'Resumo'], ['dizem', 'O que dizem'], ['conteudo', 'Conteúdo'], ['linguagem', 'Linguagem'], ['pesquisa', 'Pesquisa']];
 const AU_COLORS = ['#8F5B5F', '#C8A49F', '#5D3C3E', '#AF8386', '#D7C1C3'];
 const AU_BUCKETS = { duvidas: ['❓', 'Dúvidas', 'perguntas diretas'], dores: ['💔', 'Dores', 'frustrações e bloqueios'], objecoes: ['🚧', 'Objeções', 'o que as faz hesitar'], desejos: ['✨', 'Desejos', 'o que querem alcançar'], pedidos: ['📩', 'Pedidos e palavras-chave', 'comentários de ação'] };
 const AU_WD = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
@@ -465,7 +465,7 @@ function drawAudience() {
   let inner;
   if (AU.sec === 'pesquisa') inner = auPesquisa();
   else if (!d) inner = `<div class="card empty"><div class="big">🎯</div><h2>${sb ? 'Ainda não há análise de audiência' : 'Liga o Instagram para ver a audiência'}</h2><p>${sb ? 'Carrega em “Atualizar” para analisar os comentários do teu perfil.' : 'Em modo de teste local não há dados do Instagram.'}</p></div>`;
-  else inner = { resumo: auResumo, dizem: auDizem, conteudo: auConteudo, concorrencia: auConcorrencia, linguagem: auLinguagem }[AU.sec](d);
+  else inner = { resumo: auResumo, dizem: auDizem, conteudo: auConteudo, linguagem: auLinguagem }[AU.sec](d);
   body.innerHTML = `<div class="au">${head}${inner}</div>`;
   $('#au-refresh')?.addEventListener('click', runAudience);
   $$('.au-pill').forEach((b) => b.addEventListener('click', () => { AU.sec = b.dataset.sec; drawAudience(); }));
@@ -493,7 +493,7 @@ function auResumo(d) {
     </div>
     <div class="grid cols-2">
       <div class="card"><h3>Temas que geram mais interação</h3><p class="muted small">Interações por post em % dos seguidores, nos posts que falam de cada tema.</p>
-        ${d.topics_eng.length ? hbars(d.topics_eng.slice(0, 8).map((t) => ({ label: t.label, value: t.own ?? t.comp ?? 0, text: (t.own ?? t.comp ?? 0).toFixed(2).replace('.', ',') + '%' }))) : '<p class="muted">Sem dados.</p>'}</div>
+        ${d.topics_eng.length ? hbars(d.topics_eng.slice(0, 8).map((t) => ({ label: t.label, value: t.own ?? 0, text: (t.own ?? 0).toFixed(2).replace('.', ',') + '%' }))) : '<p class="muted">Sem dados.</p>'}</div>
       <div class="card"><h3>Melhor momento para publicar</h3>
         ${bd ? `<div class="au-best"><strong>${AU_WD[bd.i]}</strong><span>${AU_HR[bd.j]}</span></div><p class="muted small">${bd.v.toFixed(1).replace('.', ',')}× a interação média. Vê o mapa completo em “Conteúdo”.</p>` : '<p class="muted">Sem dados.</p>'}</div>
     </div>`;
@@ -542,30 +542,6 @@ function auConteudo(d) {
       <p class="muted small">Cada célula mostra quantas vezes a interação do post ficou acima (ou abaixo) da média. Quanto mais escuro, melhor. Hora de Portugal. Com poucos posts por célula, usa como indicação.</p>
       ${auHeat(d.heat)}</div>
     <div class="card"><h3>Os teus posts com mais interação</h3>${auPosts(own.best)}</div>`;
-}
-
-function auConcorrencia(d) {
-  const comps = d.sources.competitors, okc = comps.filter((c) => c.ok);
-  const status = `<div class="card"><h3>Perfis acompanhados</h3><div class="au-tags">${comps.map((c) => `<span class="chip ${c.ok ? '' : 'au-warn'}">@${esc(c.username)} ${c.ok ? '✓' : '✕'}</span>`).join('')}</div></div>`;
-  if (!okc.length) {
-    return `${status}
-      <div class="card empty"><div class="big">🔌</div><h2>Os perfis concorrentes ainda não estão ligados</h2>
-        <p>O Instagram só deixa ler outros perfis através da ligação por Facebook (Business Discovery). A ligação atual do painel (Instagram Login) não o permite.</p>
-        <p class="muted small">Estado: ${esc(comps[0]?.error ?? 'sem perfis configurados')}</p></div>`;
-  }
-  const P = d.profiles, mx = (k) => Math.max(1, ...P.map((p) => Number(p[k]) || 0));
-  const row = (p) => `<tr class="${p.own ? 'au-own' : ''}"><td><strong>@${esc(p.username)}</strong>${p.own ? ' <span class="chip">tu</span>' : ''}</td>
-    <td>${hbars([{ label: '', value: p.followers }], { max: mx('followers') })}</td>
-    <td>${hbars([{ label: '', value: p.posts_per_week || 0, text: String(p.posts_per_week ?? '—').replace('.', ',') }], { max: mx('posts_per_week') })}</td>
-    <td>${hbars([{ label: '', value: p.avg_likes }], { max: mx('avg_likes') })}</td>
-    <td>${hbars([{ label: '', value: p.eng_rate || 0, text: String(p.eng_rate ?? '—').replace('.', ',') + '%' }], { max: mx('eng_rate') })}</td>
-    <td>${esc(p.formats[0]?.format ?? '—')}</td></tr>`;
-  const comp = P.filter((p) => !p.own);
-  return `${status}
-    <div class="card"><h3>Comparação de perfis</h3><div class="tbl-wrap"><table class="tbl au-tbl"><thead><tr><th>Perfil</th><th>Seguidores</th><th>Posts/semana</th><th>Gostos/post</th><th>Interação</th><th>Melhor formato</th></tr></thead><tbody>${P.map(row).join('')}</tbody></table></div></div>
-    <div class="card"><h3>Temas: tu vs concorrentes</h3><p class="muted small">Interação média (% dos seguidores) nos posts de cada tema.</p>
-      ${d.topics_eng.map((t) => `<div class="au-duo"><span>${esc(t.label)}</span>${hbars([{ label: 'Tu', value: t.own ?? 0, text: t.own != null ? String(t.own).replace('.', ',') + '%' : '—' }, { label: 'Conc.', value: t.comp ?? 0, text: t.comp != null ? String(t.comp).replace('.', ',') + '%' : '—', color: 'var(--accent-mid)' }], { max: Math.max(1, ...d.topics_eng.map((x) => Math.max(x.own ?? 0, x.comp ?? 0))) })}</div>`).join('')}</div>
-    ${comp.map((p) => `<div class="card"><h3>@${esc(p.username)}: posts com mais interação</h3>${auPosts(p.best)}</div>`).join('')}`;
 }
 
 function auLinguagem(d) {
