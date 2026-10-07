@@ -242,3 +242,22 @@ create table if not exists ig_audience (
 alter table ig_audience enable row level security;
 drop policy if exists "admin_total" on ig_audience;
 create policy "admin_total" on ig_audience for all to authenticated using (true) with check (true);
+
+-- ---------- 7) OFERTA FORMATIVA (secção "Oferta Formativa") ----------
+-- Cada formação tem um estado (draft / progress / available) e uma ficha preenchida à mão ("dados").
+create table if not exists formacoes (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null default '',
+  status text not null default 'draft' check (status in ('draft','progress','available')),
+  categoria text default '',
+  nivel text default '',
+  ticket numeric,
+  link_venda text default '',
+  estado_venda text default '',
+  dados jsonb not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table formacoes enable row level security;
+drop policy if exists "admin_total" on formacoes;
+create policy "admin_total" on formacoes for all to authenticated using (true) with check (true);

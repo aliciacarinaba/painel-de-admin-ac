@@ -118,7 +118,7 @@ function go(route) {
   // Sempre que se entra no Instagram vindo de outra secção, abre primeiro nas Métricas
   if (route === 'instagram' && state.route !== 'instagram') state.igTab = 'metrics';
   if (route === 'home' && state.route !== 'home') state.homeTab = 'general';
-  if (route === 'courses' && state.route !== 'courses') state.courseTab = 'draft';
+  if (route === 'courses' && state.route !== 'courses') { state.courseTab = 'draft'; CO.open = null; CO.draft = null; CO.dirty = false; }
   state.route = route;
   $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.route === route));
   if (route === 'home') renderHome();
@@ -792,25 +792,224 @@ function renderCalendar() {
 }
 
 // ---------- Oferta Formativa ----------
-const COURSE_TABS = [
-  ['draft', 'Rascunho', '📝', 'Ainda não há formações em rascunho', 'Aqui vão ficar as formações que estás a idealizar, antes de começares a criá-las.'],
-  ['progress', 'Em Progresso', '🛠️', 'Ainda não há formações em progresso', 'Aqui vão ficar as formações que estás a criar neste momento.'],
-  ['available', 'Disponível', '✅', 'Ainda não há formações disponíveis', 'Aqui vão ficar as formações já prontas e à venda.'],
+const COURSE_TABS = [['draft', 'Rascunhos'], ['progress', 'Em Progresso'], ['available', 'Disponíveis']];
+const COURSE_EMPTY = {
+  draft: ['📝', 'Ainda não há formações em rascunho', 'Aqui ficam as formações que estás a idealizar, antes de começares a criá-las.'],
+  progress: ['🛠️', 'Ainda não há formações em progresso', 'Aqui ficam as formações que estás a criar neste momento.'],
+  available: ['✅', 'Ainda não há formações disponíveis', 'Aqui ficam as formações já prontas e à venda.'],
+};
+const COURSE_STATUS = Object.fromEntries(COURSE_TABS);
+// Ficha de cada formação (preenchida à mão). type: 'list' = um item por linha; 'text' = texto livre.
+const COURSE_SECTIONS = [
+  ['Lente 1 · Características do produto', [
+    ['caracteristicas', 'Características do produto', 'list', 'Lista, pelo menos, 5 características (aulas, ferramentas, templates, o que quebra objeções…). Uma por linha.'],
+    ['objetivo', 'Principal objetivo do produto', 'text', ''],
+    ['funcao', 'Função na minha oferta', 'text', ''],
+    ['entrego', 'O que vou entregar', 'list', ''],
+    ['tarefas', 'Tarefas, desafios ou sugestões', 'list', ''],
+  ]],
+  ['Lente 2 · Benefícios do produto', [
+    ['ganham', 'O que ganham ao comprar', 'list', ''],
+    ['diferentes', 'Como as pessoas ficam diferentes', 'list', ''],
+    ['capazes', 'O que passam a ser capazes de fazer', 'list', ''],
+    ['transformacao', 'Transformação que o produto gera', 'list', ''],
+    ['beneficios', 'Lista de benefícios', 'list', 'Pelo menos 5. Uma por linha.'],
+  ]],
+  ['Lente 3 · Bónus do produto', [['bonus', 'Bónus', 'list', 'Todos os bónus incluídos. Um por linha.']]],
+  ['Lente 4 · Diferenciais do produto', [
+    ['dif_diferente', 'O que tem de diferente dos outros', 'list', ''],
+    ['dif_inovador', 'O que tem de inovador', 'list', ''],
+    ['dif_valioso', 'O que tem de muito valioso no mercado', 'list', ''],
+    ['diferenciais', 'Lista de diferenciais', 'list', ''],
+  ]],
+  ['Sobre mim · Raio-X pessoal', [
+    ['defendes', 'O que defendes', 'list', ''],
+    ['valores', 'Quais são os teus valores', 'list', ''],
+    ['naoconcordas', 'O que não concordas', 'list', ''],
+    ['perrengues', 'Perrengues que viveste e superaste', 'list', ''],
+    ['realizacoes', 'Realizações que conquistaste', 'list', ''],
+  ]],
+  ['Potencial cliente · Dores', [
+    ['dores_paz', 'O que tira a paz', 'list', ''],
+    ['dores_obstaculos', 'Obstáculos no caminho', 'list', ''],
+    ['dores_problemas', 'Problemas que não consegue resolver', 'list', ''],
+    ['dores_comportamentos', 'Comportamentos que a impedem de agir', 'list', ''],
+  ]],
+  ['Potencial cliente · Dúvidas', [
+    ['duv_perguntas', 'Perguntas frequentes', 'list', ''],
+    ['duv_desconfianca', 'O que ainda é visto com desconfiança', 'list', ''],
+    ['duv_nao_importante', 'Assuntos que não veem como importantes', 'list', ''],
+  ]],
+  ['Potencial cliente · Erros', [
+    ['err_mitos', 'Mitos mais frequentes', 'list', ''],
+    ['err_erros', 'Erros mais comuns', 'list', ''],
+  ]],
+  ['Potencial cliente · Desejos', [
+    ['des_meta', 'Meta que quer alcançar', 'list', ''],
+    ['des_sonhando', 'O que a faz “sonhar acordada”', 'list', ''],
+    ['des_resultado', 'Resultado que ainda não tem', 'list', ''],
+  ]],
+  ['Potencial cliente · Consequências', [
+    ['con_atuais', 'Consequências que sente hoje', 'list', ''],
+    ['con_futuras', 'Consequências se mantiver os comportamentos', 'list', ''],
+  ]],
+  ['Potencial cliente · Motivações', [
+    ['mot_internas', 'Motivações internas (emocionais)', 'list', ''],
+    ['mot_externas', 'Motivações externas (problema a resolver)', 'list', ''],
+  ]],
+  ['Potencial cliente · Jornada', [
+    ['ponto_a', 'Ponto A (situação atual)', 'text', ''],
+    ['percurso', 'Percurso até ao ponto B', 'text', ''],
+    ['ponto_b', 'Ponto B (depois do produto)', 'text', ''],
+  ]],
 ];
-function renderCourses() {
+const COURSE_FIELDS = COURSE_SECTIONS.flatMap(([, f]) => f);
+const COURSE_NIVEIS = ['Produto Principal', 'Produto de Entrada', 'Upsell', 'Bónus', 'Serviço'];
+const CO = { list: [], loaded: false, open: null, draft: null, dirty: false };
+const LS_COURSES = 'painel_formacoes';
+
+async function coursesLoad() {
+  if (sb) {
+    const { data, error } = await sb.from('formacoes').select('*').order('created_at', { ascending: true });
+    if (error) throw error;
+    CO.list = data || [];
+  } else {
+    try { CO.list = JSON.parse(localStorage.getItem(LS_COURSES) || '[]'); } catch { CO.list = []; }
+  }
+  CO.loaded = true;
+}
+async function coursesSave(c) {
+  c.updated_at = new Date().toISOString();
+  if (sb) { const { error } = await sb.from('formacoes').upsert(c); if (error) throw error; }
+  else {
+    const i = CO.list.findIndex((x) => x.id === c.id);
+    const next = i >= 0 ? CO.list.map((x) => (x.id === c.id ? c : x)) : [...CO.list, c];
+    try { localStorage.setItem(LS_COURSES, JSON.stringify(next)); } catch { /* sem armazenamento */ }
+  }
+  const i = CO.list.findIndex((x) => x.id === c.id);
+  if (i >= 0) CO.list[i] = c; else CO.list.push(c);
+}
+async function coursesDelete(id) {
+  if (sb) { const { error } = await sb.from('formacoes').delete().eq('id', id); if (error) throw error; }
+  CO.list = CO.list.filter((x) => x.id !== id);
+  if (!sb) { try { localStorage.setItem(LS_COURSES, JSON.stringify(CO.list)); } catch { /* sem armazenamento */ } }
+}
+
+const courseFill = (c) => {
+  const d = c.dados || {};
+  const done = COURSE_FIELDS.filter(([k]) => (Array.isArray(d[k]) ? d[k].length : String(d[k] ?? '').trim())).length;
+  return Math.round((done / COURSE_FIELDS.length) * 100);
+};
+const eur = (n) => (n == null || n === '' ? '' : Number(n).toLocaleString('pt-PT', { minimumFractionDigits: Number.isInteger(+n) ? 0 : 2, maximumFractionDigits: 2 }) + ' €');
+
+async function renderCourses() {
+  if (CO.open) return drawCourseDetail();
   $('#view').innerHTML = `
     <div class="page-head"><h1>🎓 Oferta Formativa</h1></div>
     <div class="tabs">${COURSE_TABS.map(([k, l]) => `<button class="tab" data-tab="${k}">${l}</button>`).join('')}</div>
-    <div id="course-body"></div>`;
+    <div id="course-body"><div class="card empty" style="margin-top:16px"><p>A carregar…</p></div></div>`;
   $$('.tab').forEach((t) => t.addEventListener('click', () => { state.courseTab = t.dataset.tab; renderCourses(); }));
   $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === state.courseTab));
-  const [, , icon, titulo, texto] = COURSE_TABS.find((t) => t[0] === state.courseTab);
+  if (!CO.loaded) {
+    try { await coursesLoad(); } catch (e) { console.error(e); return ($('#course-body').innerHTML = '<div class="card empty" style="margin-top:16px"><p>Não foi possível carregar as formações.</p></div>'); }
+    if (state.route !== 'courses' || CO.open) return;
+  }
+  drawCourseList();
+}
+
+function drawCourseList() {
+  const tab = state.courseTab, list = CO.list.filter((c) => c.status === tab);
+  const [icon, titulo, texto] = COURSE_EMPTY[tab];
+  const counts = Object.fromEntries(COURSE_TABS.map(([k]) => [k, CO.list.filter((c) => c.status === k).length]));
+  $$('.tab').forEach((t) => { const k = t.dataset.tab; t.innerHTML = `${COURSE_STATUS[k]} <span class="count">${counts[k]}</span>`; });
   $('#course-body').innerHTML = `
-    <div class="card empty" style="margin-top:16px">
-      <div class="big">${icon}</div>
-      <h2>${titulo}</h2>
-      <p>${texto}</p>
-    </div>`;
+    <div class="co-bar"><span class="muted">${list.length} ${list.length === 1 ? 'formação' : 'formações'}</span><button class="btn primary" id="co-new">+ Nova formação</button></div>
+    ${list.length ? `<div class="grid cols-3">${list.map((c) => `
+      <button class="card co-card" data-id="${c.id}">
+        <strong>${esc(c.nome || 'Sem nome')}</strong>
+        <div class="co-meta">${c.categoria ? `<span class="chip">${esc(c.categoria)}</span>` : ''}${c.nivel ? `<span class="chip">${esc(c.nivel)}</span>` : ''}${c.estado_venda ? `<span class="chip ${c.estado_venda === 'Pausado' ? 'au-warn' : ''}">${esc(c.estado_venda)}</span>` : ''}</div>
+        <div class="co-foot"><span>${eur(c.ticket) || '—'}</span><span class="muted small">Ficha ${courseFill(c)}%</span></div>
+        <span class="au-bar-t co-prog"><span class="au-bar-f" style="width:${courseFill(c)}%"></span></span>
+      </button>`).join('')}</div>`
+    : `<div class="card empty" style="margin-top:16px"><div class="big">${icon}</div><h2>${titulo}</h2><p>${texto}</p></div>`}`;
+  $('#co-new').addEventListener('click', newCourse);
+  $$('.co-card').forEach((b) => b.addEventListener('click', () => openCourse(b.dataset.id)));
+}
+
+function newCourse() {
+  const c = { id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())), nome: '', status: state.courseTab, categoria: '', nivel: '', ticket: null, link_venda: '', estado_venda: '', dados: {}, created_at: new Date().toISOString() };
+  CO.open = c.id; CO.draft = c; CO.isNew = true; CO.dirty = true;
+  drawCourseDetail();
+}
+function openCourse(id) {
+  const c = CO.list.find((x) => x.id === id); if (!c) return;
+  CO.open = id; CO.draft = JSON.parse(JSON.stringify(c)); CO.isNew = false; CO.dirty = false;
+  drawCourseDetail();
+}
+function closeCourse() {
+  if (CO.dirty && !confirm('Tens alterações por guardar. Sair mesmo assim?')) return;
+  CO.open = null; CO.draft = null; CO.dirty = false;
+  renderCourses();
+}
+
+function drawCourseDetail() {
+  const c = CO.draft, d = c.dados || (c.dados = {});
+  const val = (k, type) => (type === 'list' ? (Array.isArray(d[k]) ? d[k].join('\n') : '') : String(d[k] ?? ''));
+  $('#view').innerHTML = `
+    <div class="co-top">
+      <button class="btn" id="co-back">← Voltar</button>
+      <div class="co-actions"><span class="muted small" id="co-state">${CO.dirty ? 'Alterações por guardar' : 'Guardado'}</span>
+        ${CO.isNew ? '' : '<button class="btn danger" id="co-del">Apagar</button>'}<button class="btn primary" id="co-save">Guardar</button></div>
+    </div>
+    <div class="card co-head">
+      <input id="co-nome" class="co-title" placeholder="Nome da formação" value="${esc(c.nome)}">
+      <div class="grid cols-3 co-props">
+        <label>Estado<select id="co-status">${COURSE_TABS.map(([k, l]) => `<option value="${k}" ${c.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+        <label>Categoria<input id="co-cat" type="text" list="co-cats" value="${esc(c.categoria)}" placeholder="Ex.: Gestão Financeira"><datalist id="co-cats">${[...new Set(CO.list.map((x) => x.categoria).filter(Boolean))].map((x) => `<option value="${esc(x)}">`).join('')}</datalist></label>
+        <label>Nível<input id="co-nivel" type="text" list="co-niveis" value="${esc(c.nivel)}" placeholder="Ex.: Produto Principal"><datalist id="co-niveis">${COURSE_NIVEIS.map((x) => `<option value="${esc(x)}">`).join('')}</datalist></label>
+        <label>Ticket (€)<input id="co-ticket" type="number" min="0" step="0.01" value="${c.ticket ?? ''}" placeholder="147"></label>
+        <label>Link de venda<input id="co-link" type="url" value="${esc(c.link_venda)}" placeholder="https://…"></label>
+        <label>Estado de venda<select id="co-venda"><option value="">—</option>${['Ativo', 'Pausado'].map((x) => `<option ${c.estado_venda === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
+      </div>
+    </div>
+    ${COURSE_SECTIONS.map(([titulo, fields], i) => `
+      <details class="card co-sec" ${i === 0 ? 'open' : ''}><summary>${esc(titulo)}<span class="muted small" data-fill="${i}"></span></summary>
+        <div class="grid cols-2">${fields.map(([k, label, type, hint]) => `
+          <label class="co-field">${esc(label)}${type === 'list' ? ' <small class="muted">(um por linha)</small>' : ''}
+            <textarea data-k="${k}" data-type="${type}" rows="${type === 'list' ? 5 : 4}" placeholder="${esc(hint)}">${esc(val(k, type))}</textarea></label>`).join('')}</div>
+      </details>`).join('')}`;
+  const mark = () => { CO.dirty = true; $('#co-state').textContent = 'Alterações por guardar'; };
+  const bind = (id, fn) => $(id).addEventListener('input', () => { fn($(id).value); mark(); });
+  bind('#co-nome', (v) => (c.nome = v)); bind('#co-cat', (v) => (c.categoria = v)); bind('#co-nivel', (v) => (c.nivel = v));
+  bind('#co-link', (v) => (c.link_venda = v)); bind('#co-ticket', (v) => (c.ticket = v === '' ? null : Number(v)));
+  $('#co-status').addEventListener('change', () => { c.status = $('#co-status').value; mark(); });
+  $('#co-venda').addEventListener('change', () => { c.estado_venda = $('#co-venda').value; mark(); });
+  $$('.co-field textarea').forEach((t) => {
+    const fit = () => { t.style.height = 'auto'; t.style.height = Math.max(90, t.scrollHeight + 2) + 'px'; };
+    fit();
+    t.addEventListener('input', () => {
+      fit(); mark();
+      d[t.dataset.k] = t.dataset.type === 'list' ? t.value.split('\n').map((x) => x.trim()).filter(Boolean) : t.value;
+    });
+  });
+  $$('.co-sec').forEach((s) => s.addEventListener('toggle', () => $$('.co-field textarea', s).forEach((t) => { t.style.height = 'auto'; t.style.height = Math.max(90, t.scrollHeight + 2) + 'px'; })));
+  $('#co-back').addEventListener('click', closeCourse);
+  $('#co-save').addEventListener('click', saveCourse);
+  $('#co-del')?.addEventListener('click', async () => {
+    if (!confirm(`Apagar a formação “${c.nome || 'Sem nome'}”? Esta ação não se pode desfazer.`)) return;
+    try { await coursesDelete(c.id); CO.open = null; CO.draft = null; CO.dirty = false; toast('Formação apagada.'); renderCourses(); }
+    catch (e) { console.error(e); toast('Não foi possível apagar a formação.', true); }
+  });
+}
+
+async function saveCourse() {
+  const c = CO.draft;
+  if (!c.nome.trim()) { toast('Dá um nome à formação antes de guardar.', true); $('#co-nome').focus(); return; }
+  try {
+    await coursesSave({ ...c, nome: c.nome.trim() });
+    CO.isNew = false; CO.dirty = false; state.courseTab = c.status;
+    $('#co-state').textContent = 'Guardado'; toast('Formação guardada.');
+  } catch (e) { console.error(e); toast('Não foi possível guardar. Tenta outra vez.', true); }
 }
 
 // ---------- Parcerias (placeholder) ----------
