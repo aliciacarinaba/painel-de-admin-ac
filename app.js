@@ -1517,7 +1517,7 @@ function paItemFields(it, multi) {
     : freq === 'Trimestral' ? [[chave === 'cm' ? 'cm_dia' : 'dia_pag', 'Dia do mês de pagamento (em cada trimestre)', 'number']] : []);
   const dinheiro = (lbl) => [['val', lbl, 'number'], ['forma', 'Forma de Pagamento', 'select', ['', ...PA_FORMAS]], ['freq', 'Periodicidade de Pagamentos', 'select', PA_FREQ], ...quando(it.freq, 'd'), ...estado];
   const permuta = (extra) => [['val_oferta', 'Valor da oferta (€)', 'number'],
-    ...(extra ? [['extra', 'Existe pagamento além da oferta?', 'select', ['', 'Sim', 'Não']], ...(it.extra === 'Sim' ? [['|'], ...dinheiro('Valor (€)')] : [])] : [])];
+    ...(extra ? [['extra', 'Existe pagamento além da oferta?', 'select', ['', 'Sim', 'Não']], ...(it.extra === 'Sim' ? [['|'], ['extra_tipo', 'Tipo de pagamento', 'select', ['', 'Dinheiro', 'Comissão e/ou Afiliação']], ...(it.extra_tipo === 'Dinheiro' ? dinheiro('Valor (€)') : it.extra_tipo === 'Comissão e/ou Afiliação' ? comissao(true) : [])] : [])] : [])];
   const comissao = (comEstado) => [['comissao', 'Valor da comissão (€ ou %)', 'text'], ['cm_forma', 'Forma de Pagamento', 'select', ['', ...PA_FORMAS]], ['cm_freq', 'Periodicidade de Pagamentos', 'select', PA_FREQ], ...quando(it.cm_freq, 'cm'), ...(comEstado ? estado : [])];
   const comPermuta = it.pag === 'Permuta' || (it.pag === 'Misto' && it.m_per);
   const f = [['pag', 'Tipo de pagamento', 'select', ['', ...PA_PAGAMENTO]]];
@@ -1538,7 +1538,7 @@ function paSyncResumo(c) {
   const its = (c.dados?.itens || []);
   const tipos = [...new Set(its.map((i) => i.pag).filter(Boolean))];
   c.pagamento_tipo = tipos.length > 1 ? 'Misto' : (tipos[0] || '');
-  const money = (i) => (i.pag === 'Dinheiro' || (i.pag === 'Misto' && i.m_din) || (i.pag === 'Permuta' && i.extra === 'Sim') ? Number(i.val) || 0 : 0);
+  const money = (i) => (i.pag === 'Dinheiro' || (i.pag === 'Misto' && i.m_din) || (i.pag === 'Permuta' && i.extra === 'Sim' && i.extra_tipo === 'Dinheiro') ? Number(i.val) || 0 : 0);
   const tot = its.reduce((n, i) => n + money(i), 0);
   c.valor = tot || null;
   const ests = its.map((i) => i.estado_pag).filter(Boolean);
@@ -1606,7 +1606,7 @@ function drawPartnerDetail() {
       if (box) { c.dados[box.dataset.list][+box.dataset.item][el.dataset.k] = v; if (box.dataset.list === 'itens') paSyncResumo(c); } else paSet(c, el.dataset.k, v);
       if (el.dataset.k === 'tem_seguimento' && v && !(c.dados.itens_seg || []).length) c.dados.itens_seg = [{ pag: '' }];
       mark();
-      if (['tem_seguimento', 'pag', 'extra', 'm_din', 'm_per', 'm_com', 'freq', 'cm_freq'].includes(el.dataset.k)) drawPartnerDetail();
+      if (['tem_seguimento', 'pag', 'extra', 'm_din', 'm_per', 'm_com', 'extra_tipo', 'freq', 'cm_freq'].includes(el.dataset.k)) drawPartnerDetail();
     };
     el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', upd);
   });
