@@ -502,3 +502,7 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .co-props label input, .co-props label select, .co-props label textarea, .co-field input, .co-field select, .co-field textarea { font-weight: 400; }
 .pa-sec-h .pa-opt { display: flex; align-items: center; gap: 10px; margin-right: 8px; }
 .pa-file a { text-decoration: none; }
+.lightbox { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; background: rgba(25, 5, 6, .82); padding: 32px; cursor: zoom-out; }
+.lightbox img { max-width: 100%; max-height: 100%; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.4); cursor: default; background: #fff; }
+.lb-x { position: absolute; top: 18px; right: 22px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255,255,255,.18); color: #fff; font-size: 20px; cursor: pointer; }
+.lb-x:hover { background: rgba(255,255,255,.3); }

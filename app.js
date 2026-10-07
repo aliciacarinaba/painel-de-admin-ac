@@ -873,7 +873,7 @@ function calModal({ heading, rec, fields, onDone }) {
   const filesBox = $('#cm-files', bg);
   if (filesBox) {
     const draw = () => {
-      filesBox.innerHTML = anexos().length ? anexos().map((f, i) => `<div class="cm-file"><a href="${esc(f.url || f.dataUrl || '#')}" target="_blank" rel="noopener" title="${esc(f.nome)}"><span class="cm-thumb" style="background-image:url('${esc(f.url || f.dataUrl || '')}')"></span></a><span class="small">${esc(f.nome)}</span><button type="button" class="btn sm" data-rm="${i}">Remover</button></div>`).join('') : '<span class="muted small">Ainda sem anexos.</span>';
+      filesBox.innerHTML = anexos().length ? anexos().map((f, i) => `<div class="cm-file"><a href="${esc(f.url || f.dataUrl || '#')}" target="_blank" rel="noopener" title="${esc(f.nome)}" data-lb><span class="cm-thumb" style="background-image:url('${esc(f.url || f.dataUrl || '')}')"></span></a><span class="small">${esc(f.nome)}</span><button type="button" class="btn sm" data-rm="${i}">Remover</button></div>`).join('') : '<span class="muted small">Ainda sem anexos.</span>';
       $$('[data-rm]', filesBox).forEach((b) => b.addEventListener('click', async () => {
         const f = anexos().splice(+b.dataset.rm, 1)[0];
         if (f?.path) { const ai = added.findIndex((x) => x.path === f.path); if (ai >= 0) { added.splice(ai, 1); sb?.storage.from('anexos').remove([f.path]).catch(() => {}); } else removedOld.push(f.path); }
@@ -1594,7 +1594,7 @@ function paFilesInit(c, mark) {
       const list = c.dados[box.dataset.fk] || [];
       box.innerHTML = list.map((f, i) => {
         const url = f.url || f.dataUrl || '', img = /\.(png|jpe?g)$/i.test(f.nome || '') || String(f.dataUrl || '').startsWith('data:image');
-        return `<div class="pa-file"><a href="${esc(url || '#')}" target="_blank" rel="noopener" title="${esc(f.nome)}">${img ? `<span class="pa-thumb" style="background-image:url('${esc(url)}')"></span>` : '<span class="pa-thumb pa-pdf">📄 PDF</span>'}</a>
+        return `<div class="pa-file"><a href="${esc(url || '#')}" target="_blank" rel="noopener" title="${esc(f.nome)}" ${img ? 'data-lb' : ''}>${img ? `<span class="pa-thumb" style="background-image:url('${esc(url)}')"></span>` : '<span class="pa-thumb pa-pdf">📄 PDF</span>'}</a>
           ${img ? '' : `<span class="small">${esc(f.nome)}</span>`}<button type="button" class="btn sm" data-frm="${box.dataset.fk}:${i}">Remover</button></div>`;
       }).join('');
     });
@@ -1720,6 +1720,19 @@ function renderInstagram() {
   else if (state.igTab === 'interactions') renderLeads();
   else renderAutomations();
 }
+
+// Imagens em pop-up (links com data-lb): abre por cima da página, fecha ao clicar fora, no ✕ ou com Esc
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[data-lb]'); if (!a || !a.getAttribute('href') || a.getAttribute('href') === '#') return;
+  e.preventDefault();
+  const bg = document.createElement('div'); bg.className = 'lightbox';
+  bg.innerHTML = `<button class="lb-x" aria-label="Fechar">✕</button><img src="${esc(a.getAttribute('href'))}" alt="${esc(a.title || '')}">`;
+  const close = () => { bg.remove(); document.removeEventListener('keydown', onKey, true); };
+  const onKey = (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); close(); } };
+  bg.addEventListener('click', (ev) => { if (ev.target.tagName !== 'IMG') close(); });
+  document.addEventListener('keydown', onKey, true);
+  document.body.appendChild(bg);
+});
 
 // Número com separador de milhares em português (ex: 1.721)
 const fmt = (n) => Number(n).toLocaleString('pt-PT');
