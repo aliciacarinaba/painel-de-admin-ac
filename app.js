@@ -832,6 +832,8 @@ function calModal({ heading, rec, fields, onDone }) {
     const v = get(k), id = 'cm-' + k;
     if (type === 'bool') return `<label class="co-field pa-bool"><input type="checkbox" data-k="${k}" data-type="bool" ${v ? 'checked' : ''}><span>${esc(label)}</span></label>`;
     if (type === 'longtext') return `<label class="co-field cm-wide"><span>${esc(label)}</span><textarea data-k="${k}" data-type="text">${esc(v ?? '')}</textarea></label>`;
+    if (type === 'links') return `<div class="co-field cm-wide"><span>${esc(label)}</span><textarea data-k="${k}" data-type="links" placeholder="Cola um link por linha (reels, posts, vídeos, artigos…)">${esc(Array.isArray(v) ? v.join('\n') : '')}</textarea><div class="cm-linklist" id="cm-links"></div></div>`;
+    if (type === 'files') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="cm-files" id="cm-files"></div><div class="cm-filebar"><label class="btn cm-attach">+ Anexar imagens<input type="file" id="cm-file" accept="image/png,image/jpeg" multiple hidden></label><span class="muted small">PNG ou JPEG, até 5 MB cada</span></div></div>`;
     if (type === 'multi') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="cm-multi">${opts.map((o) => `<label class="cm-opt"><input type="checkbox" data-k="${k}" data-type="multi" value="${esc(o)}" ${(v || []).includes(o) ? 'checked' : ''}>${esc(o)}</label>`).join('')}</div></div>`;
     if (type === 'select') return `<label class="co-field"><span>${esc(label)}</span><select data-k="${k}" data-type="text">${opts.map((o) => `<option value="${esc(o)}" ${String(v ?? '') === o ? 'selected' : ''}>${esc(o || '—')}</option>`).join('')}</select></label>`;
     if (type === 'combo') return `<label class="co-field"><span>${esc(label)}</span><input type="text" list="${id}" data-k="${k}" data-type="text" value="${esc(v ?? '')}"><datalist id="${id}">${opts.map((o) => `<option value="${esc(o)}">`).join('')}</datalist></label>`;
@@ -843,26 +845,85 @@ function calModal({ heading, rec, fields, onDone }) {
     <div class="cm-grid">${fields.map(fld).join('')}</div>
     <div class="cm-foot">${isNew ? '<span></span>' : '<button class="btn danger" id="cm-del">Apagar</button>'}<div><button class="btn" id="cm-cancel">Cancelar</button> <button class="btn primary" id="cm-save">Guardar</button></div></div></div>`;
   document.body.appendChild(bg);
-  const close = () => bg.remove();
+  const added = [];            // ficheiros enviados nesta janela (apagados se cancelares)
+  const removedOld = [];       // ficheiros antigos removidos (apagados só ao guardar)
+  const anexos = () => (draft.dados.anexos ||= []);
+  let saved = false;
+  const dispose = () => bg.remove();
+  const close = () => { if (!saved && sb && added.length) sb.storage.from('anexos').remove(added.map((x) => x.path)).catch(() => {}); dispose(); };
   const first = bg.querySelector('input,select,textarea'); first?.focus();
   bg.addEventListener('mousedown', (e) => { if (e.target === bg) close(); });
   bg.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
   $('#cm-cancel', bg).addEventListener('click', close);
+  // links de referência
+  const links = $('[data-type="links"]', bg);
+  if (links) {
+    const showLinks = () => { $('#cm-links', bg).innerHTML = links.value.split('\n').map((x) => x.trim()).filter((x) => /^https?:\/\//i.test(x)).map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u.replace(/^https?:\/\/(www\.)?/i, '').slice(0, 60))} ↗</a>`).join(''); };
+    links.addEventListener('input', showLinks); showLinks();
+  }
+  // anexos (imagens)
+  const filesBox = $('#cm-files', bg);
+  if (filesBox) {
+    const draw = () => {
+      filesBox.innerHTML = anexos().length ? anexos().map((f, i) => `<div class="cm-file"><a href="${esc(f.url || f.dataUrl || '#')}" target="_blank" rel="noopener" title="${esc(f.nome)}"><span class="cm-thumb" style="background-image:url('${esc(f.url || f.dataUrl || '')}')"></span></a><span class="small">${esc(f.nome)}</span><button type="button" class="btn sm" data-rm="${i}">Remover</button></div>`).join('') : '<span class="muted small">Ainda sem anexos.</span>';
+      $$('[data-rm]', filesBox).forEach((b) => b.addEventListener('click', async () => {
+        const f = anexos().splice(+b.dataset.rm, 1)[0];
+        if (f?.path) { const ai = added.findIndex((x) => x.path === f.path); if (ai >= 0) { added.splice(ai, 1); sb?.storage.from('anexos').remove([f.path]).catch(() => {}); } else removedOld.push(f.path); }
+        draw();
+      }));
+    };
+    draw();
+    if (sb && anexos().some((f) => f.path)) {
+      sb.storage.from('anexos').createSignedUrls(anexos().filter((f) => f.path).map((f) => f.path), 3600).then(({ data }) => {
+        (data || []).forEach((d) => { const f = anexos().find((x) => x.path === d.path); if (f) f.url = d.signedUrl; }); draw();
+      }).catch(() => {});
+    }
+    $('#cm-file', bg).addEventListener('change', async (e) => {
+      for (const file of [...e.target.files]) {
+        if (!['image/png', 'image/jpeg'].includes(file.type)) { toast(`“${file.name}” não é PNG nem JPEG.`, true); continue; }
+        if (file.size > 5 * 1024 * 1024) { toast(`“${file.name}” tem mais de 5 MB.`, true); continue; }
+        try {
+          if (sb) {
+            const path = `${draft.id}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, '_')}`;
+            const up = await sb.storage.from('anexos').upload(path, file, { contentType: file.type });
+            if (up.error) throw up.error;
+            const sg = await sb.storage.from('anexos').createSignedUrl(path, 3600);
+            const f = { nome: file.name, path, url: sg.data?.signedUrl }; anexos().push(f); added.push(f);
+          } else {
+            if (file.size > 1024 * 1024) { toast('Em modo de teste local, o limite é 1 MB.', true); continue; }
+            const dataUrl = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); });
+            anexos().push({ nome: file.name, dataUrl });
+          }
+        } catch (err) { console.error(err); toast(`Não foi possível anexar “${file.name}”.`, true); }
+      }
+      e.target.value = ''; draw();
+    });
+  }
   $('#cm-save', bg).addEventListener('click', async () => {
     $$('[data-k]', bg).forEach((el) => {
       const k = el.dataset.k, t = el.dataset.type;
       if (t === 'multi') { if (!Array.isArray(draft.dados[k])) draft.dados[k] = []; return; }
-      const v = t === 'bool' ? el.checked : (t === 'date' ? (el.value || null) : el.value);
+      const v = t === 'bool' ? el.checked : (t === 'date' ? (el.value || null) : (t === 'links' ? el.value.split('\n').map((x) => x.trim()).filter(Boolean) : el.value));
       if (k === 'titulo') draft.titulo = v; else draft.dados[k] = v;
     });
     fields.filter((f) => f[2] === 'multi').forEach(([k]) => { draft.dados[k] = $$(`[data-k="${k}"]:checked`, bg).map((e) => e.value); });
     if (!String(draft.titulo || '').trim()) { toast('Preenche o título antes de guardar.', true); return; }
     draft.titulo = draft.titulo.trim();
-    try { await calSave(draft); close(); toast('Guardado.'); onDone?.(); } catch (e) { console.error(e); toast('Não foi possível guardar. Tenta outra vez.', true); }
+    if (draft.dados.anexos) draft.dados.anexos = draft.dados.anexos.map(({ nome, path, dataUrl }) => (path ? { nome, path } : { nome, dataUrl }));
+    try {
+      await calSave(draft); saved = true;
+      if (sb && removedOld.length) sb.storage.from('anexos').remove(removedOld).catch(() => {});
+      dispose(); toast('Guardado.'); onDone?.();
+    } catch (e) { console.error(e); toast('Não foi possível guardar. Tenta outra vez.', true); }
   });
   $('#cm-del', bg)?.addEventListener('click', async () => {
     if (!confirm('Apagar este registo? Esta ação não se pode desfazer.')) return;
-    try { await calDelete(draft.id); close(); toast('Apagado.'); onDone?.(); } catch (e) { console.error(e); toast('Não foi possível apagar.', true); }
+    try {
+      await calDelete(draft.id);
+      const paths = (rec.dados?.anexos || []).map((f) => f.path).filter(Boolean);
+      if (sb && paths.length) sb.storage.from('anexos').remove(paths).catch(() => {});
+      saved = true; dispose(); toast('Apagado.'); onDone?.();
+    } catch (e) { console.error(e); toast('Não foi possível apagar.', true); }
   });
 }
 const calNew = (tipo, dados = {}, titulo = '') => ({ id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())), tipo, titulo, dados, created_at: new Date().toISOString() });
@@ -963,25 +1024,26 @@ function editData(rec) {
     ['data', 'Dia no calendário (ou primeiro dia)', 'date'],
     ['data_fim', 'Último dia (só se for um período)', 'date'],
     ['recorrente', 'Repete todos os anos', 'bool'],
-    ['descritivo', 'Descrição (opcional)', 'longtext'],
     ['exemplos', 'Exemplos de adaptação e utilização', 'longtext'],
+    ['links', 'Links de referência (conteúdos que posso adaptar)', 'links'],
+    ['anexos', 'Anexos (imagens PNG ou JPEG)', 'files'],
   ] });
 }
 function calDiaTxt(r) {
   const d = r.dados?.data; if (!d) return '—';
   const f = r.dados.data_fim, rec = r.dados.recorrente;
-  const dt = (s, y) => new Date(s + 'T12:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', ...(y ? { year: 'numeric' } : {}) });
-  const txt = f ? `${new Date(d + 'T12:00').getDate()} a ${dt(f, !rec)}` : dt(d, !rec);
-  return esc(txt) + (rec ? ' <span class="chip gray">todos os anos</span>' : '');
+  const dt = (s) => new Date(s + 'T12:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', ...(rec ? {} : { year: 'numeric' }) });
+  return esc(f ? `${new Date(d + 'T12:00').getDate()} a ${dt(f)}` : dt(d));
 }
 function drawCalDates() {
   const rows = calOf('data').sort((a, b) => String(a.dados?.data || '9999').slice(5).localeCompare(String(b.dados?.data || '9999').slice(5)));
   $('#cal-body').innerHTML = `
     <div class="co-bar"><span class="muted">${rows.length} ${rows.length === 1 ? 'data' : 'datas'} · aparecem no calendário com 📌</span><button class="btn primary" id="cd-new">+ Nova data</button></div>
-    ${rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl"><thead><tr><th>Data / evento</th><th>Dia</th><th>Exemplos de adaptação e utilização</th></tr></thead><tbody>
-      ${rows.map((r) => `<tr class="pa-row" data-id="${r.id}"><td><strong>${esc(r.titulo)}</strong></td>
+    ${rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl"><colgroup><col style="width:20%"><col style="width:13%"><col><col style="width:12%"></colgroup><thead><tr><th>Data / evento</th><th>Dia</th><th>Exemplos de adaptação e utilização</th><th>Referências</th></tr></thead><tbody>
+      ${rows.map((r) => `<tr class="pa-row cal-row" data-id="${r.id}"><td><strong class="cal-clamp">${esc(r.titulo)}</strong></td>
         <td>${calDiaTxt(r)}</td>
-        <td class="pa-oferta" title="${esc(r.dados?.exemplos || '')}">${esc(r.dados?.exemplos || '—')}</td></tr>`).join('')}</tbody></table></div>`
+        <td><span class="cal-clamp cal-ex" title="${esc(r.dados?.exemplos || '')}">${esc(r.dados?.exemplos || '—')}</span></td>
+        <td>${(r.dados?.links || []).length ? `<span class="chip gray">🔗 ${r.dados.links.length}</span>` : ''}${(r.dados?.anexos || []).length ? `<span class="chip gray">🖼️ ${r.dados.anexos.length}</span>` : ''}${!(r.dados?.links || []).length && !(r.dados?.anexos || []).length ? '—' : ''}</td></tr>`).join('')}</tbody></table></div>`
     : '<div class="card empty"><div class="big">🗓️</div><h2>Ainda não há datas relevantes</h2><p>Regista aqui as datas que importam para o teu conteúdo (Dia da Mãe, Black Friday, Dia do Trabalhador…) com ideias de como as aproveitar.</p></div>'}`;
   $('#cd-new').addEventListener('click', () => editData(calNew('data', { recorrente: true })));
   $$('.pa-row').forEach((r) => r.addEventListener('click', () => editData(CA.list.find((x) => x.id === r.dataset.id))));

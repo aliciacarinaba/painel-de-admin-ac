@@ -300,3 +300,12 @@ create index if not exists calendario_tipo on calendario (tipo);
 alter table calendario enable row level security;
 drop policy if exists "admin_total" on calendario;
 create policy "admin_total" on calendario for all to authenticated using (true) with check (true);
+
+-- ---------- 10) ANEXOS (imagens PNG/JPEG, ex.: nas Datas Relevantes) ----------
+-- Bucket privado: só utilizadores autenticados leem e escrevem (limite 5 MB por ficheiro).
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('anexos', 'anexos', false, 5242880, array['image/png','image/jpeg'])
+on conflict (id) do update set public = false, file_size_limit = 5242880, allowed_mime_types = array['image/png','image/jpeg'];
+drop policy if exists "anexos_admin_total" on storage.objects;
+create policy "anexos_admin_total" on storage.objects for all to authenticated
+  using (bucket_id = 'anexos') with check (bucket_id = 'anexos');

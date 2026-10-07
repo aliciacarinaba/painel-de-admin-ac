@@ -436,3 +436,18 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .au-pill.active { background: var(--accent); color: #fff; border: 0; }
 .cal-sum { justify-content: flex-end; margin: 0 0 12px; display: flex; gap: 6px; flex-wrap: wrap; }
 .cal-tbl .pa-oferta { max-width: 560px; }
+.cal-tbl { table-layout: fixed; }
+.cal-tbl td, .cal-tbl th { white-space: normal; }
+.cal-tbl .cal-row { height: 124px; }
+.cal-tbl .cal-row td { vertical-align: middle; }
+.cal-clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; line-height: 1.45; }
+.cal-ex { -webkit-line-clamp: 5; font-size: 14px; }
+.cm-linklist { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.cm-linklist a { color: var(--accent); font-weight: 600; font-size: 13px; text-decoration: none; word-break: break-all; }
+.cm-linklist a:hover { text-decoration: underline; }
+.cm-files { display: flex; flex-wrap: wrap; gap: 12px; }
+.cm-file { display: flex; flex-direction: column; gap: 6px; width: 110px; }
+.cm-file .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; color: var(--text); }
+.cm-thumb { display: block; width: 110px; height: 110px; border-radius: 12px; background: var(--track) center / cover no-repeat; border: 1px solid var(--border); }
+.cm-filebar { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+.cm-attach { cursor: pointer; }
