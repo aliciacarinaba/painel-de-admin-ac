@@ -455,3 +455,13 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .cal-tbl .cal-row td { padding-top: 0; padding-bottom: 0; }
 .cal-clamp { -webkit-line-clamp: 2; }
 .cal-ex { -webkit-line-clamp: 2; }
+/* Todas as linhas de tabelas e listas com a mesma altura (referência: tabela de Parcerias = 56 px) */
+:root { --row-h: 56px; }
+.tbl tbody tr, .tbl .cal-row, .tbl .pa-row { height: var(--row-h); }
+.tbl tbody td { padding-top: 0; padding-bottom: 0; height: var(--row-h); box-sizing: border-box; }
+.tbl th { height: 48px; }
+.auto-item { height: var(--row-h); min-height: var(--row-h); box-sizing: border-box; padding-top: 0; padding-bottom: 0; }
+.auto-item strong { margin-bottom: 2px; line-height: 1.25; }
+.auto-item .chip { margin-top: 0; margin-bottom: 0; }
+.cal-tbl .cal-row, .cal-tbl .cal-row td { height: var(--row-h); }
+.cal-ex, .cal-clamp { line-height: 1.35; }
