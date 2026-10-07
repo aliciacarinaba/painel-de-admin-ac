@@ -1383,7 +1383,7 @@ const PA_SECTIONS = [
     ['canal', 'Canal do contacto', 'combo', PA_CANAIS],
     ['contacto', 'Contacto (@, e-mail ou telefone)', 'text'],
   ]],
-  ['Oferta Inicial', null],
+  ['Oferta', null],
   ['Proposta de Seguimento', 'seg'],
   ['O que tenho de fazer', [
     ['tarefas', 'O que é necessário da minha parte (um por linha)', 'list'],
