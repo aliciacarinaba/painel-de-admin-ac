@@ -1384,6 +1384,7 @@ const PA_SECTIONS = [
     ['contacto', 'Contacto (@, e-mail ou telefone)', 'text'],
   ]],
   ['Oferta Inicial', null],
+  ['Proposta de Seguimento', 'seg'],
   ['O que tenho de fazer', [
     ['tarefas', 'O que é necessário da minha parte (um por linha)', 'list'],
     ['data_inicio', 'Data de início', 'date'],
@@ -1547,13 +1548,13 @@ function paMigrate(c) {
     c.dados.itens.push({ produto: pag === 'Permuta' ? (c.dados.permuta || '') : '', pag, val: c.valor ?? null, forma: c.forma_pagamento || '', estado_pag: c.pagamento_estado || '', data_pag: c.data_pagamento || null, prazo: c.dados.prazo_pagamento || '', extra: pag === 'Permuta' && c.valor ? 'Sim' : '' });
   }
 }
-function paOfertaHTML(c) {
-  const its = c.dados?.itens || [];
-  return `<div class="grid cols-3 co-props">${paField(c, ['oferta', 'Oferta', 'longtext'])}</div>
-    ${its.map((it, n) => `<div class="pa-item" data-item="${n}"><div class="pa-item-h"><strong>${esc(it.produto || `Produto ou serviço ${n + 1}`)}</strong><button class="btn danger" data-del-item="${n}">Remover</button></div>
+function paOfertaHTML(c, seg) {
+  const list = seg ? 'itens_seg' : 'itens', its = c.dados?.[list] || [];
+  return `<div class="grid cols-3 co-props">${paField(c, [seg ? 'oferta_seg' : 'oferta', 'Oferta', 'longtext'])}</div>
+    ${its.map((it, n) => `<div class="pa-item" data-item="${n}" data-list="${list}"><div class="pa-item-h"><strong>${esc(it.produto || `Produto ou serviço ${n + 1}`)}</strong><button class="btn danger" data-del-item="${n}" data-list="${list}">Remover</button></div>
       <div class="grid cols-3 co-props">${paItemFields(it).map((f) => paField({ dados: it }, f)).join('')}</div></div>`).join('')}
-    <div class="pa-item-add"><button class="btn" id="pa-add-item">+ Adicionar produto ou serviço</button></div>
-    <div class="grid cols-3 co-props">${paField(c, ['fatura', 'Fatura emitida', 'bool'])}</div>`;
+    <div class="pa-item-add"><button class="btn" data-add-item="${list}">+ Adicionar produto ou serviço</button></div>
+    <div class="grid cols-3 co-props">${paField(c, [seg ? 'fatura_seg' : 'fatura', 'Fatura emitida', 'bool'])}</div>`;
 }
 
 function paField(c, [k, label, type, opts]) {
@@ -1578,7 +1579,7 @@ function drawPartnerDetail() {
     </div>
     <div class="card co-head"><input id="pa-nome" type="text" class="co-title" placeholder="Nome da marca ou pessoa" value="${esc(c.nome)}">
       <div class="grid cols-3 co-props">${PA_SECTIONS[0][1].map((f) => paField(c, f)).join('')}</div></div>
-    ${PA_SECTIONS.slice(1).map(([t, fields]) => `<div class="card co-sec pa-sec"><h3>${esc(t)}</h3>${fields ? `<div class="grid cols-3 co-props">${fields.map((f) => paField(c, f)).join('')}</div>` : paOfertaHTML(c)}</div>`).join('')}`;
+    ${PA_SECTIONS.slice(1).map(([t, fields]) => `<div class="card co-sec pa-sec"><h3>${esc(t)}</h3>${Array.isArray(fields) ? `<div class="grid cols-3 co-props">${fields.map((f) => paField(c, f)).join('')}</div>` : fields === 'seg' ? `<div class="grid cols-3 co-props">${paField(c, ['tem_seguimento', 'Há uma proposta de seguimento', 'bool'])}</div>${c.dados?.tem_seguimento ? paOfertaHTML(c, true) : ''}` : paOfertaHTML(c)}</div>`).join('')}`;
   const mark = () => { PA.dirty = true; $('#pa-state').textContent = 'Alterações por guardar'; };
   $('#pa-nome').addEventListener('input', (e) => { c.nome = e.target.value; mark(); });
   $$('[data-k]').forEach((el) => {
@@ -1590,14 +1591,15 @@ function drawPartnerDetail() {
       else if (t === 'date') v = el.value || null;
       else v = el.value;
       const box = el.closest('[data-item]');
-      if (box) { c.dados.itens[+box.dataset.item][el.dataset.k] = v; paSyncResumo(c); } else paSet(c, el.dataset.k, v);
+      if (box) { c.dados[box.dataset.list][+box.dataset.item][el.dataset.k] = v; if (box.dataset.list === 'itens') paSyncResumo(c); } else paSet(c, el.dataset.k, v);
+      if (el.dataset.k === 'tem_seguimento' && v && !(c.dados.itens_seg || []).length) c.dados.itens_seg = [{ pag: '' }];
       mark();
-      if (['pag', 'extra', 'm_din', 'm_per', 'm_com'].includes(el.dataset.k)) drawPartnerDetail();
+      if (['tem_seguimento', 'pag', 'extra', 'm_din', 'm_per', 'm_com'].includes(el.dataset.k)) drawPartnerDetail();
     };
     el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', upd);
   });
-  $('#pa-add-item')?.addEventListener('click', () => { (c.dados.itens ||= []).push({ pag: '' }); mark(); drawPartnerDetail(); });
-  $$('[data-del-item]').forEach((b) => b.addEventListener('click', () => { c.dados.itens.splice(+b.dataset.delItem, 1); paSyncResumo(c); mark(); drawPartnerDetail(); }));
+  $$('[data-add-item]').forEach((b) => b.addEventListener('click', () => { (c.dados[b.dataset.addItem] ||= []).push({ pag: '' }); mark(); drawPartnerDetail(); }));
+  $$('[data-del-item]').forEach((b) => b.addEventListener('click', () => { c.dados[b.dataset.list].splice(+b.dataset.delItem, 1); if (b.dataset.list === 'itens') paSyncResumo(c); mark(); drawPartnerDetail(); }));
   $('#pa-back').addEventListener('click', closePartner);
   $('#pa-save').addEventListener('click', savePartner);
   $('#pa-del')?.addEventListener('click', async () => {
