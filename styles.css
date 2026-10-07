@@ -354,3 +354,25 @@ textarea.url-box { min-height: 64px; word-break: break-all; font-family: ui-mono
 .co-sec summary { cursor: pointer; font-weight: 700; font-size: 16px; }
 .co-sec .grid { margin-top: 14px; }
 input[type=number] { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--text); font: inherit; outline: none; }
+
+/* ---------- Uniformidade: mesma altura em campos, seletores, botões, separadores, linhas e quadros ---------- */
+:root { --ctl-h: 44px; --ctl-h-sm: 36px; --row-h: 56px; }
+input[type=text], input[type=email], input[type=password], input[type=url], input[type=number], input[type=search], input[type=tel], input[type=date], select {
+  height: var(--ctl-h); box-sizing: border-box; padding-top: 0; padding-bottom: 0; line-height: 1.2; font-size: 15px;
+}
+select { -webkit-appearance: none; appearance: none; padding-right: 38px; cursor: pointer;
+  background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%236E5A5C' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center; }
+input[type=number] { -moz-appearance: textfield; }
+.btn { min-height: var(--ctl-h); display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; padding-top: 0; padding-bottom: 0; font-size: 15px; }
+.btn.sm { min-height: var(--ctl-h-sm); }
+.tab { min-height: var(--ctl-h); display: inline-flex; align-items: center; padding-top: 0; padding-bottom: 0; font-size: 15px; }
+.pills button, .au-pill { min-height: var(--ctl-h); display: inline-flex; align-items: center; padding-top: 0; padding-bottom: 0; }
+.tbl th { height: 48px; box-sizing: border-box; }
+.tbl tbody tr { height: var(--row-h); }
+.tbl td { padding-top: 0; padding-bottom: 0; }
+.auto-item { min-height: 76px; box-sizing: border-box; padding-top: 0; padding-bottom: 0; }
+.grid { align-items: stretch; }
+.grid > .card, .grid > button.card { height: auto; align-self: stretch; box-sizing: border-box; }
+.co-field { height: 100%; }
+.co-field textarea { flex: 1; min-height: 150px; }
+input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }

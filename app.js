@@ -975,8 +975,8 @@ function drawCourseDetail() {
     ${COURSE_SECTIONS.map(([titulo, fields], i) => `
       <details class="card co-sec" ${i === 0 ? 'open' : ''}><summary>${esc(titulo)}<span class="muted small" data-fill="${i}"></span></summary>
         <div class="grid cols-2">${fields.map(([k, label, type, hint]) => `
-          <label class="co-field">${esc(label)}${type === 'list' ? ' <small class="muted">(um por linha)</small>' : ''}
-            <textarea data-k="${k}" data-type="${type}" rows="${type === 'list' ? 5 : 4}" placeholder="${esc(hint)}">${esc(val(k, type))}</textarea></label>`).join('')}</div>
+          <label class="co-field"><span>${esc(label)}${type === 'list' ? ' <small class="muted">(um por linha)</small>' : ''}</span>
+            <textarea data-k="${k}" data-type="${type}" placeholder="${esc(hint)}">${esc(val(k, type))}</textarea></label>`).join('')}</div>
       </details>`).join('')}`;
   const mark = () => { CO.dirty = true; $('#co-state').textContent = 'Alterações por guardar'; };
   const bind = (id, fn) => $(id).addEventListener('input', () => { fn($(id).value); mark(); });
@@ -985,14 +985,11 @@ function drawCourseDetail() {
   $('#co-status').addEventListener('change', () => { c.status = $('#co-status').value; mark(); });
   $('#co-venda').addEventListener('change', () => { c.estado_venda = $('#co-venda').value; mark(); });
   $$('.co-field textarea').forEach((t) => {
-    const fit = () => { t.style.height = 'auto'; t.style.height = Math.max(90, t.scrollHeight + 2) + 'px'; };
-    fit();
     t.addEventListener('input', () => {
-      fit(); mark();
+      mark();
       d[t.dataset.k] = t.dataset.type === 'list' ? t.value.split('\n').map((x) => x.trim()).filter(Boolean) : t.value;
     });
   });
-  $$('.co-sec').forEach((s) => s.addEventListener('toggle', () => $$('.co-field textarea', s).forEach((t) => { t.style.height = 'auto'; t.style.height = Math.max(90, t.scrollHeight + 2) + 'px'; })));
   $('#co-back').addEventListener('click', closeCourse);
   $('#co-save').addEventListener('click', saveCourse);
   $('#co-del')?.addEventListener('click', async () => {
