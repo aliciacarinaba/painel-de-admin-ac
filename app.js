@@ -1826,12 +1826,13 @@ document.addEventListener('click', (e) => {
     document.body.appendChild(pop);
     const r = sel.getBoundingClientRect(), h = Math.min(pop.scrollHeight, 320);
     const below = innerHeight - r.bottom - 12, up = below < h && r.top > below;
-    pop.style.minWidth = r.width + 'px';
+    pop.style.width = r.width + 'px';
     pop.style.left = Math.max(8, Math.min(r.left, innerWidth - pop.offsetWidth - 8)) + 'px';
     pop.style[up ? 'bottom' : 'top'] = (up ? innerHeight - r.top + 6 : r.bottom + 6) + 'px';
     pop.style.maxHeight = Math.max(140, Math.min(320, up ? r.top - 16 : below)) + 'px';
     pop.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
   };
+  ['pointerdown', 'mouseup', 'click'].forEach((t) => document.addEventListener(t, (e) => { if (e.target.closest?.('select')) e.preventDefault(); }, true));
   document.addEventListener('mousedown', (e) => {
     const sel = e.target.closest?.('select');
     if (sel && !sel.disabled) { e.preventDefault(); sel.focus(); cur === sel ? close() : open(sel); return; }
