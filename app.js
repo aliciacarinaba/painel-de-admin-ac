@@ -1508,11 +1508,15 @@ function closePartner() {
 // "Oferta Inicial": uma ou mais linhas (produto/serviço), cada uma com o seu tipo de pagamento e valores
 const PA_ESTADO_PAG = ['', 'Por pagar', 'Parcial', 'Pago'];
 function paItemFields(it, multi) {
-  const estadoData = [['estado_pag', 'Estado do pagamento', 'select', PA_ESTADO_PAG], ['data_pag', 'Data prevista de pagamento', 'date']];
-  const dinheiro = (lbl) => [['val', lbl, 'number'], ['forma', 'Forma de Pagamento', 'select', ['', ...PA_FORMAS]], ['freq', 'Periodicidade de Pagamentos', 'select', PA_FREQ], ...estadoData];
+  const estado = [['estado_pag', 'Estado do pagamento', 'select', PA_ESTADO_PAG]];
+  // Data prevista só no pagamento unitário; nos restantes pergunta-se o dia de pagamento
+  const quando = (freq, chave) => (freq === 'Pagamento Unitário' ? [[chave === 'cm' ? 'cm_data' : 'data_pag', 'Data prevista de pagamento', 'date']]
+    : freq === 'Mensal' ? [[chave === 'cm' ? 'cm_dia' : 'dia_pag', 'Dia do mês de pagamento', 'number']]
+    : freq === 'Trimestral' ? [[chave === 'cm' ? 'cm_dia' : 'dia_pag', 'Dia do mês de pagamento (em cada trimestre)', 'number']] : []);
+  const dinheiro = (lbl) => [['val', lbl, 'number'], ['forma', 'Forma de Pagamento', 'select', ['', ...PA_FORMAS]], ['freq', 'Periodicidade de Pagamentos', 'select', PA_FREQ], ...quando(it.freq, 'd'), ...estado];
   const permuta = (extra) => [['val_oferta', 'Valor da oferta (€)', 'number'],
     ...(extra ? [['extra', 'Existe pagamento além da oferta?', 'select', ['', 'Sim', 'Não']], ...(it.extra === 'Sim' ? dinheiro('Valor do pagamento (€)') : [])] : [])];
-  const comissao = (estado) => [['comissao', 'Valor da comissão (€ ou %)', 'text'], ['cm_forma', 'Forma de Pagamento', 'select', ['', ...PA_FORMAS]], ['cm_freq', 'Periodicidade de Pagamentos', 'select', PA_FREQ], ...(estado ? estadoData : [])];
+  const comissao = (comEstado) => [['comissao', 'Valor da comissão (€ ou %)', 'text'], ['cm_forma', 'Forma de Pagamento', 'select', ['', ...PA_FORMAS]], ['cm_freq', 'Periodicidade de Pagamentos', 'select', PA_FREQ], ...quando(it.cm_freq, 'cm'), ...(comEstado ? estado : [])];
   const comPermuta = it.pag === 'Permuta' || (it.pag === 'Misto' && it.m_per);
   const f = [['pag', 'Tipo de pagamento', 'select', ['', ...PA_PAGAMENTO]]];
   if (multi || comPermuta) f.push(['produto', comPermuta && !multi ? 'Produto ou serviço oferecido' : 'Produto ou serviço', 'text']);
@@ -1571,7 +1575,7 @@ function paField(c, [k, label, type, opts]) {
   if (type === 'list') return `<label class="co-field pa-wide">${lbl}<textarea data-k="${k}" data-type="list" placeholder="Ex.: 2 reels, 3 stories com link, 1 post de carrossel">${esc(Array.isArray(v) ? v.join('\n') : '')}</textarea></label>`;
   if (type === 'select') return `<label class="co-field">${lbl}<select data-k="${k}" data-type="text">${opts.map((o) => { const [val, tx] = Array.isArray(o) ? o : [o, o || '—']; return `<option value="${esc(val)}" ${String(v ?? '') === val ? 'selected' : ''}>${esc(tx)}</option>`; }).join('')}</select></label>`;
   if (type === 'combo') return `<label class="co-field">${lbl}<input type="text" list="pa-dl-${k}" data-k="${k}" data-type="text" value="${esc(v ?? '')}"><datalist id="pa-dl-${k}">${opts.map((o) => `<option value="${esc(o)}">`).join('')}</datalist></label>`;
-  return `<label class="co-field">${lbl}<input type="${type === 'number' ? 'number' : type}" ${type === 'number' ? 'min="0" step="0.01"' : ''} data-k="${k}" data-type="${type}" value="${esc(v ?? '')}"></label>`;
+  return `<label class="co-field">${lbl}<input type="${type === 'number' ? 'number' : type}" ${type === 'number' ? (/dia/.test(k) ? 'min="1" max="31" step="1"' : 'min="0" step="0.01"') : ''} data-k="${k}" data-type="${type}" value="${esc(v ?? '')}"></label>`;
 }
 
 function drawPartnerDetail() {
@@ -1599,7 +1603,7 @@ function drawPartnerDetail() {
       if (box) { c.dados[box.dataset.list][+box.dataset.item][el.dataset.k] = v; if (box.dataset.list === 'itens') paSyncResumo(c); } else paSet(c, el.dataset.k, v);
       if (el.dataset.k === 'tem_seguimento' && v && !(c.dados.itens_seg || []).length) c.dados.itens_seg = [{ pag: '' }];
       mark();
-      if (['tem_seguimento', 'pag', 'extra', 'm_din', 'm_per', 'm_com'].includes(el.dataset.k)) drawPartnerDetail();
+      if (['tem_seguimento', 'pag', 'extra', 'm_din', 'm_per', 'm_com', 'freq', 'cm_freq'].includes(el.dataset.k)) drawPartnerDetail();
     };
     el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', upd);
   });
