@@ -1098,12 +1098,12 @@ function editRef(rec) {
   ] });
 }
 function drawCalRefs() {
+  if (!CA.refCat) CA.refCat = CAL_REF_CATS[0];
   const items = calOf('referencia');
   const counts = Object.fromEntries(CAL_REF_CATS.map((c) => [c, items.filter((i) => i.dados?.categoria === c).length]));
   const rows = items.filter((i) => !CA.refCat || i.dados?.categoria === CA.refCat);
   $('#cal-body').innerHTML = `
     <div class="pa-pipe">
-      <button class="au-pill ${CA.refCat === '' ? 'active' : ''}" data-c="">Tudo</button>
       ${CAL_REF_CATS.map((c) => `<button class="au-pill ${CA.refCat === c ? 'active' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}
     </div>
     <div class="co-bar"><span></span><button class="btn primary" id="cr-new">${CA.refCat === 'Criadores' ? '+ Novo criador' : '+ Nova referência'}</button></div>
