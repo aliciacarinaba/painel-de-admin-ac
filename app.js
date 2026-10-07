@@ -768,19 +768,27 @@ function renderBranding() {
 async function renderGeneral() {
   const v = $('#home-body');
   v.innerHTML = `
-    <div class="grid cols-3">
+    <div class="grid cols-4">
       <div class="card hl"><div class="stat-l">Leads captados</div><div class="stat-n" id="n-leads">0</div></div>
       <div class="card"><div class="stat-l">Automações ativas</div><div class="stat-n" id="n-autos">0</div></div>
       <div class="card"><div class="stat-l">DMs enviadas (7 dias)</div><div class="stat-n" id="n-dms">0</div></div>
+      <div class="card"><div class="stat-l">Parcerias ativas</div><div class="stat-n" id="n-pars">0</div></div>
     </div>`;
   const since = new Date(Date.now() - 7 * 864e5).toISOString();
-  const [leads, autos, dms] = await Promise.all([
+  const parCount = async () => {
+    try {
+      if (sb) { const { count } = await sb.from('parcerias').select('id', { count: 'exact', head: true }).in('estado', PA_ATIVO); return count || 0; }
+      return JSON.parse(localStorage.getItem(LS_PA) || '[]').filter((c) => PA_ATIVO.includes(c.estado)).length;
+    } catch { return 0; }
+  };
+  const [leads, autos, dms, pars] = await Promise.all([
     safeCount('ig_leads'),
     safeCount('ig_automations', (q) => q.eq('active', true)),
     safeCount('ig_deliveries', (q) => q.eq('status', 'ok').gte('ts', since)),
+    parCount(),
   ]);
   if (state.route !== 'home' || !$('#n-leads')) return;
-  $('#n-leads').textContent = leads; $('#n-autos').textContent = autos; $('#n-dms').textContent = dms;
+  $('#n-leads').textContent = leads; $('#n-autos').textContent = autos; $('#n-dms').textContent = dms; $('#n-pars').textContent = pars;
 }
 
 // ---------- Calendário ----------
