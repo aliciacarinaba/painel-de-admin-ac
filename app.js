@@ -1035,7 +1035,7 @@ const PA_SECTIONS = [
     ['oferta', 'Oferta (o que me propõem ou o que proponho)', 'longtext'],
     ['pagamento_tipo', 'Tipo de pagamento', 'select', ['', ...PA_PAGAMENTO]],
     ['valor', 'Valor (€)', 'number'],
-    ['forma_pagamento', 'Forma de pagamento (se for em dinheiro)', 'select', ['', ...PA_FORMAS]],
+    ['forma_pagamento', 'Forma de pagamento', 'select', ['', ...PA_FORMAS]],
     ['pagamento_estado', 'Estado do pagamento', 'select', ['', 'Por pagar', 'Parcial', 'Pago', 'N/A']],
     ['data_pagamento', 'Data prevista de pagamento', 'date'],
     ['prazo_pagamento', 'Condições / prazo de pagamento', 'text'],
