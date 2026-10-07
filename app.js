@@ -1515,7 +1515,7 @@ function paItemFields(it, multi) {
     : freq === 'Trimestral' ? [[chave === 'cm' ? 'cm_dia' : 'dia_pag', 'Dia do mês de pagamento (em cada trimestre)', 'number']] : []);
   const dinheiro = (lbl) => [['val', lbl, 'number'], ['forma', 'Forma de Pagamento', 'select', ['', ...PA_FORMAS]], ['freq', 'Periodicidade de Pagamentos', 'select', PA_FREQ], ...quando(it.freq, 'd'), ...estado];
   const permuta = (extra) => [['val_oferta', 'Valor da oferta (€)', 'number'],
-    ...(extra ? [['extra', 'Existe pagamento além da oferta?', 'select', ['', 'Sim', 'Não']], ...(it.extra === 'Sim' ? dinheiro('Valor do pagamento (€)') : [])] : [])];
+    ...(extra ? [['extra', 'Existe pagamento além da oferta?', 'select', ['', 'Sim', 'Não']], ...(it.extra === 'Sim' ? [['|'], ...dinheiro('Valor do pagamento (€)')] : [])] : [])];
   const comissao = (comEstado) => [['comissao', 'Valor da comissão (€ ou %)', 'text'], ['cm_forma', 'Forma de Pagamento', 'select', ['', ...PA_FORMAS]], ['cm_freq', 'Periodicidade de Pagamentos', 'select', PA_FREQ], ...quando(it.cm_freq, 'cm'), ...(comEstado ? estado : [])];
   const comPermuta = it.pag === 'Permuta' || (it.pag === 'Misto' && it.m_per);
   const f = [['pag', 'Tipo de pagamento', 'select', ['', ...PA_PAGAMENTO]]];
@@ -1569,6 +1569,7 @@ function paOfertaHTML(c, seg) {
 function paField(c, [k, label, type, opts]) {
   const v = paGet(c, k);
   const lbl = label ? `<span>${esc(label)}</span>` : '';
+  if (k === '|') return '<div class="pa-wide"></div>';
   if (k === '#') return `<h4 class="pa-sub pa-wide">${esc(label)}</h4>`;
   if (type === 'bool') return `<label class="co-field pa-bool"><input type="checkbox" data-k="${k}" data-type="bool" ${v ? 'checked' : ''}><span>${esc(label)}</span></label>`;
   if (type === 'longtext') return `<label class="co-field pa-wide">${lbl}<textarea data-k="${k}" data-type="text">${esc(v ?? '')}</textarea></label>`;
