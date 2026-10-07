@@ -1805,6 +1805,53 @@ document.addEventListener('click', (e) => {
   document.body.appendChild(bg);
 });
 
+// Listas de seleção no estilo da marca (substituem a lista nativa do browser)
+(() => {
+  let pop = null, cur = null, t0 = 0;
+  const close = () => { pop?.remove(); pop = null; cur = null; };
+  const open = (sel) => {
+    close(); cur = sel; t0 = Date.now();
+    pop = document.createElement('div'); pop.className = 'sel-pop'; pop.setAttribute('role', 'listbox');
+    [...sel.options].forEach((o, i) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'sel-opt' + (i === sel.selectedIndex ? ' on' : '');
+      b.textContent = o.textContent || '—'; b.disabled = o.disabled; b.setAttribute('role', 'option');
+      b.addEventListener('mousedown', (e) => e.preventDefault());
+      b.addEventListener('click', () => {
+        const changed = sel.selectedIndex !== i; sel.selectedIndex = i; close();
+        if (changed) { sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); }
+        sel.focus();
+      });
+      pop.appendChild(b);
+    });
+    document.body.appendChild(pop);
+    const r = sel.getBoundingClientRect(), h = Math.min(pop.scrollHeight, 320);
+    const below = innerHeight - r.bottom - 12, up = below < h && r.top > below;
+    pop.style.minWidth = r.width + 'px';
+    pop.style.left = Math.max(8, Math.min(r.left, innerWidth - pop.offsetWidth - 8)) + 'px';
+    pop.style[up ? 'bottom' : 'top'] = (up ? innerHeight - r.top + 6 : r.bottom + 6) + 'px';
+    pop.style.maxHeight = Math.max(140, Math.min(320, up ? r.top - 16 : below)) + 'px';
+    pop.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
+  };
+  document.addEventListener('mousedown', (e) => {
+    const sel = e.target.closest?.('select');
+    if (sel && !sel.disabled) { e.preventDefault(); sel.focus(); cur === sel ? close() : open(sel); return; }
+    if (pop && !e.target.closest('.sel-pop')) close();
+  }, true);
+  document.addEventListener('keydown', (e) => {
+    const sel = e.target.closest?.('select');
+    if (pop && e.key === 'Escape') { e.stopPropagation(); close(); return; }
+    if (pop && ['ArrowDown', 'ArrowUp'].includes(e.key)) {
+      e.preventDefault(); const o = [...pop.querySelectorAll('.sel-opt:not(:disabled)')]; if (!o.length) return;
+      const i = o.findIndex((x) => x.classList.contains('hv') ) ; o.forEach((x) => x.classList.remove('hv'));
+      const n = o[(i + (e.key === 'ArrowDown' ? 1 : -1) + o.length) % o.length]; n.classList.add('hv'); n.scrollIntoView({ block: 'nearest' }); return;
+    }
+    if (pop && e.key === 'Enter') { const h = pop.querySelector('.hv'); if (h) { e.preventDefault(); h.click(); } else close(); return; }
+    if (sel && ['ArrowDown', 'ArrowUp', ' ', 'Enter'].includes(e.key) && !sel.disabled) { e.preventDefault(); open(sel); }
+  }, true);
+  window.addEventListener('resize', close);
+  document.addEventListener('scroll', (e) => { if (pop && Date.now() - t0 > 250 && !e.target.closest?.('.sel-pop')) close(); }, true);
+})();
+
 // Número com separador de milhares em português (ex: 1.721)
 const fmt = (n) => Number(n).toLocaleString('pt-PT');
 
