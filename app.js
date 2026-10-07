@@ -513,8 +513,7 @@ function auDizem(d) {
         ${cur.topics.length ? hbars(cur.topics.map((t) => ({ label: L[t.key], value: t.n }))) : '<p class="muted">Ainda não há comentários suficientes desta categoria para identificar temas.</p>'}</div>
       <div class="card"><h3>Exemplos reais</h3>
         ${cur.samples.length ? `<div class="au-quotes">${cur.samples.slice(0, 6).map((s) => `<blockquote>${esc(s)}</blockquote>`).join('')}</div>` : '<p class="muted">Sem exemplos nesta categoria. Faz sentido: quanto menos comentários, menos padrões.</p>'}</div>
-    </div>
-    <p class="muted small">Análise por palavras-chave sobre os comentários públicos dos teus posts. Os nomes de quem comenta não são guardados nesta análise.</p>`;
+    </div>`;
 }
 
 function auHeat(heat) {
