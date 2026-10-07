@@ -769,10 +769,10 @@ async function renderGeneral() {
   const v = $('#home-body');
   v.innerHTML = `
     <div class="grid cols-4">
-      <div class="card hl"><div class="stat-l">Leads captados</div><div class="stat-n" id="n-leads">0</div></div>
+      <div class="card hl"><div class="stat-l">Parcerias ativas</div><div class="stat-n" id="n-pars">0</div></div>
+      <div class="card"><div class="stat-l">Leads captados</div><div class="stat-n" id="n-leads">0</div></div>
       <div class="card"><div class="stat-l">Automações ativas</div><div class="stat-n" id="n-autos">0</div></div>
       <div class="card"><div class="stat-l">DMs enviadas (7 dias)</div><div class="stat-n" id="n-dms">0</div></div>
-      <div class="card"><div class="stat-l">Parcerias ativas</div><div class="stat-n" id="n-pars">0</div></div>
     </div>`;
   const since = new Date(Date.now() - 7 * 864e5).toISOString();
   const parCount = async () => {
