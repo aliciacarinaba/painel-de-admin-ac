@@ -1506,7 +1506,7 @@ function closePartner() {
 
 
 // "Oferta Inicial": uma ou mais linhas (produto/serviço), cada uma com o seu tipo de pagamento e valores
-const PA_ESTADO_PAG = ['', 'Por pagar', 'Parcial', 'Pago', 'N/A'];
+const PA_ESTADO_PAG = ['', 'Por pagar', 'Parcial', 'Pago'];
 function paItemFields(it, multi) {
   const estadoData = [['estado_pag', 'Estado do pagamento', 'select', PA_ESTADO_PAG], ['data_pag', 'Data prevista de pagamento', 'date']];
   const dinheiro = (lbl) => [['val', lbl, 'number'], ['forma', 'Forma de Pagamento', 'select', ['', ...PA_FORMAS]], ['freq', 'Periodicidade de Pagamentos', 'select', PA_FREQ], ...estadoData];
