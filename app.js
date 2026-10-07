@@ -939,11 +939,27 @@ async function renderCalendar() {
     t.classList.toggle('active', CA.sub === t.dataset.sub);
     t.addEventListener('click', () => { CA.sub = t.dataset.sub; renderCalendar(); });
   });
+  calLoadIg();
   if (!CA.loaded) {
     try { await calLoad(); } catch (e) { console.error(e); return ($('#cal-body').innerHTML = '<div class="card empty"><p>Não foi possível carregar o calendário.</p></div>'); }
     if (state.route !== 'calendar') return;
   }
   drawCalBody();
+}
+// Posts já publicados no Instagram (só leitura): aparecem sozinhos no calendário
+const IG_TIPO = { VIDEO: 'Reels', CAROUSEL_ALBUM: 'Carrossel', IMAGE: 'Estático' };
+async function calLoadIg() {
+  if (!sb || CA.igBusy) return;
+  CA.igBusy = true;
+  try {
+    const r = await sb.functions.invoke('ig-media', { body: { limit: 100 } });
+    CA.ig = (r.data?.posts || []).filter((p) => p.timestamp).map((p) => {
+      const cap = String(p.caption || '').replace(/\s+/g, ' ').trim();
+      return { id: p.id, permalink: p.permalink, day: ymd(new Date(p.timestamp)), formato: IG_TIPO[p.media_type] || 'Estático', titulo: cap.slice(0, 60) || 'Publicação sem legenda' };
+    });
+    if (state.route === 'calendar' && CA.sub === 'cal') drawCalGrid();
+  } catch (e) { console.error(e); }
+  CA.igBusy = false;
 }
 const redrawCal = () => { if (state.route === 'calendar') drawCalBody(); };
 function drawCalBody() {
@@ -970,6 +986,11 @@ function drawCalGrid() {
   const all = calOf('conteudo');
   const byDay = {};
   all.forEach((r) => { const d = r.dados?.data; if (d) (byDay[d] ||= []).push(r); });
+  const igBy = {};
+  const planned = new Set(all.map((r) => r.dados?.referencia).filter(Boolean));
+  (CA.ig || []).forEach((p) => { if (!planned.has(p.permalink)) (igBy[p.day] ||= []).push(p); });
+  const mKey = `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, '0')}`;
+  const igMonth = Object.keys(igBy).filter((k) => k.startsWith(mKey)).reduce((n, k) => n + igBy[k].length, 0);
   const inMonth = all.filter((r) => String(r.dados?.data || '').startsWith(`${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, '0')}`));
   const cnt = (s) => inMonth.filter((r) => r.dados?.status === s).length;
   const title = m.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
@@ -977,12 +998,13 @@ function drawCalGrid() {
   for (let i = 0; i < 42; i++) {
     const d = new Date(start); d.setDate(start.getDate() + i);
     const key = ymd(d), items = byDay[key] || [], dts = calDatesOn(d);
-    const rows = [...dts.map((r) => ({ t: 'd', r })), ...items.map((r) => ({ t: 'c', r }))];
+    const rows = [...dts.map((r) => ({ t: 'd', r })), ...(igBy[key] || []).map((r) => ({ t: 'i', r })), ...items.map((r) => ({ t: 'c', r }))];
     const shown = rows.slice(0, 3), more = rows.length - shown.length;
     cells += `<div class="cal-cell ${d.getMonth() !== m.getMonth() ? 'out' : ''} ${key === todayKey ? 'today' : ''}" data-day="${key}">
       <span class="cal-n">${d.getDate()}</span>
       ${shown.map(({ t, r }) => t === 'd'
         ? `<button class="cal-it cal-date" data-d="${r.id}" title="${esc(r.titulo)}">📌 ${esc(r.titulo)}</button>`
+        : t === 'i' ? `<button class="cal-it st-publ" data-ig="${esc(r.permalink)}" title="${esc(r.titulo)} · Publicado no Instagram">${CAL_FORMATOS[r.formato] || '▫️'} ${esc(r.titulo)}</button>`
         : `<button class="cal-it ${CAL_STATUS_CLS[r.dados?.status] || 'st-rasc'}" data-c="${r.id}" title="${esc(r.titulo)} · ${esc(r.dados?.status || '')}">${CAL_FORMATOS[r.dados?.formato] || '▫️'} ${esc(r.titulo)}</button>`).join('')}
       ${more > 0 ? `<span class="cal-more">+${more} mais</span>` : ''}</div>`;
   }
@@ -992,15 +1014,16 @@ function drawCalGrid() {
         <h2 class="cal-title">${esc(title.charAt(0).toUpperCase() + title.slice(1))}</h2></div>
       <button class="btn primary" id="cal-new">+ Novo conteúdo</button>
     </div>
-    <div class="cal-sum"><span class="cal-it st-rasc">Rascunho ${cnt('Em rascunho')}</span><span class="cal-it st-prog">Em progresso ${cnt('Em progresso')}</span><span class="cal-it st-agen">Agendado ${cnt('Agendado')}</span><span class="cal-it st-publ">Publicado ${cnt('Publicado')}</span></div>
+    <div class="cal-sum"><span class="cal-it st-rasc">Rascunho ${cnt('Em rascunho')}</span><span class="cal-it st-prog">Em progresso ${cnt('Em progresso')}</span><span class="cal-it st-agen">Agendado ${cnt('Agendado')}</span><span class="cal-it st-publ">Publicado ${cnt('Publicado') + igMonth}</span></div>
     <div class="cal-grid"><div class="cal-head">${CAL_WD.map((w) => `<div>${w}</div>`).join('')}</div><div class="cal-days">${cells}</div></div>
-    <p class="muted small">Clica num dia para planear um conteúdo nessa data. 📌 são as tuas datas relevantes.</p>`;
+    <p class="muted small">Clica num dia para planear um conteúdo nessa data. 📌 são as tuas datas relevantes. Os posts já publicados no Instagram aparecem automaticamente a verde; clica para os abrir.</p>`;
   const go = (n) => { CA.month = new Date(m.getFullYear(), m.getMonth() + n, 1); drawCalGrid(); };
   $('#cal-prev').addEventListener('click', () => go(-1)); $('#cal-next').addEventListener('click', () => go(1));
   $('#cal-today').addEventListener('click', () => { const n = new Date(); CA.month = new Date(n.getFullYear(), n.getMonth(), 1); drawCalGrid(); });
   $('#cal-new').addEventListener('click', () => editConteudo(calNew('conteudo', { status: 'Em rascunho', data: todayKey })));
   $$('.cal-cell').forEach((c) => c.addEventListener('click', () => editConteudo(calNew('conteudo', { status: 'Em rascunho', data: c.dataset.day }))));
   $$('.cal-it[data-c]').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); editConteudo(CA.list.find((x) => x.id === b.dataset.c)); }));
+  $$('.cal-it[data-ig]').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); window.open(b.dataset.ig, '_blank', 'noopener'); }));
   $$('.cal-it[data-d]').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); editData(CA.list.find((x) => x.id === b.dataset.d)); }));
 }
 function editConteudo(rec) {

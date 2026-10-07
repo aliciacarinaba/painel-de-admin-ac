@@ -16,8 +16,9 @@ Deno.serve(async (req) => {
   const body = await req.json().catch(() => ({}));
   const ids: string[] = (Array.isArray(body?.ids) ? body.ids : []).map(String).filter((i: string) => /^\d+$/.test(i)).slice(0, 30);
 
+  const limit = Math.min(Math.max(Number(body?.limit) || 30, 1), 100);
   const [list, ...extra] = await Promise.all([
-    ig(`/${env("IG_ACCOUNT_ID")}/media?fields=${FIELDS}&limit=30`),
+    ig(`/${env("IG_ACCOUNT_ID")}/media?fields=${FIELDS}&limit=${limit}`),
     ...ids.map((id) => ig(`/${id}?fields=${FIELDS}`)),
   ]);
   if (!list.ok) return json({ posts: [], error: list.data?.error?.message ?? "Erro ao ler os posts" });
