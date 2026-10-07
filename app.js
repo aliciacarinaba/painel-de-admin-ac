@@ -109,7 +109,7 @@ if (sb) sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') showLogin()
 // ============================================================
 // 3) NAVEGAÇÃO E ECRÃS
 // ============================================================
-const state = { route: 'home', igTab: 'metrics', homeTab: 'general' };
+const state = { route: 'home', igTab: 'metrics', homeTab: 'general', courseTab: 'draft' };
 
 $$('.nav-item').forEach((b) => b.addEventListener('click', () => { go(b.dataset.route); $('#sidebar').classList.remove('open'); }));
 $('#menu-toggle').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
@@ -118,12 +118,13 @@ function go(route) {
   // Sempre que se entra no Instagram vindo de outra secção, abre primeiro nas Métricas
   if (route === 'instagram' && state.route !== 'instagram') state.igTab = 'metrics';
   if (route === 'home' && state.route !== 'home') state.homeTab = 'general';
+  if (route === 'courses' && state.route !== 'courses') state.courseTab = 'draft';
   state.route = route;
   $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.route === route));
   if (route === 'home') renderHome();
   else if (route === 'calendar') renderCalendar();
   else if (route === 'partnerships') renderSoon('Parcerias', '🤝', 'Aqui vais poder gerir as tuas parcerias.');
-  else if (route === 'courses') renderSoon('Oferta Formativa', '🎓', 'Aqui vais poder gerir a tua oferta formativa.');
+  else if (route === 'courses') renderCourses();
   else renderInstagram();
 }
 
@@ -790,7 +791,29 @@ function renderCalendar() {
     </div>`;
 }
 
-// ---------- Parcerias e Oferta Formativa (placeholders) ----------
+// ---------- Oferta Formativa ----------
+const COURSE_TABS = [
+  ['draft', 'Rascunho', '📝', 'Ainda não há formações em rascunho', 'Aqui vão ficar as formações que estás a idealizar, antes de começares a criá-las.'],
+  ['progress', 'Em Progresso', '🛠️', 'Ainda não há formações em progresso', 'Aqui vão ficar as formações que estás a criar neste momento.'],
+  ['available', 'Disponível', '✅', 'Ainda não há formações disponíveis', 'Aqui vão ficar as formações já prontas e à venda.'],
+];
+function renderCourses() {
+  $('#view').innerHTML = `
+    <div class="page-head"><h1>🎓 Oferta Formativa</h1></div>
+    <div class="tabs">${COURSE_TABS.map(([k, l]) => `<button class="tab" data-tab="${k}">${l}</button>`).join('')}</div>
+    <div id="course-body"></div>`;
+  $$('.tab').forEach((t) => t.addEventListener('click', () => { state.courseTab = t.dataset.tab; renderCourses(); }));
+  $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === state.courseTab));
+  const [, , icon, titulo, texto] = COURSE_TABS.find((t) => t[0] === state.courseTab);
+  $('#course-body').innerHTML = `
+    <div class="card empty" style="margin-top:16px">
+      <div class="big">${icon}</div>
+      <h2>${titulo}</h2>
+      <p>${texto}</p>
+    </div>`;
+}
+
+// ---------- Parcerias (placeholder) ----------
 function renderSoon(titulo, icone, texto) {
   $('#view').innerHTML = `
     <div class="card empty" style="margin-top:40px">
