@@ -1370,8 +1370,8 @@ const PA_PAG_CHIP = { 'Por pagar': 'au-warn', 'Parcial': 'au-warn', 'Pago': 'ok'
 const PA_TIPOS = ['Conteúdo patrocinado', 'Afiliação', 'Embaixadora', 'Permuta de produtos', 'Evento / Workshop', 'Cocriação', 'Outro'];
 const PA_CANAIS = ['Instagram (DM)', 'E-mail', 'WhatsApp', 'Evento', 'Outro'];
 const PA_PAGAMENTO = ['Dinheiro', 'Permuta', 'Comissão / afiliação', 'Misto'];
-const PA_FREQ = ['', 'Pagamento único', 'Mensal', 'Trimestral', 'Semestral', 'Anual', 'Outra'];
-const PA_FORMAS = ['Transferência bancária', 'MB Way', 'PayPal', 'Outra'];
+const PA_FREQ = ['', 'Pagamento Unitário', 'Mensal', 'Trimestral'];
+const PA_FORMAS = ['Numerário', 'Transferência bancária', 'MB Way', 'PayPal', 'Outra'];
 const PA_COLS = ['nome', 'origem', 'data_sugestao', 'estado', 'tipo', 'oferta', 'pagamento_tipo', 'valor', 'forma_pagamento', 'pagamento_estado', 'data_pagamento'];
 // Campos da ficha: [chave, rótulo, tipo, opções]. Tipos: text, longtext, list, date, number, url, bool, select, combo
 const PA_SECTIONS = [
@@ -1509,10 +1509,10 @@ function closePartner() {
 const PA_ESTADO_PAG = ['', 'Por pagar', 'Parcial', 'Pago', 'N/A'];
 function paItemFields(it, multi) {
   const estadoData = [['estado_pag', 'Estado do pagamento', 'select', PA_ESTADO_PAG], ['data_pag', 'Data prevista de pagamento', 'date']];
-  const dinheiro = (lbl) => [['val', lbl, 'number'], ['forma', 'Forma de pagamento', 'select', ['', ...PA_FORMAS]], ['freq', 'Datas de pagamento', 'select', PA_FREQ], ...estadoData, ['prazo', 'Condições / prazo de pagamento', 'text']];
+  const dinheiro = (lbl) => [['val', lbl, 'number'], ['forma', 'Forma de Pagamento', 'select', ['', ...PA_FORMAS]], ['freq', 'Periodicidade de Pagamentos', 'select', PA_FREQ], ...estadoData];
   const permuta = (extra) => [['val_oferta', 'Valor da oferta (€)', 'number'],
     ...(extra ? [['extra', 'Existe pagamento além da oferta?', 'select', ['', 'Sim', 'Não']], ...(it.extra === 'Sim' ? dinheiro('Valor do pagamento (€)') : [])] : [])];
-  const comissao = (estado) => [['comissao', 'Valor da comissão (€ ou %)', 'text'], ['cm_forma', 'Forma de pagamento', 'select', ['', ...PA_FORMAS]], ['cm_freq', 'Datas de pagamento', 'select', PA_FREQ], ...(estado ? estadoData : [])];
+  const comissao = (estado) => [['comissao', 'Valor da comissão (€ ou %)', 'text'], ['cm_forma', 'Forma de Pagamento', 'select', ['', ...PA_FORMAS]], ['cm_freq', 'Periodicidade de Pagamentos', 'select', PA_FREQ], ...(estado ? estadoData : [])];
   const comPermuta = it.pag === 'Permuta' || (it.pag === 'Misto' && it.m_per);
   const f = [['pag', 'Tipo de pagamento', 'select', ['', ...PA_PAGAMENTO]]];
   if (multi || comPermuta) f.push(['produto', comPermuta && !multi ? 'Produto ou serviço oferecido' : 'Produto ou serviço', 'text']);
