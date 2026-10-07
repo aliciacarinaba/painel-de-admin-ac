@@ -429,3 +429,9 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .cm-opt input { accent-color: var(--accent); margin: 0; }
 .cm-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 20px; }
 @media (max-width: 640px) { .cm-grid { grid-template-columns: 1fr; } }
+/* Botões de secção iguais em todas as páginas (como em Instagram > Métricas) */
+.au-pills, .pa-pipe { gap: 6px; }
+.au-pill { border: 0; background: transparent; padding: 0 14px; font-size: 14px; color: var(--text-2); }
+.au-pill:hover { background: var(--accent-soft); }
+.au-pill.active { background: var(--accent); color: #fff; border: 0; }
+.cal-sum { justify-content: flex-start; margin: 0 0 12px; display: flex; gap: 6px; flex-wrap: wrap; }

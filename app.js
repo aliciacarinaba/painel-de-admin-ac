@@ -118,7 +118,7 @@ function go(route) {
   // Sempre que se entra no Instagram vindo de outra secção, abre primeiro nas Métricas
   if (route === 'instagram' && state.route !== 'instagram') state.igTab = 'metrics';
   if (route === 'home' && state.route !== 'home') state.homeTab = 'general';
-  if (route === 'calendar' && state.route !== 'calendar') CA.sub = null;
+  if (route === 'calendar' && state.route !== 'calendar') CA.sub = 'cal';
   if (route === 'partnerships' && state.route !== 'partnerships') { PA.open = null; PA.draft = null; PA.dirty = false; }
   if (route === 'courses' && state.route !== 'courses') { state.courseTab = 'draft'; CO.open = null; CO.draft = null; CO.dirty = false; }
   state.route = route;
@@ -784,7 +784,7 @@ async function renderGeneral() {
 }
 
 // ---------- Calendário ----------
-const CAL_SUBS = [['dates', 'Datas Relevantes'], ['lines', 'Linhas Editoriais e Rubricas'], ['refs', 'Banco de Referências']];
+const CAL_SUBS = [['cal', 'Calendário Editorial'], ['dates', 'Datas Relevantes'], ['lines', 'Linhas Editoriais e Rubricas'], ['refs', 'Banco de Referências']];
 const CAL_FORMATOS = { 'Reels': '🎬', 'Carrossel': '🎠', 'Estático': '🖼️', 'Stories': '📱', 'Live': '🔴' };
 const CAL_STATUS = ['Em rascunho', 'Em progresso', 'Agendado', 'Publicado'];
 const CAL_STATUS_CLS = { 'Em rascunho': 'st-rasc', 'Em progresso': 'st-prog', 'Agendado': 'st-agen', 'Publicado': 'st-publ' };
@@ -793,7 +793,7 @@ const CAL_TEMAS = ['Geral', 'Gestão Financeira', 'Manciure', 'Loja Online', 'Ps
 const CAL_PLATAFORMAS = ['Instagram', 'TikTok', 'YouTube', 'Facebook', 'Blog', 'Newsletter'];
 const CAL_REF_CATS = ['Criadores', 'Conteúdos', 'Blogs, websites e livros', 'Podcasts', 'Histórias da Marca', 'Radar Semanal', 'Chuva de ideias'];
 const CAL_WD = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-const CA = { list: [], loaded: false, month: null, sub: null, fRub: '', fStatus: '', fFormato: '', refCat: '', rubSel: '' };
+const CA = { list: [], loaded: false, month: null, sub: 'cal', refCat: '', rubSel: '' };
 const LS_CAL = 'painel_calendario';
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
@@ -876,7 +876,7 @@ async function renderCalendar() {
     <div id="cal-body"><div class="card empty"><p>A carregar…</p></div></div>`;
   $$('.tab[data-sub]').forEach((t) => {
     t.classList.toggle('active', CA.sub === t.dataset.sub);
-    t.addEventListener('click', () => { CA.sub = CA.sub === t.dataset.sub ? null : t.dataset.sub; renderCalendar(); });
+    t.addEventListener('click', () => { CA.sub = t.dataset.sub; renderCalendar(); });
   });
   if (!CA.loaded) {
     try { await calLoad(); } catch (e) { console.error(e); return ($('#cal-body').innerHTML = '<div class="card empty"><p>Não foi possível carregar o calendário.</p></div>'); }
@@ -902,9 +902,8 @@ function drawCalGrid() {
   const start = new Date(first); start.setDate(1 - ((first.getDay() + 6) % 7));
   const todayKey = ymd(new Date());
   const all = calOf('conteudo');
-  const pass = (r) => (!CA.fRub || (r.dados?.rubricas || []).includes(CA.fRub)) && (!CA.fStatus || r.dados?.status === CA.fStatus) && (!CA.fFormato || r.dados?.formato === CA.fFormato);
   const byDay = {};
-  all.filter(pass).forEach((r) => { const d = r.dados?.data; if (d) (byDay[d] ||= []).push(r); });
+  all.forEach((r) => { const d = r.dados?.data; if (d) (byDay[d] ||= []).push(r); });
   const inMonth = all.filter((r) => String(r.dados?.data || '').startsWith(`${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, '0')}`));
   const cnt = (s) => inMonth.filter((r) => r.dados?.status === s).length;
   const title = m.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
@@ -927,21 +926,13 @@ function drawCalGrid() {
         <h2 class="cal-title">${esc(title.charAt(0).toUpperCase() + title.slice(1))}</h2></div>
       <button class="btn primary" id="cal-new">+ Novo conteúdo</button>
     </div>
-    <div class="toolbar">
-      <select id="cal-frub"><option value="">Rubrica: todas</option>${calRubricas().map((x) => `<option ${CA.fRub === x ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>
-      <select id="cal-fstatus"><option value="">Estado: todos</option>${CAL_STATUS.map((x) => `<option ${CA.fStatus === x ? 'selected' : ''}>${x}</option>`).join('')}</select>
-      <select id="cal-fform"><option value="">Formato: todos</option>${Object.keys(CAL_FORMATOS).map((x) => `<option ${CA.fFormato === x ? 'selected' : ''}>${x}</option>`).join('')}</select>
-      <span class="cal-sum"><span class="cal-it st-rasc">Rascunho ${cnt('Em rascunho')}</span><span class="cal-it st-prog">Em progresso ${cnt('Em progresso')}</span><span class="cal-it st-agen">Agendado ${cnt('Agendado')}</span><span class="cal-it st-publ">Publicado ${cnt('Publicado')}</span></span>
-    </div>
+    <div class="cal-sum"><span class="cal-it st-rasc">Rascunho ${cnt('Em rascunho')}</span><span class="cal-it st-prog">Em progresso ${cnt('Em progresso')}</span><span class="cal-it st-agen">Agendado ${cnt('Agendado')}</span><span class="cal-it st-publ">Publicado ${cnt('Publicado')}</span></div>
     <div class="cal-grid"><div class="cal-head">${CAL_WD.map((w) => `<div>${w}</div>`).join('')}</div><div class="cal-days">${cells}</div></div>
     <p class="muted small">Clica num dia para planear um conteúdo nessa data. 📌 são as tuas datas relevantes.</p>`;
   const go = (n) => { CA.month = new Date(m.getFullYear(), m.getMonth() + n, 1); drawCalGrid(); };
   $('#cal-prev').addEventListener('click', () => go(-1)); $('#cal-next').addEventListener('click', () => go(1));
   $('#cal-today').addEventListener('click', () => { const n = new Date(); CA.month = new Date(n.getFullYear(), n.getMonth(), 1); drawCalGrid(); });
   $('#cal-new').addEventListener('click', () => editConteudo(calNew('conteudo', { status: 'Em rascunho', data: todayKey })));
-  $('#cal-frub').addEventListener('change', (e) => { CA.fRub = e.target.value; drawCalGrid(); });
-  $('#cal-fstatus').addEventListener('change', (e) => { CA.fStatus = e.target.value; drawCalGrid(); });
-  $('#cal-fform').addEventListener('change', (e) => { CA.fFormato = e.target.value; drawCalGrid(); });
   $$('.cal-cell').forEach((c) => c.addEventListener('click', () => editConteudo(calNew('conteudo', { status: 'Em rascunho', data: c.dataset.day }))));
   $$('.cal-it[data-c]').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); editConteudo(CA.list.find((x) => x.id === b.dataset.c)); }));
   $$('.cal-it[data-d]').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); editData(CA.list.find((x) => x.id === b.dataset.d)); }));
