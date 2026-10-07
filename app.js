@@ -873,7 +873,7 @@ function calModal({ heading, rec, fields, onDone }) {
   const filesBox = $('#cm-files', bg);
   if (filesBox) {
     const draw = () => {
-      filesBox.innerHTML = anexos().length ? anexos().map((f, i) => `<div class="cm-file"><a href="${esc(f.url || f.dataUrl || '#')}" target="_blank" rel="noopener" title="${esc(f.nome)}" data-lb><span class="cm-thumb" style="background-image:url('${esc(f.url || f.dataUrl || '')}')"></span></a><span class="small">${esc(f.nome)}</span><button type="button" class="btn sm" data-rm="${i}">Remover</button></div>`).join('') : '<span class="muted small">Ainda sem anexos.</span>';
+      filesBox.innerHTML = anexos().length ? anexos().map((f, i) => `<div class="cm-file"><a href="${esc(f.url || f.dataUrl || '#')}" target="_blank" rel="noopener" title="${esc(f.nome)}" data-lb><span class="cm-thumb" style="background-image:url('${esc(f.url || f.dataUrl || '')}')"></span></a><span class="small">${esc(f.nome)}</span><button type="button" class="file-del" data-rm="${i}" title="Remover" aria-label="Remover imagem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v6M14 11v6"/></svg></button></div>`).join('') : '<span class="muted small">Ainda sem anexos.</span>';
       $$('[data-rm]', filesBox).forEach((b) => b.addEventListener('click', async () => {
         const f = anexos().splice(+b.dataset.rm, 1)[0];
         if (f?.path) { const ai = added.findIndex((x) => x.path === f.path); if (ai >= 0) { added.splice(ai, 1); sb?.storage.from('anexos').remove([f.path]).catch(() => {}); } else removedOld.push(f.path); }
@@ -1595,7 +1595,7 @@ function paFilesInit(c, mark) {
       box.innerHTML = list.map((f, i) => {
         const url = f.url || f.dataUrl || '', img = /\.(png|jpe?g)$/i.test(f.nome || '') || String(f.dataUrl || '').startsWith('data:image');
         return `<div class="pa-file"><a href="${esc(url || '#')}" target="_blank" rel="noopener" title="${esc(f.nome)}" ${img ? 'data-lb' : ''}>${img ? `<span class="pa-thumb" style="background-image:url('${esc(url)}')"></span>` : '<span class="pa-thumb pa-pdf">📄 PDF</span>'}</a>
-          ${img ? '' : `<span class="small">${esc(f.nome)}</span>`}<button type="button" class="btn sm" data-frm="${box.dataset.fk}:${i}">Remover</button></div>`;
+          ${img ? '' : `<span class="small">${esc(f.nome)}</span>`}<button type="button" class="file-del" data-frm="${box.dataset.fk}:${i}" title="Remover" aria-label="Remover ficheiro"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v6M14 11v6"/></svg></button></div>`;
       }).join('');
     });
     $$('[data-frm]').forEach((b) => b.addEventListener('click', () => {
