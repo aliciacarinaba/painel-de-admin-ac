@@ -1369,7 +1369,7 @@ const PA_ESTADO_CHIP = { 'Nova': 'gray', 'Em negociação': 'au-warn', 'Aceite':
 const PA_PAG_CHIP = { 'Por pagar': 'au-warn', 'Parcial': 'au-warn', 'Pago': 'ok', 'N/A': 'gray' };
 const PA_TIPOS = ['Conteúdo patrocinado', 'Afiliação', 'Embaixadora', 'Permuta de produtos', 'Evento / Workshop', 'Cocriação', 'Outro'];
 const PA_CANAIS = ['Instagram (DM)', 'E-mail', 'WhatsApp', 'Evento', 'Outro'];
-const PA_PAGAMENTO = ['Dinheiro', 'Permuta', 'Comissão / afiliação', 'Misto'];
+const PA_PAGAMENTO = ['Dinheiro', 'Permuta', 'Comissão e/ou Afiliação', 'Misto'];
 const PA_FREQ = ['', 'Pagamento Unitário', 'Mensal', 'Trimestral'];
 const PA_FORMAS = ['Numerário', 'Transferência bancária', 'MB Way', 'PayPal', 'Outra'];
 const PA_COLS = ['nome', 'origem', 'data_sugestao', 'estado', 'tipo', 'oferta', 'pagamento_tipo', 'valor', 'forma_pagamento', 'pagamento_estado', 'data_pagamento'];
@@ -1411,6 +1411,8 @@ async function paLoad() {
     try { PA.list = JSON.parse(localStorage.getItem(LS_PA) || '[]'); } catch { PA.list = []; }
   }
   PA.list.forEach((c) => {
+    (c.dados?.itens || []).concat(c.dados?.itens_seg || []).forEach((i) => { if (i.pag === 'Comissão / afiliação') i.pag = 'Comissão e/ou Afiliação'; });
+    if (c.pagamento_tipo === 'Comissão / afiliação') c.pagamento_tipo = 'Comissão e/ou Afiliação';
     if (c.estado === 'Em conversa') c.estado = 'Em negociação';
     if (String(c.pagamento_tipo || '').startsWith('Permuta')) c.pagamento_tipo = 'Permuta';
     if (c.pagamento_tipo === 'Sem pagamento') c.pagamento_tipo = '';
@@ -1522,12 +1524,12 @@ function paItemFields(it, multi) {
   if (multi || comPermuta) f.push(['produto', comPermuta && !multi ? 'Produto ou serviço oferecido' : 'Produto ou serviço', 'text']);
   if (it.pag === 'Dinheiro') f.push(...dinheiro('Valor (€)'));
   else if (it.pag === 'Permuta') f.push(...permuta(true));
-  else if (it.pag === 'Comissão / afiliação') f.push(...comissao(true));
+  else if (it.pag === 'Comissão e/ou Afiliação') f.push(...comissao(true));
   else if (it.pag === 'Misto') {
-    f.push(['m_din', 'Inclui dinheiro', 'bool'], ['m_per', 'Inclui permuta', 'bool'], ['m_com', 'Inclui comissão / afiliação', 'bool']);
+    f.push(['m_din', 'Inclui dinheiro', 'bool'], ['m_per', 'Inclui permuta', 'bool'], ['m_com', 'Inclui comissão e/ou afiliação', 'bool']);
     if (it.m_din) f.push(['#', 'Dinheiro'], ...dinheiro('Valor (€)'));
     if (it.m_per) f.push(['#', 'Permuta'], ...permuta(false));
-    if (it.m_com) f.push(['#', 'Comissão / afiliação'], ...comissao(false));
+    if (it.m_com) f.push(['#', 'Comissão e/ou Afiliação'], ...comissao(false));
   }
   return f;
 }
