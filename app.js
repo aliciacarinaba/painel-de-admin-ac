@@ -1083,6 +1083,7 @@ function editCriador(rec) {
     ['youtube', 'YouTube (link)', 'url'],
     ['porque', 'Porque é que acompanho esta pessoa?', 'longtext'],
     ['tipos_conteudo', 'Quais os tipos de conteúdos que mais gosto de ver?', 'longtext'],
+    ['links_conteudos', 'Links de conteúdos deste criador de que gosto', 'links'],
   ] });
 }
 const CRIADOR_CHIP = { 'Já comprei': 'ok', 'Sim': 'au-warn', 'Não': 'gray' };
@@ -1107,7 +1108,7 @@ function drawCalRefs() {
     </div>
     <div class="co-bar"><span></span><button class="btn primary" id="cr-new">${CA.refCat === 'Criadores' ? '+ Novo criador' : '+ Nova referência'}</button></div>
     ${CA.refCat === 'Criadores' && rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl"><colgroup><col style="width:13%"><col style="width:16%"><col style="width:9%"><col></colgroup><thead><tr><th>Criador</th><th>Redes</th><th>Compraria?</th><th>Porque é que acompanho</th></tr></thead><tbody>
-      ${rows.map((r) => `<tr class="pa-row cal-row" data-id="${r.id}"><td><strong class="cal-clamp">${esc(r.titulo)}</strong></td>
+      ${rows.map((r) => `<tr class="pa-row cal-row" data-id="${r.id}"><td><div class="cr-name"><strong>${esc(r.titulo)}</strong>${(r.dados?.links_conteudos || []).length ? `<span class="chip gray" title="Links de conteúdos guardados">🔗 ${r.dados.links_conteudos.length}</span>` : ''}</div></td>
         <td>${[['instagram', 'Instagram', igHandle(r.dados?.instagram)], ['tiktok', 'TikTok', 'TikTok'], ['youtube', 'YouTube', 'YouTube']].filter(([k]) => r.dados?.[k]).map(([k, , t]) => `<a class="cal-link-a" href="${esc(r.dados[k])}" target="_blank" rel="noopener">${esc(t || k)}</a>`).join(' ') || '—'}</td>
         <td>${r.dados?.compraria ? `<span class="chip ${CRIADOR_CHIP[r.dados.compraria] || ''}">${esc(r.dados.compraria)}</span>` : '—'}</td>
         <td><span class="cal-clamp cal-ex" title="${esc(r.dados?.porque || '')}">${esc(r.dados?.porque || '—')}</span></td></tr>`).join('')}</tbody></table></div>`

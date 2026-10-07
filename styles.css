@@ -467,3 +467,6 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .cal-ex, .cal-clamp { line-height: 1.35; }
 .cal-link-a { display: inline-block; color: var(--accent); font-weight: 600; font-size: 13.5px; text-decoration: none; margin-right: 8px; }
 .cal-link-a:hover { text-decoration: underline; }
+.cr-name { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; min-width: 0; }
+.cr-name strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cr-name .chip { flex: none; margin: 0; }
