@@ -141,7 +141,7 @@ async function safeCount(table, filter) {
 // ---------- Início ----------
 function renderHome() {
   $('#view').innerHTML = `
-    <div class="page-head"><h1>👋 Bem-vinda ao teu Painel de Administração</h1><p class="muted">Um resumo rápido do que está a acontecer.</p></div>
+    <div class="page-head"><h1>👋 Bem-vinda ao teu Painel de Administração</h1></div>
     <div class="tabs">
       <button class="tab" data-tab="general">Informação Geral</button>
       <button class="tab" data-tab="branding">Branding</button>
