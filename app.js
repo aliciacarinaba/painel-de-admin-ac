@@ -1383,7 +1383,7 @@ const PA_SECTIONS = [
     ['contacto', 'Contacto (@, e-mail ou telefone)', 'text'],
   ]],
   ['Oferta e pagamento', [
-    ['oferta', 'Oferta (o que me propõem ou o que proponho)', 'longtext'],
+    ['oferta', 'Oferta', 'longtext'],
     ['pagamento_tipo', 'Tipo de pagamento', 'select', ['', ...PA_PAGAMENTO]],
     ['valor', 'Valor (€)', 'number'],
     ['forma_pagamento', 'Forma de pagamento', 'select', ['', ...PA_FORMAS]],
