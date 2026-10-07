@@ -1553,7 +1553,7 @@ function paMigrate(c) {
 function paOfertaHTML(c, seg) {
   const list = seg ? 'itens_seg' : 'itens', its = c.dados?.[list] || [], multi = its.length > 1;
   const fields = (it) => paItemFields(it, multi).map((f) => paField({ dados: it }, f)).join('');
-  return `<div class="grid cols-3 co-props">${paField(c, [seg ? 'oferta_seg' : 'oferta', 'Proposta', 'longtext'])}</div>
+  return `<div class="grid cols-3 co-props">${paField(c, [seg ? 'oferta_seg' : 'oferta', '', 'longtext'])}</div>
     ${its.map((it, n) => n === 0
       ? `<div class="grid cols-3 co-props pa-item0" data-item="0" data-list="${list}">${fields(it)}</div>`
       : `<div class="pa-item" data-item="${n}" data-list="${list}"><div class="pa-item-h"><strong>${esc(it.produto || `Produto ou serviço ${n + 1}`)}</strong><button class="btn danger" data-del-item="${n}" data-list="${list}">Remover</button></div>
@@ -1564,7 +1564,7 @@ function paOfertaHTML(c, seg) {
 
 function paField(c, [k, label, type, opts]) {
   const v = paGet(c, k);
-  const lbl = `<span>${esc(label)}</span>`;
+  const lbl = label ? `<span>${esc(label)}</span>` : '';
   if (k === '#') return `<h4 class="pa-sub pa-wide">${esc(label)}</h4>`;
   if (type === 'bool') return `<label class="co-field pa-bool"><input type="checkbox" data-k="${k}" data-type="bool" ${v ? 'checked' : ''}><span>${esc(label)}</span></label>`;
   if (type === 'longtext') return `<label class="co-field pa-wide">${lbl}<textarea data-k="${k}" data-type="text">${esc(v ?? '')}</textarea></label>`;
