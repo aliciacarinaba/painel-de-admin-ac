@@ -376,3 +376,17 @@ input[type=number] { -moz-appearance: textfield; }
 .co-field { height: 100%; }
 .co-field textarea { flex: 1; min-height: 150px; }
 input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
+
+/* Parcerias */
+.chip.ok { background: #E4F1E8; color: #2F6B47; }
+.chip.err { background: #F8E3E1; color: #9B2C26; }
+.pa-kpis { margin-bottom: 16px; }
+.pa-pipe { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.pa-pipe .count { margin-left: 6px; font-size: 12px; opacity: .75; }
+.pa-row { cursor: pointer; }
+.pa-oferta { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.pa-sec h3 { margin: 0 0 14px; }
+.pa-wide { grid-column: 1 / -1; }
+.pa-bool { flex-direction: row !important; align-items: center; gap: 10px; min-height: var(--ctl-h); align-self: end; }
+.pa-bool input { width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
+.pa-bool span { font-size: 14px; color: var(--text); font-weight: 600; }

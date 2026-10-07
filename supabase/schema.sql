@@ -261,3 +261,26 @@ create table if not exists formacoes (
 alter table formacoes enable row level security;
 drop policy if exists "admin_total" on formacoes;
 create policy "admin_total" on formacoes for all to authenticated using (true) with check (true);
+
+-- ---------- 8) PARCERIAS (secção "Parcerias") ----------
+-- Parcerias sugeridas a ti ("recebida") ou por ti ("enviada"). O que não é filtrável fica em "dados".
+create table if not exists parcerias (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null default '',
+  origem text not null default 'recebida' check (origem in ('recebida','enviada')),
+  data_sugestao date,
+  estado text not null default 'Nova',
+  tipo text default '',
+  oferta text default '',
+  pagamento_tipo text default '',
+  valor numeric,
+  forma_pagamento text default '',
+  pagamento_estado text default '',
+  data_pagamento date,
+  dados jsonb not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table parcerias enable row level security;
+drop policy if exists "admin_total" on parcerias;
+create policy "admin_total" on parcerias for all to authenticated using (true) with check (true);
