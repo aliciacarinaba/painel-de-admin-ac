@@ -1381,7 +1381,6 @@ const PA_SECTIONS = [
     ['tipo', 'Tipo de parceria', 'combo', PA_TIPOS],
     ['canal', 'Canal do contacto', 'combo', PA_CANAIS],
     ['contacto', 'Contacto (@, e-mail ou telefone)', 'text'],
-    ['link', 'Link da proposta / briefing', 'url'],
   ]],
   ['Oferta e pagamento', [
     ['oferta', 'Oferta (o que me propõem ou o que proponho)', 'longtext'],
