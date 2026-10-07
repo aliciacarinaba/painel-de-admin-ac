@@ -498,3 +498,4 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .pa-q { font-size: 12.5px; font-weight: 700; color: var(--text-2); }
 .pa-sec-h .pa-opt { gap: 8px; }
 .co-props label input, .co-props label select, .co-props label textarea, .co-field input, .co-field select, .co-field textarea { font-weight: 400; }
+.pa-sec-h .pa-opt { display: flex; align-items: center; gap: 10px; margin-right: 8px; }
