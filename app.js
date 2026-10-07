@@ -1038,7 +1038,7 @@ function calDiaTxt(r) {
 function drawCalDates() {
   const rows = calOf('data').sort((a, b) => String(a.dados?.data || '9999').slice(5).localeCompare(String(b.dados?.data || '9999').slice(5)));
   $('#cal-body').innerHTML = `
-    <div class="co-bar"><span class="muted">${rows.length} ${rows.length === 1 ? 'data' : 'datas'} · aparecem no calendário com 📌</span><button class="btn primary" id="cd-new">+ Nova data</button></div>
+    <div class="co-bar"><span></span><button class="btn primary" id="cd-new">+ Nova data</button></div>
     ${rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl"><colgroup><col style="width:20%"><col style="width:13%"><col><col style="width:12%"></colgroup><thead><tr><th>Data / evento</th><th>Dia</th><th>Exemplos de adaptação e utilização</th><th>Referências</th></tr></thead><tbody>
       ${rows.map((r) => `<tr class="pa-row cal-row" data-id="${r.id}"><td><strong class="cal-clamp">${esc(r.titulo)}</strong></td>
         <td>${calDiaTxt(r)}</td>
