@@ -509,3 +509,13 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .pa-file, .cm-file { position: relative; }
 .file-del { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.92); color: var(--danger, #A33A3A); box-shadow: 0 1px 4px rgba(0,0,0,.25); cursor: pointer; }
 .file-del:hover { background: #fff; }
+
+/* Texto formatado (Descritivo) */
+.rt { border: 1px solid var(--border); border-radius: 12px; background: #fff; overflow: hidden; }
+.rt:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.rt-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px; border-bottom: 1px solid var(--border); background: var(--surface-2, #FAF6F5); }
+.rt-b { min-height: 32px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; font-size: 13px; cursor: pointer; }
+.rt-b:hover { border-color: var(--accent); }
+.rt-ed { min-height: 150px; max-height: 360px; overflow: auto; padding: 12px 14px; font-size: 14px; line-height: 1.5; font-weight: 400; outline: none; }
+.rt-ed ul, .rt-ed ol { margin: 4px 0; padding-left: 22px; }
+.rt-ed p, .rt-ed div { margin: 0 0 6px; }

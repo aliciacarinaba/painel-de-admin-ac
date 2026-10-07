@@ -836,6 +836,25 @@ const calRubricas = () => [...new Set([...CAL_RUBRICAS, ...calOf('rubrica').flat
 
 // --- Janela de edição genérica ---
 // fields: [chave, rótulo, tipo, opções]. A chave "titulo" fica na coluna titulo; as restantes em dados.
+// Texto formatado (Descritivo): só tags simples, sem atributos
+const RT_OK = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'P', 'DIV', 'BR', 'UL', 'OL', 'LI']);
+function rtClean(html) {
+  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
+  const walk = (n) => {
+    [...n.childNodes].forEach((c) => {
+      if (c.nodeType === 3) return;
+      if (c.nodeType !== 1) { c.remove(); return; }
+      if (['SCRIPT', 'STYLE'].includes(c.tagName)) { c.remove(); return; }
+      walk(c);
+      if (!RT_OK.has(c.tagName)) c.replaceWith(...c.childNodes);
+      else [...c.attributes].forEach((a) => c.removeAttribute(a.name));
+    });
+  };
+  walk(doc.body);
+  return doc.body.innerHTML.trim();
+}
+const rtHtml = (v) => { v = String(v ?? ''); return /<(b|strong|i|em|u|p|div|br|ul|ol|li)\b/i.test(v) ? rtClean(v) : esc(v).replace(/\n/g, '<br>'); };
+const rtText = (v) => { const d = document.createElement('div'); d.innerHTML = rtHtml(v).replace(/<\/(p|div|li)>|<br\s*\/?>/gi, ' '); return d.textContent.replace(/\s+/g, ' ').trim(); };
 function calModal({ heading, rec, fields, onDone }) {
   const draft = JSON.parse(JSON.stringify(rec)); draft.dados ||= {};
   const isNew = !CA.list.some((x) => x.id === rec.id);
@@ -847,6 +866,7 @@ function calModal({ heading, rec, fields, onDone }) {
     if (type === 'links') return `<div class="co-field cm-wide"><span>${esc(label)}</span><textarea data-k="${k}" data-type="links" placeholder="Cola um link por linha (reels, posts, vídeos, artigos…)">${esc(Array.isArray(v) ? v.join('\n') : '')}</textarea><div class="cm-linklist" id="cm-links"></div></div>`;
     if (type === 'files') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="cm-files" id="cm-files"></div><div class="cm-filebar"><label class="btn cm-attach">+ Anexar imagens<input type="file" id="cm-file" accept="image/png,image/jpeg" multiple hidden></label><span class="muted small">PNG ou JPEG, até 5 MB cada</span></div></div>`;
     if (type === 'multi') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="cm-multi">${opts.map((o) => `<label class="cm-opt"><input type="checkbox" data-k="${k}" data-type="multi" value="${esc(o)}" ${(v || []).includes(o) ? 'checked' : ''}>${esc(o)}</label>`).join('')}</div></div>`;
+    if (type === 'rich') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="rt"><div class="rt-bar"><button type="button" class="rt-b" data-cmd="bold" title="Negrito"><b>N</b></button><button type="button" class="rt-b" data-cmd="italic" title="Itálico"><i>I</i></button><button type="button" class="rt-b" data-cmd="underline" title="Sublinhado"><u>S</u></button><button type="button" class="rt-b" data-cmd="insertUnorderedList" title="Lista com marcas">• Lista</button><button type="button" class="rt-b" data-cmd="insertOrderedList" title="Lista numerada">1. Lista</button></div><div class="rt-ed" contenteditable="true" data-k="${k}" data-type="rich">${rtHtml(v)}</div></div></div>`;
     if (type === 'tipos') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="cm-multi" id="cm-tipos"></div></div>`;
     if (type === 'select') return `<label class="co-field"><span>${esc(label)}</span><select data-k="${k}" data-type="text">${opts.map((o) => `<option value="${esc(o)}" ${String(v ?? '') === o ? 'selected' : ''}>${esc(o || '—')}</option>`).join('')}</select></label>`;
     if (type === 'combo') return `<label class="co-field"><span>${esc(label)}</span><input type="text" list="${id}" data-k="${k}" data-type="text" value="${esc(v ?? '')}"><datalist id="${id}">${opts.map((o) => `<option value="${esc(o)}">`).join('')}</datalist></label>`;
@@ -868,6 +888,12 @@ function calModal({ heading, rec, fields, onDone }) {
   bg.addEventListener('mousedown', (e) => { if (e.target === bg) close(); });
   bg.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
   $('#cm-cancel', bg).addEventListener('click', close);
+  // editor de texto formatado
+  $$('.rt-b', bg).forEach((b) => {
+    b.addEventListener('mousedown', (e) => e.preventDefault());
+    b.addEventListener('click', () => { $('.rt-ed', bg).focus(); document.execCommand(b.dataset.cmd); });
+  });
+  $$('.rt-ed', bg).forEach((ed) => ed.addEventListener('paste', (e) => { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')); }));
   // tipos de conteúdo (dependem das redes sociais escolhidas)
   const tiposBox = $('#cm-tipos', bg);
   if (tiposBox) {
@@ -929,6 +955,7 @@ function calModal({ heading, rec, fields, onDone }) {
     $$('[data-k]', bg).forEach((el) => {
       const k = el.dataset.k, t = el.dataset.type;
       if (t === 'multi') { if (!Array.isArray(draft.dados[k])) draft.dados[k] = []; return; }
+      if (t === 'rich') { draft.dados[k] = rtClean(el.innerHTML); return; }
       const v = t === 'bool' ? el.checked : (t === 'date' ? (el.value || null) : (t === 'links' ? el.value.split('\n').map((x) => x.trim()).filter(Boolean) : el.value));
       if (k === 'titulo') draft.titulo = v; else draft.dados[k] = v;
     });
@@ -1106,7 +1133,7 @@ function editRubrica(rec) {
     ['rubricas', 'Rubrica', 'multi', calRubricas()],
     ['redes', 'Redes sociais', 'multi', CAL_REDES],
     ['tipos', 'Tipo de conteúdo', 'tipos'],
-    ['notas', 'Descritivo', 'longtext'],
+    ['notas', 'Descritivo', 'rich'],
   ] });
 }
 function drawCalLines() {
@@ -1117,7 +1144,7 @@ function drawCalLines() {
   $('#cal-body').innerHTML = `
     <div class="grid cols-5 pa-kpis">${rubs.map((r) => `<button class="card au-bk ${sel === r ? 'sel' : ''}" data-r="${esc(r)}"><div class="stat-l">${esc(r)}</div><div class="stat-n">${counts[r]}</div><div class="muted small">ideias · ${posts.filter((p) => (p.dados?.rubricas || []).includes(r)).length} no calendário</div></button>`).join('')}</div>
     <div class="co-bar"><span class="muted">${sel ? esc(sel) : 'Todas as rubricas'} · ${rows.length} ${rows.length === 1 ? 'ideia' : 'ideias'}</span><button class="btn primary" id="cl-new">+ Nova ideia</button></div>
-    ${rows.length ? `<div class="grid cols-3">${rows.map((r) => `<button class="card co-card" data-id="${r.id}"><strong>${esc(r.titulo)}</strong><div class="co-meta">${[...ideiaRubs(r), ...(r.dados?.redes || []), ...(r.dados?.tipos || [])].map((x, i) => `<span class="chip ${i >= ideiaRubs(r).length ? 'gray' : ''}">${esc(x)}</span>`).join('')}</div><div class="muted small cal-note">${esc(r.dados?.notas || '')}</div></button>`).join('')}</div>`
+    ${rows.length ? `<div class="grid cols-3">${rows.map((r) => `<button class="card co-card" data-id="${r.id}"><strong>${esc(r.titulo)}</strong><div class="co-meta">${[...ideiaRubs(r), ...(r.dados?.redes || []), ...(r.dados?.tipos || [])].map((x, i) => `<span class="chip ${i >= ideiaRubs(r).length ? 'gray' : ''}">${esc(x)}</span>`).join('')}</div><div class="muted small cal-note">${esc(rtText(r.dados?.notas))}</div></button>`).join('')}</div>`
     : '<div class="card empty"><div class="big">📍</div><h2>Ainda não há ideias nesta rubrica</h2><p>Cada rubrica é uma linha editorial recorrente. Junta aqui as ideias e formatos de cada uma para as usares ao planear o calendário.</p></div>'}`;
   $('#cl-new').addEventListener('click', () => editRubrica(calNew('rubrica', { rubricas: sel ? [sel] : [] })));
   $$('.au-bk[data-r]').forEach((b) => b.addEventListener('click', () => { CA.rubSel = CA.rubSel === b.dataset.r ? '' : b.dataset.r; drawCalLines(); }));
