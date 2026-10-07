@@ -1394,11 +1394,6 @@ const PA_SECTIONS = [
     ['contrato', 'Contrato assinado', 'bool'],
     ['condicoes', 'Outras condições (direitos de uso, duração, aprovações…)', 'longtext'],
   ]],
-  ['Seguimento', [
-    ['proximo_passo', 'Próximo passo', 'text'],
-    ['data_followup', 'Data de seguimento', 'date'],
-    ['notas', 'Notas', 'longtext'],
-  ]],
 ];
 const PA = { list: [], loaded: false, open: null, draft: null, dirty: false, isNew: false, q: '', estado: '', origem: '' };
 const LS_PA = 'painel_parcerias';
