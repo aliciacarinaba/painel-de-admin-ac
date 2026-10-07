@@ -859,7 +859,7 @@ function calModal({ heading, rec, fields, onDone }) {
   const draft = JSON.parse(JSON.stringify(rec)); draft.dados ||= {};
   const isNew = !CA.list.some((x) => x.id === rec.id);
   const get = (k) => (k === 'titulo' ? draft.titulo : draft.dados[k]);
-  const fld = ([k, label, type, opts]) => {
+  const fld = ([k, label, type, opts, empty]) => {
     const v = get(k), id = 'cm-' + k;
     if (type === 'bool') return `<label class="co-field pa-bool"><input type="checkbox" data-k="${k}" data-type="bool" ${v ? 'checked' : ''}><span>${esc(label)}</span></label>`;
     if (type === 'longtext') return `<label class="co-field cm-wide"><span>${esc(label)}</span><textarea data-k="${k}" data-type="text">${esc(v ?? '')}</textarea></label>`;
@@ -868,7 +868,7 @@ function calModal({ heading, rec, fields, onDone }) {
     if (type === 'multi') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="cm-multi">${opts.map((o) => `<label class="cm-opt"><input type="checkbox" data-k="${k}" data-type="multi" value="${esc(o)}" ${(v || []).includes(o) ? 'checked' : ''}>${esc(o)}</label>`).join('')}</div></div>`;
     if (type === 'rich') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="rt"><div class="rt-bar"><button type="button" class="rt-b" data-cmd="bold" title="Negrito"><b>N</b></button><button type="button" class="rt-b" data-cmd="italic" title="Itálico"><i>I</i></button><button type="button" class="rt-b" data-cmd="underline" title="Sublinhado"><u>S</u></button><button type="button" class="rt-b" data-cmd="insertUnorderedList" title="Lista com marcas">• Lista</button><button type="button" class="rt-b" data-cmd="insertOrderedList" title="Lista numerada">1. Lista</button></div><div class="rt-ed" contenteditable="true" data-k="${k}" data-type="rich">${rtHtml(v)}</div></div></div>`;
     if (type === 'tipos') return `<div class="co-field cm-wide"><span>${esc(label)}</span><div class="cm-multi" id="cm-tipos"></div></div>`;
-    if (type === 'select') return `<label class="co-field"><span>${esc(label)}</span><select data-k="${k}" data-type="text">${opts.map((o) => `<option value="${esc(o)}" ${String(v ?? '') === o ? 'selected' : ''}>${esc(o || '—')}</option>`).join('')}</select></label>`;
+    if (type === 'select') return `<label class="co-field"><span>${esc(label)}</span><select data-k="${k}" data-type="text">${opts.map((o) => `<option value="${esc(o)}" ${String(v ?? '') === o ? 'selected' : ''}>${esc(o || empty || '—')}</option>`).join('')}</select></label>`;
     if (type === 'combo') return `<label class="co-field"><span>${esc(label)}</span><input type="text" list="${id}" data-k="${k}" data-type="text" value="${esc(v ?? '')}"><datalist id="${id}">${opts.map((o) => `<option value="${esc(o)}">`).join('')}</datalist></label>`;
     return `<label class="co-field ${k === 'titulo' ? 'cm-wide' : ''}"><span>${esc(label)}</span><input type="${type}" data-k="${k}" data-type="${type}" value="${esc(v ?? '')}"></label>`;
   };
@@ -1126,13 +1126,21 @@ function drawCalDates() {
 }
 
 // Linhas Editoriais e Rubricas
-function editRubrica(rec) {
+async function editRubrica(rec) {
+  let pars = [];
+  try {
+    if (sb) pars = ((await sb.from('parcerias').select('nome')).data || []).map((x) => x.nome);
+    else pars = JSON.parse(localStorage.getItem('painel_parcerias') || '[]').map((x) => x.nome);
+  } catch {}
+  pars = [...new Set([...pars, rec.dados?.parceria].filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt'));
   rec.dados ||= {}; if (!rec.dados.rubricas) rec.dados.rubricas = ideiaRubs(rec);
   calModal({ heading: rec.titulo ? 'Editar ideia' : 'Nova ideia de conteúdo', rec, onDone: redrawCal, fields: [
     ['titulo', 'Título', 'text'],
     ['rubricas', 'Rubrica', 'multi', calRubricas()],
     ['redes', 'Redes sociais', 'multi', CAL_REDES],
     ['tipos', 'Tipo de conteúdo', 'tipos'],
+    ['parceria', 'Relacionada com uma parceria?', 'select', ['', ...pars], 'Não'],
+    ['data', 'Data de publicação', 'date'],
     ['notas', 'Descritivo', 'rich'],
   ] });
 }
@@ -1144,7 +1152,7 @@ function drawCalLines() {
   $('#cal-body').innerHTML = `
     <div class="grid cols-5 pa-kpis">${rubs.map((r) => `<button class="card au-bk ${sel === r ? 'sel' : ''}" data-r="${esc(r)}"><div class="stat-l">${esc(r)}</div><div class="stat-n">${counts[r]}</div><div class="muted small">ideias · ${posts.filter((p) => (p.dados?.rubricas || []).includes(r)).length} no calendário</div></button>`).join('')}</div>
     <div class="co-bar"><span class="muted">${sel ? esc(sel) : 'Todas as rubricas'} · ${rows.length} ${rows.length === 1 ? 'ideia' : 'ideias'}</span><button class="btn primary" id="cl-new">+ Nova ideia</button></div>
-    ${rows.length ? `<div class="grid cols-3">${rows.map((r) => `<button class="card co-card" data-id="${r.id}"><strong>${esc(r.titulo)}</strong><div class="co-meta">${[...ideiaRubs(r), ...(r.dados?.redes || []), ...(r.dados?.tipos || [])].map((x, i) => `<span class="chip ${i >= ideiaRubs(r).length ? 'gray' : ''}">${esc(x)}</span>`).join('')}</div><div class="muted small cal-note">${esc(rtText(r.dados?.notas))}</div></button>`).join('')}</div>`
+    ${rows.length ? `<div class="grid cols-3">${rows.map((r) => `<button class="card co-card" data-id="${r.id}"><strong>${esc(r.titulo)}</strong><div class="co-meta">${[...ideiaRubs(r), ...(r.dados?.redes || []), ...(r.dados?.tipos || []), ...(r.dados?.parceria ? ['🤝 ' + r.dados.parceria] : [])].map((x, i) => `<span class="chip ${i >= ideiaRubs(r).length ? 'gray' : ''}">${esc(x)}</span>`).join('')}</div><div class="muted small cal-note">${esc(rtText(r.dados?.notas))}</div></button>`).join('')}</div>`
     : '<div class="card empty"><div class="big">📍</div><h2>Ainda não há ideias nesta rubrica</h2><p>Cada rubrica é uma linha editorial recorrente. Junta aqui as ideias e formatos de cada uma para as usares ao planear o calendário.</p></div>'}`;
   $('#cl-new').addEventListener('click', () => editRubrica(calNew('rubrica', { rubricas: sel ? [sel] : [] })));
   $$('.au-bk[data-r]').forEach((b) => b.addEventListener('click', () => { CA.rubSel = CA.rubSel === b.dataset.r ? '' : b.dataset.r; drawCalLines(); }));
