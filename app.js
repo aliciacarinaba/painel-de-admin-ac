@@ -1553,7 +1553,7 @@ function paMigrate(c) {
   c.dados.itens = [];
   if (c.pagamento_tipo || c.valor) {
     const pag = String(c.pagamento_tipo || '').startsWith('Permuta') ? 'Permuta' : (c.pagamento_tipo === 'Sem pagamento' ? '' : c.pagamento_tipo || '');
-    c.dados.itens.push({ produto: pag === 'Permuta' ? (c.dados.permuta || '') : '', pag, val: c.valor ?? null, forma: c.forma_pagamento || '', estado_pag: c.pagamento_estado || '', data_pag: c.data_pagamento || null, prazo: c.dados.prazo_pagamento || '', extra: pag === 'Permuta' && c.valor ? 'Sim' : '' });
+    c.dados.itens.push({ produto: pag === 'Permuta' ? (c.dados.permuta || '') : '', pag, val: c.valor ?? null, forma: c.forma_pagamento || '', estado_pag: c.pagamento_estado || '', data_pag: c.data_pagamento || null, prazo: c.dados.prazo_pagamento || '', extra: pag === 'Permuta' && c.valor ? 'Sim' : '', extra_tipo: pag === 'Permuta' && c.valor ? 'Dinheiro' : '' });
   }
 }
 function paOfertaHTML(c, seg) {
