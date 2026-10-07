@@ -1103,8 +1103,8 @@ function drawCalRefs() {
   const rows = items.filter((i) => !CA.refCat || i.dados?.categoria === CA.refCat);
   $('#cal-body').innerHTML = `
     <div class="pa-pipe">
-      <button class="au-pill ${CA.refCat === '' ? 'active' : ''}" data-c="">Tudo <span class="count">${items.length}</span></button>
-      ${CAL_REF_CATS.map((c) => `<button class="au-pill ${CA.refCat === c ? 'active' : ''}" data-c="${esc(c)}">${esc(c)} <span class="count">${counts[c]}</span></button>`).join('')}
+      <button class="au-pill ${CA.refCat === '' ? 'active' : ''}" data-c="">Tudo</button>
+      ${CAL_REF_CATS.map((c) => `<button class="au-pill ${CA.refCat === c ? 'active' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}
     </div>
     <div class="co-bar"><span></span><button class="btn primary" id="cr-new">${CA.refCat === 'Criadores' ? '+ Novo criador' : '+ Nova referência'}</button></div>
     ${CA.refCat === 'Criadores' && rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl cr-tbl"><colgroup><col style="width:11%"><col style="width:12%"><col style="width:7%"><col></colgroup><thead><tr><th>Criador</th><th>Redes</th><th>Compraria?</th><th>Porque é que acompanho</th></tr></thead><tbody>
@@ -1252,7 +1252,6 @@ function drawCourseList() {
   const tab = state.courseTab, list = CO.list.filter((c) => c.status === tab);
   const [icon, titulo, texto] = COURSE_EMPTY[tab];
   const counts = Object.fromEntries(COURSE_TABS.map(([k]) => [k, CO.list.filter((c) => c.status === k).length]));
-  $$('.tab').forEach((t) => { const k = t.dataset.tab; t.innerHTML = `${COURSE_STATUS[k]} <span class="count">${counts[k]}</span>`; });
   $('#course-body').innerHTML = `
     <div class="co-bar"><span class="muted">${list.length} ${list.length === 1 ? 'formação' : 'formações'}</span><button class="btn primary" id="co-new">+ Nova formação</button></div>
     ${list.length ? `<div class="grid cols-3">${list.map((c) => `
@@ -1444,8 +1443,8 @@ function drawPartnerList() {
       <div class="card"><div class="stat-l">Por receber</div><div class="stat-n">${eur(porReceber) || '0 €'}</div><div class="muted small">ainda não pago</div></div>
     </div>
     <div class="pa-pipe">
-      <button class="au-pill ${PA.estado === '' ? 'active' : ''}" data-e="">Todas <span class="count">${L.length}</span></button>
-      ${PA_ESTADOS.map((e) => `<button class="au-pill ${PA.estado === e ? 'active' : ''}" data-e="${e}">${e} <span class="count">${counts[e]}</span></button>`).join('')}
+      <button class="au-pill ${PA.estado === '' ? 'active' : ''}" data-e="">Todas</button>
+      ${PA_ESTADOS.map((e) => `<button class="au-pill ${PA.estado === e ? 'active' : ''}" data-e="${e}">${e}</button>`).join('')}
     </div>
     <div class="toolbar">
       <input type="text" id="pa-q" placeholder="Pesquisar marca, pessoa, oferta…" value="${esc(PA.q)}">
