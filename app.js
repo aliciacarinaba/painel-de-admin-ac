@@ -1595,7 +1595,7 @@ function paFilesInit(c, mark) {
       box.innerHTML = list.map((f, i) => {
         const url = f.url || f.dataUrl || '', img = /\.(png|jpe?g)$/i.test(f.nome || '') || String(f.dataUrl || '').startsWith('data:image');
         return `<div class="pa-file"><a href="${esc(url || '#')}" target="_blank" rel="noopener" title="${esc(f.nome)}">${img ? `<span class="pa-thumb" style="background-image:url('${esc(url)}')"></span>` : '<span class="pa-thumb pa-pdf">📄 PDF</span>'}</a>
-          <span class="small">${esc(f.nome)}</span><button type="button" class="btn sm" data-frm="${box.dataset.fk}:${i}">Remover</button></div>`;
+          ${img ? '' : `<span class="small">${esc(f.nome)}</span>`}<button type="button" class="btn sm" data-frm="${box.dataset.fk}:${i}">Remover</button></div>`;
       }).join('');
     });
     $$('[data-frm]').forEach((b) => b.addEventListener('click', () => {
