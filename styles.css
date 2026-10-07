@@ -480,3 +480,7 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .pa-tbl th:first-child, .pa-tbl td:first-child { padding-left: 16px; }
 .pa-tbl th:nth-child(5), .pa-tbl td:nth-child(5) { width: auto; }
 .pa-tbl th:last-child, .pa-tbl td:last-child { padding-right: 16px; }
+.pa-sub { margin: 6px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-2); }
+.pa-item { border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 16px; }
+.pa-item-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.pa-item-add { margin: 16px 0; }

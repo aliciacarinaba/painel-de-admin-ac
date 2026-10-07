@@ -1369,7 +1369,8 @@ const PA_ESTADO_CHIP = { 'Nova': 'gray', 'Em negociação': 'au-warn', 'Aceite':
 const PA_PAG_CHIP = { 'Por pagar': 'au-warn', 'Parcial': 'au-warn', 'Pago': 'ok', 'N/A': 'gray' };
 const PA_TIPOS = ['Conteúdo patrocinado', 'Afiliação', 'Embaixadora', 'Permuta de produtos', 'Evento / Workshop', 'Cocriação', 'Outro'];
 const PA_CANAIS = ['Instagram (DM)', 'E-mail', 'WhatsApp', 'Evento', 'Outro'];
-const PA_PAGAMENTO = ['Dinheiro', 'Permuta (produtos/serviços)', 'Comissão / afiliação', 'Misto', 'Sem pagamento'];
+const PA_PAGAMENTO = ['Dinheiro', 'Permuta', 'Comissão / afiliação', 'Misto'];
+const PA_FREQ = ['', 'Pagamento único', 'Mensal', 'Trimestral', 'Semestral', 'Anual', 'Outra'];
 const PA_FORMAS = ['Transferência bancária', 'MB Way', 'PayPal', 'Outra'];
 const PA_COLS = ['nome', 'origem', 'data_sugestao', 'estado', 'tipo', 'oferta', 'pagamento_tipo', 'valor', 'forma_pagamento', 'pagamento_estado', 'data_pagamento'];
 // Campos da ficha: [chave, rótulo, tipo, opções]. Tipos: text, longtext, list, date, number, url, bool, select, combo
@@ -1382,17 +1383,7 @@ const PA_SECTIONS = [
     ['canal', 'Canal do contacto', 'combo', PA_CANAIS],
     ['contacto', 'Contacto (@, e-mail ou telefone)', 'text'],
   ]],
-  ['Oferta Inicial', [
-    ['oferta', 'Oferta', 'longtext'],
-    ['pagamento_tipo', 'Tipo de pagamento', 'select', ['', ...PA_PAGAMENTO]],
-    ['valor', 'Valor (€)', 'number'],
-    ['forma_pagamento', 'Forma de pagamento', 'select', ['', ...PA_FORMAS]],
-    ['pagamento_estado', 'Estado do pagamento', 'select', ['', 'Por pagar', 'Parcial', 'Pago', 'N/A']],
-    ['data_pagamento', 'Data prevista de pagamento', 'date'],
-    ['prazo_pagamento', 'Condições / prazo de pagamento', 'text'],
-    ['permuta', 'Produtos ou serviços em permuta (e valor estimado)', 'longtext'],
-    ['fatura', 'Fatura emitida', 'bool'],
-  ]],
+  ['Oferta Inicial', null],
   ['O que tenho de fazer', [
     ['tarefas', 'O que é necessário da minha parte (um por linha)', 'list'],
     ['data_inicio', 'Data de início', 'date'],
@@ -1418,7 +1409,11 @@ async function paLoad() {
   } else {
     try { PA.list = JSON.parse(localStorage.getItem(LS_PA) || '[]'); } catch { PA.list = []; }
   }
-  PA.list.forEach((c) => { if (c.estado === 'Em conversa') c.estado = 'Em negociação'; });
+  PA.list.forEach((c) => {
+    if (c.estado === 'Em conversa') c.estado = 'Em negociação';
+    if (String(c.pagamento_tipo || '').startsWith('Permuta')) c.pagamento_tipo = 'Permuta';
+    if (c.pagamento_tipo === 'Sem pagamento') c.pagamento_tipo = '';
+  });
   PA.loaded = true;
 }
 async function paSave(c) {
@@ -1450,7 +1445,7 @@ async function renderPartnerships() {
 
 function drawPartnerList() {
   const L = PA.list, q = PA.q.trim().toLowerCase();
-  const money = (arr) => arr.filter((c) => PA_FECHADO_OK.includes(c.estado) && ['Dinheiro', 'Misto'].includes(c.pagamento_tipo));
+  const money = (arr) => arr.filter((c) => PA_FECHADO_OK.includes(c.estado) && (['Dinheiro', 'Misto'].includes(c.pagamento_tipo) || (c.pagamento_tipo === 'Permuta' && c.dados?.pm_extra === 'Sim')));
   const acordado = money(L).reduce((s, c) => s + paNum(c), 0);
   const porReceber = money(L).filter((c) => !['Pago', 'N/A'].includes(c.pagamento_estado)).reduce((s, c) => s + paNum(c), 0);
   const counts = Object.fromEntries(PA_ESTADOS.map((e) => [e, L.filter((c) => c.estado === e).length]));
@@ -1497,20 +1492,74 @@ function drawPartnerList() {
 
 function newPartner() {
   const c = { id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())), nome: '', origem: 'recebida', data_sugestao: new Date().toISOString().slice(0, 10), estado: 'Nova', tipo: '', oferta: '', pagamento_tipo: '', valor: null, forma_pagamento: '', pagamento_estado: '', data_pagamento: null, dados: {}, created_at: new Date().toISOString() };
-  PA.open = c.id; PA.draft = c; PA.isNew = true; PA.dirty = true; drawPartnerDetail();
+  paMigrate(c); c.dados.itens.push({ pag: '' }); PA.open = c.id; PA.draft = c; PA.isNew = true; PA.dirty = true; drawPartnerDetail();
 }
 function openPartner(id) {
   const c = PA.list.find((x) => x.id === id); if (!c) return;
-  PA.open = id; PA.draft = JSON.parse(JSON.stringify(c)); PA.isNew = false; PA.dirty = false; drawPartnerDetail();
+  PA.open = id; PA.draft = JSON.parse(JSON.stringify(c)); paMigrate(PA.draft); if (!PA.draft.dados.itens.length) PA.draft.dados.itens.push({ pag: '' }); PA.isNew = false; PA.dirty = false; drawPartnerDetail();
 }
 function closePartner() {
   if (PA.dirty && !confirm('Tens alterações por guardar. Sair mesmo assim?')) return;
   PA.open = null; PA.draft = null; PA.dirty = false; renderPartnerships();
 }
 
+
+// "Oferta Inicial": uma ou mais linhas (produto/serviço), cada uma com o seu tipo de pagamento e valores
+const PA_ESTADO_PAG = ['', 'Por pagar', 'Parcial', 'Pago', 'N/A'];
+function paItemFields(it) {
+  const estadoData = [['estado_pag', 'Estado do pagamento', 'select', PA_ESTADO_PAG], ['data_pag', 'Data prevista de pagamento', 'date']];
+  const dinheiro = (lbl) => [['val', lbl, 'number'], ['forma', 'Forma de pagamento', 'select', ['', ...PA_FORMAS]], ['freq', 'Datas de pagamento', 'select', PA_FREQ], ...estadoData, ['prazo', 'Condições / prazo de pagamento', 'text']];
+  const permuta = (extra) => [['val_oferta', 'Valor da oferta (€)', 'number'],
+    ...(extra ? [['extra', 'Existe pagamento além da oferta?', 'select', ['', 'Sim', 'Não']], ...(it.extra === 'Sim' ? dinheiro('Valor do pagamento (€)') : [])] : [])];
+  const comissao = (estado) => [['comissao', 'Valor da comissão (€ ou %)', 'text'], ['cm_forma', 'Forma de pagamento', 'select', ['', ...PA_FORMAS]], ['cm_freq', 'Datas de pagamento', 'select', PA_FREQ], ...(estado ? estadoData : [])];
+  const f = [['produto', 'Produto ou serviço', 'text'], ['pag', 'Tipo de pagamento', 'select', ['', ...PA_PAGAMENTO]]];
+  if (it.pag === 'Dinheiro') f.push(...dinheiro('Valor (€)'));
+  else if (it.pag === 'Permuta') f.push(...permuta(true));
+  else if (it.pag === 'Comissão / afiliação') f.push(...comissao(true));
+  else if (it.pag === 'Misto') {
+    f.push(['m_din', 'Inclui dinheiro', 'bool'], ['m_per', 'Inclui permuta', 'bool'], ['m_com', 'Inclui comissão / afiliação', 'bool']);
+    if (it.m_din) f.push(['#', 'Dinheiro'], ...dinheiro('Valor (€)'));
+    if (it.m_per) f.push(['#', 'Permuta'], ...permuta(false));
+    if (it.m_com) f.push(['#', 'Comissão / afiliação'], ...comissao(false));
+  }
+  return f;
+}
+// Resumo da parceria (usado na lista) calculado a partir das linhas
+function paSyncResumo(c) {
+  const its = (c.dados?.itens || []);
+  const tipos = [...new Set(its.map((i) => i.pag).filter(Boolean))];
+  c.pagamento_tipo = tipos.length > 1 ? 'Misto' : (tipos[0] || '');
+  const money = (i) => (i.pag === 'Dinheiro' || (i.pag === 'Misto' && i.m_din) || (i.pag === 'Permuta' && i.extra === 'Sim') ? Number(i.val) || 0 : 0);
+  const tot = its.reduce((n, i) => n + money(i), 0);
+  c.valor = tot || null;
+  const ests = its.map((i) => i.estado_pag).filter(Boolean);
+  c.pagamento_estado = !ests.length ? '' : ests.every((e) => e === 'Pago') ? 'Pago' : ests.includes('Por pagar') ? 'Por pagar' : ests.includes('Parcial') ? 'Parcial' : ests[0];
+  c.forma_pagamento = its.map((i) => i.forma || i.cm_forma).find(Boolean) || '';
+  c.data_pagamento = its.map((i) => i.data_pag).filter(Boolean).sort()[0] || null;
+}
+// Fichas antigas (sem linhas): cria uma linha com os dados que já existiam
+function paMigrate(c) {
+  c.dados ||= {};
+  if (Array.isArray(c.dados.itens)) return;
+  c.dados.itens = [];
+  if (c.pagamento_tipo || c.valor) {
+    const pag = String(c.pagamento_tipo || '').startsWith('Permuta') ? 'Permuta' : (c.pagamento_tipo === 'Sem pagamento' ? '' : c.pagamento_tipo || '');
+    c.dados.itens.push({ produto: pag === 'Permuta' ? (c.dados.permuta || '') : '', pag, val: c.valor ?? null, forma: c.forma_pagamento || '', estado_pag: c.pagamento_estado || '', data_pag: c.data_pagamento || null, prazo: c.dados.prazo_pagamento || '', extra: pag === 'Permuta' && c.valor ? 'Sim' : '' });
+  }
+}
+function paOfertaHTML(c) {
+  const its = c.dados?.itens || [];
+  return `<div class="grid cols-3 co-props">${paField(c, ['oferta', 'Oferta', 'longtext'])}</div>
+    ${its.map((it, n) => `<div class="pa-item" data-item="${n}"><div class="pa-item-h"><strong>${esc(it.produto || `Produto ou serviço ${n + 1}`)}</strong><button class="btn danger" data-del-item="${n}">Remover</button></div>
+      <div class="grid cols-3 co-props">${paItemFields(it).map((f) => paField({ dados: it }, f)).join('')}</div></div>`).join('')}
+    <div class="pa-item-add"><button class="btn" id="pa-add-item">+ Adicionar produto ou serviço</button></div>
+    <div class="grid cols-3 co-props">${paField(c, ['fatura', 'Fatura emitida', 'bool'])}</div>`;
+}
+
 function paField(c, [k, label, type, opts]) {
   const v = paGet(c, k);
   const lbl = `<span>${esc(label)}</span>`;
+  if (k === '#') return `<h4 class="pa-sub pa-wide">${esc(label)}</h4>`;
   if (type === 'bool') return `<label class="co-field pa-bool"><input type="checkbox" data-k="${k}" data-type="bool" ${v ? 'checked' : ''}><span>${esc(label)}</span></label>`;
   if (type === 'longtext') return `<label class="co-field pa-wide">${lbl}<textarea data-k="${k}" data-type="text">${esc(v ?? '')}</textarea></label>`;
   if (type === 'list') return `<label class="co-field pa-wide">${lbl}<textarea data-k="${k}" data-type="list" placeholder="Ex.: 2 reels, 3 stories com link, 1 post de carrossel">${esc(Array.isArray(v) ? v.join('\n') : '')}</textarea></label>`;
@@ -1529,7 +1578,7 @@ function drawPartnerDetail() {
     </div>
     <div class="card co-head"><input id="pa-nome" type="text" class="co-title" placeholder="Nome da marca ou pessoa" value="${esc(c.nome)}">
       <div class="grid cols-3 co-props">${PA_SECTIONS[0][1].map((f) => paField(c, f)).join('')}</div></div>
-    ${PA_SECTIONS.slice(1).map(([t, fields]) => `<div class="card co-sec pa-sec"><h3>${esc(t)}</h3><div class="grid cols-3 co-props">${fields.map((f) => paField(c, f)).join('')}</div></div>`).join('')}`;
+    ${PA_SECTIONS.slice(1).map(([t, fields]) => `<div class="card co-sec pa-sec"><h3>${esc(t)}</h3>${fields ? `<div class="grid cols-3 co-props">${fields.map((f) => paField(c, f)).join('')}</div>` : paOfertaHTML(c)}</div>`).join('')}`;
   const mark = () => { PA.dirty = true; $('#pa-state').textContent = 'Alterações por guardar'; };
   $('#pa-nome').addEventListener('input', (e) => { c.nome = e.target.value; mark(); });
   $$('[data-k]').forEach((el) => {
@@ -1540,10 +1589,15 @@ function drawPartnerDetail() {
       else if (t === 'number') v = el.value === '' ? null : Number(el.value);
       else if (t === 'date') v = el.value || null;
       else v = el.value;
-      paSet(c, el.dataset.k, v); mark();
+      const box = el.closest('[data-item]');
+      if (box) { c.dados.itens[+box.dataset.item][el.dataset.k] = v; paSyncResumo(c); } else paSet(c, el.dataset.k, v);
+      mark();
+      if (['pag', 'extra', 'm_din', 'm_per', 'm_com'].includes(el.dataset.k)) drawPartnerDetail();
     };
     el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', upd);
   });
+  $('#pa-add-item')?.addEventListener('click', () => { (c.dados.itens ||= []).push({ pag: '' }); mark(); drawPartnerDetail(); });
+  $$('[data-del-item]').forEach((b) => b.addEventListener('click', () => { c.dados.itens.splice(+b.dataset.delItem, 1); paSyncResumo(c); mark(); drawPartnerDetail(); }));
   $('#pa-back').addEventListener('click', closePartner);
   $('#pa-save').addEventListener('click', savePartner);
   $('#pa-del')?.addEventListener('click', async () => {
