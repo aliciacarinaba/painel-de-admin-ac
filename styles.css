@@ -470,3 +470,5 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .cr-name { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; min-width: 0; }
 .cr-name strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cr-name .chip { flex: none; margin: 0; }
+.cr-tbl th, .cr-tbl td { padding-left: 10px; padding-right: 10px; }
+.cr-tbl th:first-child, .cr-tbl td:first-child { padding-left: 16px; }
