@@ -1382,7 +1382,7 @@ const PA_SECTIONS = [
     ['canal', 'Canal do contacto', 'combo', PA_CANAIS],
     ['contacto', 'Contacto (@, e-mail ou telefone)', 'text'],
   ]],
-  ['Oferta e pagamento', [
+  ['Oferta e Pagamento', [
     ['oferta', 'Oferta', 'longtext'],
     ['pagamento_tipo', 'Tipo de pagamento', 'select', ['', ...PA_PAGAMENTO]],
     ['valor', 'Valor (€)', 'number'],
