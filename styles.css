@@ -491,11 +491,14 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .pa-sec-h { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
 .pa-sec-h h3 { margin: 0; }
 .pa-sec-h .pa-bool { align-self: center !important; height: auto; min-height: 0; }
-.pa-files { display: flex; flex-direction: column; gap: 6px; font-weight: 400; }
-.pa-file { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--ctl-h); padding: 0 8px 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); }
-.pa-file a { color: var(--accent); font-weight: 600; font-size: 14px; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pa-file a:hover { text-decoration: underline; }
+.pa-files { display: flex; flex-wrap: wrap; gap: 14px; font-weight: 400; }
+.pa-files:empty { display: none; }
+.pa-file { display: flex; flex-direction: column; gap: 6px; width: 150px; }
+.pa-file .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; color: var(--text); }
+.pa-thumb { display: block; width: 150px; height: 150px; border-radius: 12px; background: var(--track) center / cover no-repeat; border: 1px solid var(--border); }
+.pa-pdf { display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--accent); }
 .pa-q { font-size: 12.5px; font-weight: 700; color: var(--text-2); }
 .pa-sec-h .pa-opt { gap: 8px; }
 .co-props label input, .co-props label select, .co-props label textarea, .co-field input, .co-field select, .co-field textarea { font-weight: 400; }
 .pa-sec-h .pa-opt { display: flex; align-items: center; gap: 10px; margin-right: 8px; }
+.pa-file a { text-decoration: none; }
