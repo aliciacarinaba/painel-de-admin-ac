@@ -1480,7 +1480,7 @@ function drawPartnerList() {
         <td>${c.data_sugestao ? fmtDate(c.data_sugestao) : '—'}</td>
         <td>${esc(c.tipo || '—')}</td>
         <td class="pa-oferta" title="${esc(c.oferta || '')}">${esc(c.oferta || '—')}</td>
-        <td>${esc(c.pagamento_tipo ? c.pagamento_tipo.replace(/ \(.*\)/, '') : '—')}${paNum(c) ? ` · <strong>${eur(c.valor)}</strong>` : ''}${c.forma_pagamento ? `<div class="muted small">${esc(c.forma_pagamento)}</div>` : ''}</td>
+        <td>${esc(c.pagamento_tipo ? c.pagamento_tipo.replace(/ \(.*\)/, '') : '—')}${paNum(c) ? ` · ${eur(c.valor)}` : ''}${c.forma_pagamento ? `<div class="muted small">${esc(c.forma_pagamento)}</div>` : ''}</td>
         <td>${paChip(c.pagamento_estado, PA_PAG_CHIP[c.pagamento_estado]) || '—'}</td>
         <td>${c.dados?.prazo_entrega ? fmtDate(c.dados.prazo_entrega) : '—'}</td>
         <td>${paChip(c.estado, PA_ESTADO_CHIP[c.estado])}</td></tr>`).join('')}
