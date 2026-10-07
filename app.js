@@ -895,7 +895,12 @@ function drawCalBody() {
 // Calendário mensal
 function calDatesOn(day) {
   const key = ymd(day), md = key.slice(5);
-  return calOf('data').filter((r) => { const d = r.dados?.data; return d && (d === key || (r.dados.recorrente && d.slice(5) === md)); });
+  return calOf('data').filter((r) => {
+    const d = r.dados?.data, f = r.dados?.data_fim;
+    if (!d) return false;
+    if (r.dados.recorrente) return f ? (md >= d.slice(5) && md <= f.slice(5)) : d.slice(5) === md;
+    return f ? (key >= d && key <= f) : d === key;
+  });
 }
 function drawCalGrid() {
   const m = CA.month, first = new Date(m.getFullYear(), m.getMonth(), 1);
@@ -955,20 +960,27 @@ function editConteudo(rec) {
 function editData(rec) {
   calModal({ heading: rec.titulo ? 'Editar data relevante' : 'Nova data relevante', rec, onDone: redrawCal, fields: [
     ['titulo', 'Data / evento (ex.: Dia da Mãe, Black Friday)', 'text'],
-    ['data', 'Dia no calendário', 'date'],
+    ['data', 'Dia no calendário (ou primeiro dia)', 'date'],
+    ['data_fim', 'Último dia (só se for um período)', 'date'],
     ['recorrente', 'Repete todos os anos', 'bool'],
-    ['descritivo', 'Descritivo', 'longtext'],
+    ['descritivo', 'Descrição (opcional)', 'longtext'],
     ['exemplos', 'Exemplos de adaptação e utilização', 'longtext'],
   ] });
+}
+function calDiaTxt(r) {
+  const d = r.dados?.data; if (!d) return '—';
+  const f = r.dados.data_fim, rec = r.dados.recorrente;
+  const dt = (s, y) => new Date(s + 'T12:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', ...(y ? { year: 'numeric' } : {}) });
+  const txt = f ? `${new Date(d + 'T12:00').getDate()} a ${dt(f, !rec)}` : dt(d, !rec);
+  return esc(txt) + (rec ? ' <span class="chip gray">todos os anos</span>' : '');
 }
 function drawCalDates() {
   const rows = calOf('data').sort((a, b) => String(a.dados?.data || '9999').slice(5).localeCompare(String(b.dados?.data || '9999').slice(5)));
   $('#cal-body').innerHTML = `
     <div class="co-bar"><span class="muted">${rows.length} ${rows.length === 1 ? 'data' : 'datas'} · aparecem no calendário com 📌</span><button class="btn primary" id="cd-new">+ Nova data</button></div>
-    ${rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl"><thead><tr><th>Data / evento</th><th>Dia</th><th>Descritivo</th><th>Exemplos de adaptação e utilização</th></tr></thead><tbody>
+    ${rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl"><thead><tr><th>Data / evento</th><th>Dia</th><th>Exemplos de adaptação e utilização</th></tr></thead><tbody>
       ${rows.map((r) => `<tr class="pa-row" data-id="${r.id}"><td><strong>${esc(r.titulo)}</strong></td>
-        <td>${r.dados?.data ? esc(new Date(r.dados.data + 'T12:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', ...(r.dados.recorrente ? {} : { year: 'numeric' }) })) + (r.dados.recorrente ? ' <span class="chip gray">todos os anos</span>' : '') : '—'}</td>
-        <td class="pa-oferta" title="${esc(r.dados?.descritivo || '')}">${esc(r.dados?.descritivo || '—')}</td>
+        <td>${calDiaTxt(r)}</td>
         <td class="pa-oferta" title="${esc(r.dados?.exemplos || '')}">${esc(r.dados?.exemplos || '—')}</td></tr>`).join('')}</tbody></table></div>`
     : '<div class="card empty"><div class="big">🗓️</div><h2>Ainda não há datas relevantes</h2><p>Regista aqui as datas que importam para o teu conteúdo (Dia da Mãe, Black Friday, Dia do Trabalhador…) com ideias de como as aproveitar.</p></div>'}`;
   $('#cd-new').addEventListener('click', () => editData(calNew('data', { recorrente: true })));

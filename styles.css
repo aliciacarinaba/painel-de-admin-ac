@@ -435,3 +435,4 @@ input::placeholder, textarea::placeholder { color: #A59294; opacity: 1; }
 .au-pill:hover { background: var(--accent-soft); }
 .au-pill.active { background: var(--accent); color: #fff; border: 0; }
 .cal-sum { justify-content: flex-end; margin: 0 0 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+.cal-tbl .pa-oferta { max-width: 560px; }
