@@ -1238,7 +1238,7 @@ function drawCalRefs() {
 }
 
 // ---------- Chuva de Ideias ----------
-const CH_CATS = ['Fórmulas', 'Ganchos', 'Stories', 'Carrosseis', 'Legendas'];
+const CH_CATS = ['Fórmulas', 'Ganchos', 'Stories', 'Carrosséis', 'Legendas'];
 let chCat = CH_CATS[0];
 function editChuva(rec) {
   calModal({ heading: rec.titulo ? 'Editar ideia' : 'Nova ideia', rec, onDone: renderBrainstorm, fields: [
