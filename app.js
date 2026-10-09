@@ -1256,7 +1256,7 @@ async function renderBrainstorm() {
     try { await calLoad(); } catch (e) { console.error(e); return ($('#ch-body').innerHTML = '<div class="card empty"><p>Não foi possível carregar as ideias.</p></div>'); }
     if (state.route !== 'brainstorm') return;
   }
-  const rows = calOf('chuva').filter((r) => (r.dados?.categoria || CH_CATS[0]) === chCat).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  const rows = calOf('chuva').filter((r) => (r.dados?.categoria || CH_CATS[0]) === chCat).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
   $('#ch-body').innerHTML = `
     <div class="pa-pipe">${CH_CATS.map((c) => `<button class="au-pill ${chCat === c ? 'active' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
     <div class="co-bar"><span class="muted">${rows.length} ${rows.length === 1 ? 'ideia' : 'ideias'}</span><button class="btn primary" id="ch-new">+ Nova ideia</button></div>
