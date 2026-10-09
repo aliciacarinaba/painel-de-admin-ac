@@ -127,6 +127,7 @@ function go(route) {
   else if (route === 'calendar') renderCalendar();
   else if (route === 'partnerships') renderPartnerships();
   else if (route === 'courses') renderCourses();
+  else if (route === 'brainstorm') renderBrainstorm();
   else renderInstagram();
 }
 
@@ -1234,6 +1235,32 @@ function drawCalRefs() {
   $$('.co-card, .cal-row').forEach((b) => b.addEventListener('click', () => editRef(CA.list.find((x) => x.id === b.dataset.id))));
   $$('.cal-link-a').forEach((l) => l.addEventListener('click', (e) => e.stopPropagation()));
   $$('.cal-link').forEach((l) => l.addEventListener('click', (e) => { e.stopPropagation(); const u = l.dataset.href; if (/^https?:\/\//i.test(u)) window.open(u, '_blank', 'noopener'); }));
+}
+
+// ---------- Chuva de Ideias ----------
+function editChuva(rec) {
+  calModal({ heading: rec.titulo ? 'Editar ideia' : 'Nova ideia', rec, onDone: renderBrainstorm, fields: [
+    ['titulo', 'Título', 'text'],
+    ['notas', 'Descritivo', 'rich'],
+    ['links', 'Links', 'links'],
+  ] });
+}
+async function renderBrainstorm() {
+  $('#view').innerHTML = `
+    <div class="page-head"><h1>💡 Chuva de Ideias</h1></div>
+    <div id="ch-body"><div class="card empty"><p>A carregar…</p></div></div>`;
+  if (!CA.loaded) {
+    try { await calLoad(); } catch (e) { console.error(e); return ($('#ch-body').innerHTML = '<div class="card empty"><p>Não foi possível carregar as ideias.</p></div>'); }
+    if (state.route !== 'brainstorm') return;
+  }
+  const rows = calOf('chuva').sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  $('#ch-body').innerHTML = `
+    <div class="co-bar"><span class="muted">${rows.length} ${rows.length === 1 ? 'ideia' : 'ideias'}</span><button class="btn primary" id="ch-new">+ Nova ideia</button></div>
+    ${rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl cr-tbl rf-tbl"><colgroup><col style="width:22%"><col></colgroup><thead><tr><th>Ideia</th><th>Descritivo</th></tr></thead><tbody>
+      ${rows.map((r) => `<tr class="pa-row cal-row" data-id="${r.id}"><td><strong class="cal-clamp">${esc(r.titulo)}</strong></td><td><span class="cal-clamp cal-ex">${esc(rtText(r.dados?.notas) || '—')}</span></td></tr>`).join('')}</tbody></table></div>`
+    : '<div class="card empty"><div class="big">💡</div><h2>Ainda não há ideias</h2><p>Aponta aqui, sem filtros, as ideias que te vão surgindo.</p></div>'}`;
+  $('#ch-new').addEventListener('click', () => editChuva(calNew('chuva')));
+  $$('.cal-row').forEach((r) => r.addEventListener('click', () => editChuva(CA.list.find((x) => x.id === r.dataset.id))));
 }
 
 // ---------- Oferta Formativa ----------

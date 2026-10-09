@@ -290,7 +290,7 @@ create policy "admin_total" on parcerias for all to authenticated using (true) w
 -- rubrica (ideias por linha editorial/rubrica) e referencia (banco de referências).
 create table if not exists calendario (
   id uuid primary key default gen_random_uuid(),
-  tipo text not null check (tipo in ('conteudo','data','rubrica','referencia')),
+  tipo text not null check (tipo in ('conteudo','data','rubrica','referencia','chuva')),
   titulo text not null default '',
   dados jsonb not null default '{}',
   created_at timestamptz not null default now(),
