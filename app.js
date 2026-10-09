@@ -1204,7 +1204,6 @@ function editRef(rec) {
   if (rec.dados?.categoria === 'Criadores') return editCriador(rec);
   calModal({ heading: rec.titulo ? 'Editar referência' : 'Nova referência', rec, onDone: redrawCal, fields: [
     ['titulo', 'Título / nome', 'text'],
-    ['categoria', 'Categoria', 'select', CAL_REF_CATS],
     ['link', 'Link', 'url'],
     ['notas', 'Notas (porque é uma boa referência, o que aproveitar)', 'longtext'],
   ] });
@@ -1243,7 +1242,6 @@ let chCat = CH_CATS[0];
 function editChuva(rec) {
   calModal({ heading: rec.titulo ? 'Editar ideia' : 'Nova ideia', rec, onDone: renderBrainstorm, fields: [
     ['titulo', 'Título', 'text'],
-    ['categoria', 'Categoria', 'select', CH_CATS],
     ['notas', 'Descritivo', 'rich'],
     ['links', 'Links', 'links'],
   ] });
