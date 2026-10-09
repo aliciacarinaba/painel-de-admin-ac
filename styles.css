@@ -580,3 +580,9 @@ input[type=date]::-webkit-datetime-edit-day-field:focus, input[type=date]::-webk
 .file-del-inline { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--danger, #A33A3A); cursor: pointer; }
 .file-del-inline:hover { background: var(--accent-soft); }
 select { pointer-events: none; }
+
+/* Banco de Referências: lista com imagem */
+.rf-thumb { display: block; width: 52px; height: 52px; border-radius: 10px; background: var(--accent-soft) center / cover no-repeat; border: 1px solid var(--border); }
+.rf-none { display: grid; place-items: center; color: var(--accent-mid); }
+.rf-tbl td { vertical-align: middle; }
+.rf-tbl .cal-link-a { display: block; }
