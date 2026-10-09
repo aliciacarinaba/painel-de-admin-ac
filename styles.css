@@ -597,3 +597,4 @@ select { pointer-events: none; }
 .ic-btn { width: 34px; height: 34px; display: inline-grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--accent); cursor: pointer; }
 .ic-btn:hover { background: var(--accent-soft); }
 .ic-del { color: var(--danger, #A33A3A); }
+.ch-tbl th:last-child, .ch-tbl td:last-child { width: 1%; white-space: nowrap; }
