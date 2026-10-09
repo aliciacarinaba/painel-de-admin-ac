@@ -1205,7 +1205,6 @@ function editRef(rec) {
     ['titulo', 'Título / nome', 'text'],
     ['categoria', 'Categoria', 'select', CAL_REF_CATS],
     ['link', 'Link', 'url'],
-    ['anexos', 'Imagem do post (PNG ou JPEG)', 'files'],
     ['notas', 'Notas (porque é uma boa referência, o que aproveitar)', 'longtext'],
   ] });
 }
@@ -1225,16 +1224,11 @@ function drawCalRefs() {
         <td>${[['instagram', 'Instagram', igHandle(r.dados?.instagram)], ['tiktok', 'TikTok', 'TikTok'], ['youtube', 'YouTube', 'YouTube']].filter(([k]) => r.dados?.[k]).map(([k, , t]) => `<a class="cal-link-a" href="${esc(r.dados[k])}" target="_blank" rel="noopener">${esc(t || k)}</a>`).join(' ') || '—'}</td>
         <td>${r.dados?.compraria ? `<span class="chip ${CRIADOR_CHIP[r.dados.compraria] || ''}">${esc(r.dados.compraria)}</span>` : '—'}</td>
         <td><span class="cal-clamp cal-ex" title="${esc(r.dados?.porque || '')}">${esc(r.dados?.porque || '—')}</span></td></tr>`).join('')}</tbody></table></div>`
-    : rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl cr-tbl rf-tbl"><colgroup><col style="width:92px"><col style="width:30%"><col style="width:22%"><col></colgroup><thead><tr><th>Imagem</th><th>Nome</th><th>Link</th><th>Notas</th></tr></thead><tbody>
-      ${rows.map((r) => { const im = (r.dados?.anexos || [])[0]; return `<tr class="pa-row cal-row" data-id="${r.id}"><td>${im ? `<span class="rf-thumb" ${im.path ? `data-p="${esc(im.path)}"` : `style="background-image:url('${esc(im.dataUrl || '')}')"`}></span>` : '<span class="rf-thumb rf-none">—</span>'}</td>
-        <td><strong class="cal-clamp">${esc(r.titulo)}</strong></td>
+    : rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl cr-tbl rf-tbl"><colgroup><col style="width:32%"><col style="width:24%"><col></colgroup><thead><tr><th>Nome</th><th>Link</th><th>Notas</th></tr></thead><tbody>
+      ${rows.map((r) => `<tr class="pa-row cal-row" data-id="${r.id}">        <td><strong class="cal-clamp">${esc(r.titulo)}</strong></td>
         <td>${/^https?:\/\//i.test(r.dados?.link || '') ? `<a class="cal-link-a cal-clamp" href="${esc(r.dados.link)}" target="_blank" rel="noopener" title="${esc(r.dados.link)}">${esc(refLinkTxt(r.dados.link))}</a>` : '—'}</td>
-        <td><span class="cal-clamp cal-ex" title="${esc(r.dados?.notas || '')}">${esc(r.dados?.notas || '—')}</span></td></tr>`; }).join('')}</tbody></table></div>`
+        <td><span class="cal-clamp cal-ex" title="${esc(r.dados?.notas || '')}">${esc(r.dados?.notas || '—')}</span></td></tr>`).join('')}</tbody></table></div>`
     : '<div class="card empty"><div class="big">💡</div><h2>Ainda não há referências</h2><p>Guarda aqui criadores, conteúdos, blogs, livros, podcasts e ideias que te inspiram.</p></div>'}`;
-  const th = $$('.rf-thumb[data-p]');
-  if (sb && th.length) sb.storage.from('anexos').createSignedUrls(th.map((t) => t.dataset.p), 3600).then(({ data }) => {
-    (data || []).forEach((d) => { const t = th.find((x) => x.dataset.p === d.path); if (t && d.signedUrl) t.style.backgroundImage = `url('${d.signedUrl}')`; });
-  }).catch(() => {});
   $('#cr-new').addEventListener('click', () => (CA.refCat === 'Criadores' ? editCriador(calNew('referencia', { categoria: 'Criadores' })) : editRef(calNew('referencia', { categoria: CA.refCat || CAL_REF_CATS[0] }))));
   $$('.pa-pipe .au-pill').forEach((b) => b.addEventListener('click', () => { CA.refCat = b.dataset.c; drawCalRefs(); }));
   $$('.co-card, .cal-row').forEach((b) => b.addEventListener('click', () => editRef(CA.list.find((x) => x.id === b.dataset.id))));
