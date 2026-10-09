@@ -1151,7 +1151,7 @@ function drawCalDates() {
 }
 
 // Linhas Editoriais e Rubricas
-async function editRubrica(rec) {
+async function editRubrica(rec, onDone = redrawCal) {
   let pars = [];
   try {
     if (sb) pars = ((await sb.from('parcerias').select('nome')).data || []).map((x) => x.nome);
@@ -1159,7 +1159,7 @@ async function editRubrica(rec) {
   } catch {}
   pars = [...new Set([...pars, rec.dados?.parceria].filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt'));
   rec.dados ||= {}; if (!rec.dados.rubricas) rec.dados.rubricas = ideiaRubs(rec);
-  calModal({ heading: rec.titulo ? 'Editar ideia' : 'Nova ideia de conteúdo', rec, onDone: redrawCal, fields: [
+  calModal({ heading: CA.list.some((x) => x.id === rec.id) ? 'Editar ideia' : 'Nova ideia de conteúdo', rec, onDone, fields: [
     ['titulo', 'Título', 'text'],
     ['rubricas', 'Rubrica', 'multi', calRubricas()],
     ['redes', 'Redes sociais', 'multi', CAL_REDES],
@@ -1167,6 +1167,7 @@ async function editRubrica(rec) {
     ['parceria', 'Relacionada com uma parceria?', 'parc', ['', ...pars]],
     ['data', 'Data de publicação', 'date'],
     ['notas', 'Descritivo', 'rich'],
+    ['links', 'Links de referência', 'links'],
   ] });
 }
 function drawCalLines() {
@@ -1259,12 +1260,17 @@ async function renderBrainstorm() {
   $('#ch-body').innerHTML = `
     <div class="pa-pipe">${CH_CATS.map((c) => `<button class="au-pill ${chCat === c ? 'active' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
     <div class="co-bar"><span class="muted">${rows.length} ${rows.length === 1 ? 'ideia' : 'ideias'}</span><button class="btn primary" id="ch-new">+ Nova ideia</button></div>
-    ${rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl cr-tbl rf-tbl"><colgroup><col style="width:24%"><col><col style="width:150px"></colgroup><thead><tr><th>Título</th><th>Descritivo</th><th>Link de referência</th></tr></thead><tbody>
-      ${rows.map((r) => `<tr class="pa-row cal-row" data-id="${r.id}"><td><strong class="cal-clamp">${esc(r.titulo)}</strong></td><td><span class="cal-clamp cal-ex">${esc(rtText(r.dados?.notas) || '—')}</span></td><td>${chLinks(r) || '—'}</td></tr>`).join('')}</tbody></table></div>`
+    ${rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl cr-tbl rf-tbl"><colgroup><col style="width:24%"><col><col style="width:150px"><col style="width:190px"></colgroup><thead><tr><th>Título</th><th>Descritivo</th><th>Link de referência</th><th></th></tr></thead><tbody>
+      ${rows.map((r) => `<tr class="pa-row cal-row" data-id="${r.id}"><td><strong class="cal-clamp">${esc(r.titulo)}</strong></td><td><span class="cal-clamp cal-ex">${esc(rtText(r.dados?.notas) || '—')}</span></td><td>${chLinks(r) || '—'}</td><td><button class="btn ch-link ch-conv" data-id="${r.id}" title="Criar um conteúdo nas Linhas Editoriais e Rubricas, a partir desta ideia">Passar para conteúdo →</button></td></tr>`).join('')}</tbody></table></div>`
     : '<div class="card empty"><div class="big">💡</div><h2>Ainda não há ideias nesta categoria</h2><p>Aponta aqui as ideias que te vão surgindo.</p></div>'}`;
   $('#ch-new').addEventListener('click', () => editChuva(calNew('chuva', { categoria: chCat })));
   $$('.pa-pipe .au-pill').forEach((b) => b.addEventListener('click', () => { chCat = b.dataset.c; renderBrainstorm(); }));
   $$('.ch-link').forEach((l) => l.addEventListener('click', (e) => e.stopPropagation()));
+  $$('.ch-conv').forEach((b) => b.addEventListener('click', () => {
+    const src = CA.list.find((x) => x.id === b.dataset.id);
+    const rec = calNew('rubrica', { rubricas: [], notas: src.dados?.notas || '', links: [...(src.dados?.links || [])] }, src.titulo);
+    editRubrica(rec, () => { go('calendar'); CA.sub = 'lines'; renderCalendar(); });
+  }));
   $$('.cal-row').forEach((r) => r.addEventListener('click', () => editChuva(CA.list.find((x) => x.id === r.dataset.id))));
 }
 
