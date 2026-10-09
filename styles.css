@@ -598,3 +598,14 @@ select { pointer-events: none; }
 .ic-btn:hover { background: var(--accent-soft); }
 .ic-del { color: var(--danger, #A33A3A); }
 .ch-tbl th:last-child, .ch-tbl td:last-child { width: 1%; white-space: nowrap; }
+
+/* Textos longos passam para a linha seguinte e a altura da linha ajusta-se (em toda a plataforma) */
+.tbl td { white-space: normal; overflow-wrap: break-word; }
+.tbl td .chip, .tbl td .btn, .tbl td .src { white-space: nowrap; }
+.cal-clamp, .cal-ex, .cal-note { display: block; -webkit-line-clamp: unset; overflow: visible; }
+.cr-name strong, .pa-oferta { overflow: visible; text-overflow: clip; white-space: normal; max-width: none; }
+.cal-tbl .cal-row td, .cr-tbl td { padding-top: 10px; padding-bottom: 10px; }
+.cal-it { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: break-word; }
+.rf-tbl th:first-child, .rf-tbl td:first-child { width: 22%; white-space: normal; }
+.rf-tbl .rf-cell { max-width: none; overflow: visible; text-overflow: clip; white-space: normal; overflow-wrap: break-word; }
+.rf-tbl a.rf-cell { max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
