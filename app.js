@@ -1224,7 +1224,7 @@ function drawCalRefs() {
         <td>${[['instagram', 'Instagram', igHandle(r.dados?.instagram)], ['tiktok', 'TikTok', 'TikTok'], ['youtube', 'YouTube', 'YouTube']].filter(([k]) => r.dados?.[k]).map(([k, , t]) => `<a class="cal-link-a" href="${esc(r.dados[k])}" target="_blank" rel="noopener">${esc(t || k)}</a>`).join(' ') || '—'}</td>
         <td>${r.dados?.compraria ? `<span class="chip ${CRIADOR_CHIP[r.dados.compraria] || ''}">${esc(r.dados.compraria)}</span>` : '—'}</td>
         <td><span class="cal-clamp cal-ex" title="${esc(r.dados?.porque || '')}">${esc(r.dados?.porque || '—')}</span></td></tr>`).join('')}</tbody></table></div>`
-    : rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl cr-tbl rf-tbl"><colgroup><col style="width:32%"><col style="width:24%"><col></colgroup><thead><tr><th>Nome</th><th>Link</th><th>Notas</th></tr></thead><tbody>
+    : rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl cr-tbl rf-tbl"><colgroup><col style="width:18%"><col style="width:14%"><col></colgroup><thead><tr><th>Nome</th><th>Link</th><th>Notas</th></tr></thead><tbody>
       ${rows.map((r) => `<tr class="pa-row cal-row" data-id="${r.id}">        <td><strong class="cal-clamp">${esc(r.titulo)}</strong></td>
         <td>${/^https?:\/\//i.test(r.dados?.link || '') ? `<a class="cal-link-a cal-clamp" href="${esc(r.dados.link)}" target="_blank" rel="noopener" title="${esc(r.dados.link)}">${esc(refLinkTxt(r.dados.link))}</a>` : '—'}</td>
         <td><span class="cal-clamp cal-ex" title="${esc(r.dados?.notas || '')}">${esc(r.dados?.notas || '—')}</span></td></tr>`).join('')}</tbody></table></div>`
