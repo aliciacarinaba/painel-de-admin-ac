@@ -1203,9 +1203,10 @@ const CRIADOR_CHIP = { 'Já comprei': 'ok', 'Sim': 'au-warn', 'Não': 'gray' };
 const igHandle = (u) => { const m = String(u || '').match(/instagram\.com\/([^/?#]+)/i); return m ? '@' + m[1] : ''; };
 function editRef(rec) {
   if (rec.dados?.categoria === 'Criadores') return editCriador(rec);
+  rec.dados ||= {}; if (!rec.dados.links && rec.dados.link) rec.dados.links = [rec.dados.link];
   calModal({ heading: rec.titulo ? 'Editar referência' : 'Nova referência', rec, onDone: redrawCal, fields: [
     ['titulo', 'Título / nome', 'text'],
-    ['link', 'Link', 'url'],
+    ['links', 'Links', 'links'],
     ['notas', 'Notas (porque é uma boa referência, o que aproveitar)', 'longtext'],
   ] });
 }
@@ -1227,7 +1228,7 @@ function drawCalRefs() {
         <td><span class="cal-clamp cal-ex" title="${esc(r.dados?.porque || '')}">${esc(r.dados?.porque || '—')}</span></td></tr>`).join('')}</tbody></table></div>`
     : rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl cr-tbl rf-tbl"><thead><tr><th>Nome</th><th>Link</th><th>Notas</th></tr></thead><tbody>
       ${rows.map((r) => `<tr class="pa-row cal-row" data-id="${r.id}">        <td><strong class="rf-cell" title="${esc(r.titulo)}">${esc(r.titulo)}</strong></td>
-        <td>${/^https?:\/\//i.test(r.dados?.link || '') ? `<a class="cal-link-a rf-cell" href="${esc(r.dados.link)}" target="_blank" rel="noopener" title="${esc(r.dados.link)}">${esc(refLinkTxt(r.dados.link))}</a>` : '—'}</td>
+        <td>${(r.dados?.links || (r.dados?.link ? [r.dados.link] : [])).filter((u) => /^https?:\/\//i.test(u)).map((u) => `<a class="cal-link-a rf-cell" href="${esc(u)}" target="_blank" rel="noopener" title="${esc(u)}">${esc(refLinkTxt(u))}</a>`).join('') || '—'}</td>
         <td><span class="cal-clamp cal-ex" title="${esc(r.dados?.notas || '')}">${esc(r.dados?.notas || '—')}</span></td></tr>`).join('')}</tbody></table></div>`
     : '<div class="card empty"><div class="big">💡</div><h2>Ainda não há referências</h2><p>Guarda aqui criadores, conteúdos, blogs, livros, podcasts e ideias que te inspiram.</p></div>'}`;
   $('#cr-new').addEventListener('click', () => (CA.refCat === 'Criadores' ? editCriador(calNew('referencia', { categoria: 'Criadores' })) : editRef(calNew('referencia', { categoria: CA.refCat || CAL_REF_CATS[0] }))));
