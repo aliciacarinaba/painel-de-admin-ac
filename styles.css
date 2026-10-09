@@ -613,3 +613,4 @@ select { pointer-events: none; }
 .ch-tbl th:first-child, .ch-tbl td:first-child { width: 1%; white-space: nowrap; }
 .ch-tbl th:nth-child(2), .ch-tbl td:nth-child(2) { width: auto; white-space: normal; }
 .ch-tbl td:first-child .rf-cell { width: max-content; max-width: 340px; white-space: normal; }
+.ch-tbl th:first-child, .ch-tbl td:first-child { padding-right: 22px; }
