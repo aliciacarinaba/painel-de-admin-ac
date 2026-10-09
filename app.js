@@ -854,7 +854,7 @@ function rtClean(html) {
   walk(doc.body);
   return doc.body.innerHTML.trim();
 }
-const rtHtml = (v) => { v = String(v ?? ''); return /<(b|strong|i|em|u|p|div|br|ul|ol|li)\b/i.test(v) ? rtClean(v) : esc(v).replace(/\n/g, '<br>'); };
+const rtHtml = (v) => { v = String(v ?? ''); return /<(b|strong|i|em|u|p|div|br|ul|ol|li)\b|&(gt|lt|amp|quot|nbsp|#\d+);/i.test(v) ? rtClean(v) : esc(v).replace(/\n/g, '<br>'); };
 const rtText = (v) => { const d = document.createElement('div'); d.innerHTML = rtHtml(v).replace(/<\/(p|div|li)>|<br\s*\/?>/gi, ' '); return d.textContent.replace(/\s+/g, ' ').trim(); };
 function calModal({ heading, rec, fields, onDone }) {
   const draft = JSON.parse(JSON.stringify(rec)); draft.dados ||= {};
