@@ -586,3 +586,9 @@ select { pointer-events: none; }
 .rf-none { display: grid; place-items: center; color: var(--accent-mid); }
 .rf-tbl td { vertical-align: middle; }
 .rf-tbl .cal-link-a { display: block; }
+/* Referências: colunas ajustadas ao conteúdo, com a mesma distância entre todas */
+.rf-tbl { table-layout: auto; }
+.rf-tbl th, .rf-tbl td { padding-left: 12px; padding-right: 12px; }
+.rf-tbl th:first-child, .rf-tbl td:first-child { padding-left: 16px; }
+.rf-tbl th:nth-child(-n+2), .rf-tbl td:nth-child(-n+2) { width: 1%; white-space: nowrap; }
+.rf-tbl .rf-cell { display: block; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
