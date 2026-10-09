@@ -1260,12 +1260,18 @@ async function renderBrainstorm() {
   $('#ch-body').innerHTML = `
     <div class="pa-pipe">${CH_CATS.map((c) => `<button class="au-pill ${chCat === c ? 'active' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
     <div class="co-bar"><span class="muted">${rows.length} ${rows.length === 1 ? 'ideia' : 'ideias'}</span><button class="btn primary" id="ch-new">+ Nova ideia</button></div>
-    ${rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl cr-tbl rf-tbl"><colgroup><col style="width:24%"><col style="width:150px"><col><col style="width:190px"></colgroup><thead><tr><th>Título</th><th>Link de referência</th><th>Descritivo</th><th></th></tr></thead><tbody>
-      ${rows.map((r) => `<tr class="pa-row cal-row" data-id="${r.id}"><td><strong class="cal-clamp">${esc(r.titulo)}</strong></td><td>${chLinks(r) || '—'}</td><td><span class="cal-clamp cal-ex">${esc(rtText(r.dados?.notas) || '—')}</span></td><td><button class="btn ch-link ch-conv" data-id="${r.id}" title="Criar um conteúdo nas Linhas Editoriais e Rubricas, a partir desta ideia">Passar para conteúdo →</button></td></tr>`).join('')}</tbody></table></div>`
+    ${rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl cr-tbl rf-tbl"><colgroup><col style="width:24%"><col style="width:150px"><col><col style="width:290px"></colgroup><thead><tr><th>Título</th><th>Link de referência</th><th>Descritivo</th><th></th></tr></thead><tbody>
+      ${rows.map((r) => `<tr class="pa-row cal-row" data-id="${r.id}"><td><strong class="cal-clamp">${esc(r.titulo)}</strong></td><td>${chLinks(r) || '—'}</td><td><span class="cal-clamp cal-ex">${esc(rtText(r.dados?.notas) || '—')}</span></td><td><button class="btn ch-link ch-conv" data-id="${r.id}" title="Criar um conteúdo nas Linhas Editoriais e Rubricas, a partir desta ideia">Passar para conteúdo →</button><span class="ch-ic"><button type="button" class="ic-btn ch-edit" data-id="${r.id}" title="Editar" aria-label="Editar ideia"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button><button type="button" class="ic-btn ic-del ch-del" data-id="${r.id}" title="Eliminar" aria-label="Eliminar ideia"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v6M14 11v6"/></svg></button></span></td></tr>`).join('')}</tbody></table></div>`
     : '<div class="card empty"><div class="big">💡</div><h2>Ainda não há ideias nesta categoria</h2><p>Aponta aqui as ideias que te vão surgindo.</p></div>'}`;
   $('#ch-new').addEventListener('click', () => editChuva(calNew('chuva', { categoria: chCat })));
   $$('.pa-pipe .au-pill').forEach((b) => b.addEventListener('click', () => { chCat = b.dataset.c; renderBrainstorm(); }));
   $$('.ch-link').forEach((l) => l.addEventListener('click', (e) => e.stopPropagation()));
+  $$('.ch-edit').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); editChuva(CA.list.find((x) => x.id === b.dataset.id)); }));
+  $$('.ch-del').forEach((b) => b.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (!confirm('Eliminar esta ideia? Esta ação não se pode desfazer.')) return;
+    try { await calDelete(b.dataset.id); toast('Ideia eliminada.'); renderBrainstorm(); } catch (err) { console.error(err); toast('Não foi possível eliminar.', true); }
+  }));
   $$('.ch-conv').forEach((b) => b.addEventListener('click', () => {
     const src = CA.list.find((x) => x.id === b.dataset.id);
     const rec = calNew('rubrica', { rubricas: [], notas: src.dados?.notas || '', links: [...(src.dados?.links || [])] }, src.titulo);

@@ -593,3 +593,7 @@ select { pointer-events: none; }
 .rf-tbl th:nth-child(-n+2), .rf-tbl td:nth-child(-n+2) { width: 1%; white-space: nowrap; }
 .rf-tbl .rf-cell { display: block; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ch-link { min-height: 34px; height: 34px; padding: 0 14px; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; white-space: nowrap; }
+.ch-ic { display: inline-flex; align-items: center; gap: 2px; margin-left: 10px; vertical-align: middle; }
+.ic-btn { width: 34px; height: 34px; display: inline-grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--accent); cursor: pointer; }
+.ic-btn:hover { background: var(--accent-soft); }
+.ic-del { color: var(--danger, #A33A3A); }
