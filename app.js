@@ -1246,6 +1246,7 @@ function editChuva(rec) {
     ['links', 'Links', 'links'],
   ] });
 }
+const chLinks = (r) => (r.dados?.links || []).filter((u) => /^https?:\/\//i.test(u)).map((u, i, a) => `<a class="btn ch-link" href="${esc(u)}" target="_blank" rel="noopener">${a.length > 1 ? `Link ${i + 1}` : 'Abrir link'} ↗</a>`).join(' ');
 async function renderBrainstorm() {
   $('#view').innerHTML = `
     <div class="page-head"><h1>💡 Chuva de Ideias</h1></div>
@@ -1258,11 +1259,12 @@ async function renderBrainstorm() {
   $('#ch-body').innerHTML = `
     <div class="pa-pipe">${CH_CATS.map((c) => `<button class="au-pill ${chCat === c ? 'active' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
     <div class="co-bar"><span class="muted">${rows.length} ${rows.length === 1 ? 'ideia' : 'ideias'}</span><button class="btn primary" id="ch-new">+ Nova ideia</button></div>
-    ${rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl cr-tbl rf-tbl"><colgroup><col style="width:22%"><col></colgroup><thead><tr><th>Ideia</th><th>Descritivo</th></tr></thead><tbody>
-      ${rows.map((r) => `<tr class="pa-row cal-row" data-id="${r.id}"><td><strong class="cal-clamp">${esc(r.titulo)}</strong></td><td><span class="cal-clamp cal-ex">${esc(rtText(r.dados?.notas) || '—')}</span></td></tr>`).join('')}</tbody></table></div>`
+    ${rows.length ? `<div class="tbl-wrap"><table class="tbl cal-tbl cr-tbl rf-tbl"><colgroup><col style="width:24%"><col><col style="width:150px"></colgroup><thead><tr><th>Título</th><th>Descritivo</th><th>Link de referência</th></tr></thead><tbody>
+      ${rows.map((r) => `<tr class="pa-row cal-row" data-id="${r.id}"><td><strong class="cal-clamp">${esc(r.titulo)}</strong></td><td><span class="cal-clamp cal-ex">${esc(rtText(r.dados?.notas) || '—')}</span></td><td>${chLinks(r) || '—'}</td></tr>`).join('')}</tbody></table></div>`
     : '<div class="card empty"><div class="big">💡</div><h2>Ainda não há ideias nesta categoria</h2><p>Aponta aqui as ideias que te vão surgindo.</p></div>'}`;
   $('#ch-new').addEventListener('click', () => editChuva(calNew('chuva', { categoria: chCat })));
   $$('.pa-pipe .au-pill').forEach((b) => b.addEventListener('click', () => { chCat = b.dataset.c; renderBrainstorm(); }));
+  $$('.ch-link').forEach((l) => l.addEventListener('click', (e) => e.stopPropagation()));
   $$('.cal-row').forEach((r) => r.addEventListener('click', () => editChuva(CA.list.find((x) => x.id === r.dataset.id))));
 }
 

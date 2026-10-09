@@ -592,3 +592,4 @@ select { pointer-events: none; }
 .rf-tbl th:first-child, .rf-tbl td:first-child { padding-left: 16px; }
 .rf-tbl th:nth-child(-n+2), .rf-tbl td:nth-child(-n+2) { width: 1%; white-space: nowrap; }
 .rf-tbl .rf-cell { display: block; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ch-link { min-height: 34px; height: 34px; padding: 0 14px; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; white-space: nowrap; }
