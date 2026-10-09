@@ -609,3 +609,7 @@ select { pointer-events: none; }
 .rf-tbl th:first-child, .rf-tbl td:first-child { width: 22%; white-space: normal; }
 .rf-tbl .rf-cell { max-width: none; overflow: visible; text-overflow: clip; white-space: normal; overflow-wrap: break-word; }
 .rf-tbl a.rf-cell { max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Chuva de Ideias: título ajustado ao conteúdo (máx. 340px), descritivo logo a seguir */
+.ch-tbl th:first-child, .ch-tbl td:first-child { width: 1%; white-space: nowrap; }
+.ch-tbl th:nth-child(2), .ch-tbl td:nth-child(2) { width: auto; white-space: normal; }
+.ch-tbl td:first-child .rf-cell { width: max-content; max-width: 340px; white-space: normal; }
