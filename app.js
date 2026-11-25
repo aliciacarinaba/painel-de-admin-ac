@@ -124,7 +124,7 @@ function go(route) {
   state.route = route;
   $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.route === route && !b.classList.contains('nav-back')));
   if (EMPRESAS[route]) state.empresa = route;
-  if (route === 'areas') { AR.open = null; AR.editing = null; }
+  if (route === 'areas') { AR.open = null; AR.editing = null; AR.passo = 0; }
   showArea(areaOf(route));
   if (route === 'home') renderCompanies();
   else if (route === 'alicia') renderHome();
@@ -191,7 +191,8 @@ const AREAS_DESC = {
   'Marketing': 'Divulga a marca e a oferta da empresa para atrair potenciais clientes. Estuda o mercado, cria conteúdos, gere campanhas e avalia os seus resultados.',
   'Atendimento ao Cliente': 'Apoia os clientes antes e depois da compra. Esclarece dúvidas, informa sobre encomendas e acompanha pedidos e reclamações até à resolução.',
 };
-const AR = { list: [], loaded: false, open: null, editing: null };
+const AR_PASSOS = ['Mapear o que a tua empresa faz', 'Categorizar as atividades', 'Priorizar as minhas atividades'];
+const AR = { list: [], loaded: false, open: null, editing: null, passo: 0 };
 const LS_AREAS = 'painel_areas';
 async function arLoad() {
   if (sb) {
@@ -309,7 +310,13 @@ async function renderAreas() {
   const rows = AR.list.filter((a) => a.empresa === empresa).sort((a, b) => a.ordem - b.ordem);
   const aberta = rows.find((a) => a.id === AR.open);
   if (aberta) return drawAreaDetail(aberta);
-  $('#ar-body').innerHTML = `
+  const passos = `<div class="ar-steps emp-${empresa}">${AR_PASSOS.map((t, i) => `<button type="button" class="ar-step${AR.passo === i ? ' active' : ''}" data-passo="${i}" aria-pressed="${AR.passo === i}"><span class="ar-num">0${i + 1}</span><span>${t}</span></button>`).join('')}</div>`;
+  const ligarPassos = () => $$('.ar-step').forEach((b) => b.addEventListener('click', () => { AR.passo = +b.dataset.passo; renderAreas(); }));
+  if (AR.passo) {
+    $('#ar-body').innerHTML = `${passos}<div class="card empty"><div class="big">🛠️</div><h2>${AR_PASSOS[AR.passo]}</h2><p>Esta parte está em construção.</p></div>`;
+    return ligarPassos();
+  }
+  $('#ar-body').innerHTML = `${passos}
     <div class="co-bar"><span class="muted">${esc(EMPRESAS[empresa].nome)} · ${rows.length} ${rows.length === 1 ? 'área' : 'áreas'}</span><button class="btn primary" id="ar-new">+ Adicionar área</button></div>
     <div class="ar-grid emp-${empresa}">${rows.map((a) => `<article class="card ar-card" data-id="${esc(a.id)}">
       <div class="ar-top"><span class="ar-badge">${esc(arSigla(a.nome))}</span><button type="button" class="ic-btn ic-del ar-rm" title="Eliminar área" aria-label="Eliminar a área ${esc(a.nome)}">${AR_TRASH}</button></div>
@@ -326,6 +333,7 @@ async function renderAreas() {
     AR.open = find(c).id; AR.editing = null; renderAreas(); window.scrollTo(0, 0);
   }));
   $$('.ar-rm').forEach((b) => b.addEventListener('click', () => arRemove(find(b))));
+  ligarPassos();
 }
 
 // ---------- Alícia C.: visão geral e marca ----------

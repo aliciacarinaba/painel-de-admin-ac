@@ -667,3 +667,13 @@ select { pointer-events: none; }
 
 /* Descrição de cada área (o seletor tem de ganhar a ".ar-detail > p") */
 .ar-detail > p.ar-desc { margin: 12px 0 22px; line-height: 1.6; }
+
+/* Três passos no topo de "Áreas e Funções da Empresa" */
+.ar-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 18px 0 28px; }
+.ar-step { display: flex; align-items: center; gap: 18px; min-height: 96px; padding: 18px 20px; border: 1px solid var(--border); border-radius: 16px; background: #fff; font: inherit; font-size: 17px; font-weight: 700; line-height: 1.4; color: var(--text); text-align: left; cursor: pointer; }
+.ar-step:hover { border-color: var(--emp-bg); }
+.ar-step:focus-visible { outline: 3px solid var(--emp-bg); outline-offset: 2px; }
+.ar-num { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: color-mix(in srgb, var(--emp-bg) 15%, #fff); color: color-mix(in srgb, var(--emp-bg) 75%, #000); font-size: 14px; }
+.ar-step.active { border-color: var(--emp-bg); background: var(--emp-bg); color: var(--emp-fg); }
+.ar-step.active .ar-num { background: var(--emp-fg); color: color-mix(in srgb, var(--emp-bg) 75%, #000); }
+@media (max-width: 900px) { .ar-steps { grid-template-columns: 1fr; } .ar-step { min-height: 76px; } }
