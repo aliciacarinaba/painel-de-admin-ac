@@ -309,3 +309,34 @@ on conflict (id) do update set public = false, file_size_limit = 10485760, allow
 drop policy if exists "anexos_admin_total" on storage.objects;
 create policy "anexos_admin_total" on storage.objects for all to authenticated
   using (bucket_id = 'anexos') with check (bucket_id = 'anexos');
+
+-- ---------- 11) ÁREAS E FUNÇÕES DAS EMPRESAS ----------
+create table if not exists empresa_areas (
+  id uuid primary key default gen_random_uuid(),
+  empresa text not null check (empresa in ('alicia','belrose','belshop')),
+  nome text not null,
+  ordem int not null default 0,
+  funcoes jsonb not null default '[]',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table empresa_areas enable row level security;
+drop policy if exists "admin_total" on empresa_areas;
+create policy "admin_total" on empresa_areas for all to authenticated using (true) with check (true);
+-- Áreas iniciais, iguais nas três empresas (só quando a tabela está vazia)
+insert into empresa_areas (empresa, nome, ordem)
+  select e.empresa, a.nome, a.ordem
+  from (values ('alicia'), ('belrose'), ('belshop')) as e(empresa)
+  cross join (values
+    ('Administrativo', 1),
+    ('Gestão', 2),
+    ('Financeiro', 3),
+    ('Recursos Humanos', 4),
+    ('Operações e Produção', 5),
+    ('Logística', 6),
+    ('Produto', 7),
+    ('Comercial', 8),
+    ('Marketing', 9),
+    ('Atendimento ao Cliente', 10)
+  ) as a(nome, ordem)
+  where not exists (select 1 from empresa_areas);

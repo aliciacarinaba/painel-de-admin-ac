@@ -109,7 +109,7 @@ if (sb) sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') showLogin()
 // ============================================================
 // 3) NAVEGAÇÃO E ECRÃS
 // ============================================================
-const state = { route: 'home', igTab: 'metrics', homeTab: 'general', courseTab: 'draft' };
+const state = { route: 'home', igTab: 'metrics', homeTab: 'general', courseTab: 'draft', empresa: 'alicia' };
 
 $$('.nav-item').forEach((b) => b.addEventListener('click', () => { go(b.dataset.route); $('#sidebar').classList.remove('open'); }));
 $('#menu-toggle').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
@@ -123,10 +123,13 @@ function go(route) {
   if (route === 'courses' && state.route !== 'courses') { state.courseTab = 'draft'; CO.open = null; CO.draft = null; CO.dirty = false; }
   state.route = route;
   $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.route === route && !b.classList.contains('nav-back')));
+  if (EMPRESAS[route]) state.empresa = route;
+  if (route === 'areas') { AR.open = null; AR.editing = null; }
   showArea(areaOf(route));
   if (route === 'home') renderCompanies();
   else if (route === 'alicia') renderHome();
   else if (route === 'belrose' || route === 'belshop') renderCompanySoon(route);
+  else if (route === 'areas') renderAreas();
   else if (route === 'calendar') renderCalendar();
   else if (route === 'partnerships') renderPartnerships();
   else if (route === 'courses') renderCourses();
@@ -152,7 +155,7 @@ const EMPRESAS = {
   belshop: { nome: 'Belshop' },
 };
 // Área onde está cada ecrã: o Início geral, ou uma das empresas
-const areaOf = (route) => (route === 'home' ? 'home' : EMPRESAS[route] ? route : 'alicia');
+const areaOf = (route) => (route === 'home' ? 'home' : EMPRESAS[route] ? route : route === 'areas' ? state.empresa : 'alicia');
 function showArea(area) {
   $$('.nav-item[data-area]').forEach((b) => { b.hidden = !b.dataset.area.split(' ').includes(area); });
   $('#area-name').textContent = area === 'home' ? 'Admin' : EMPRESAS[area].nome;
@@ -172,6 +175,147 @@ function renderCompanySoon(k) {
   $('#view').innerHTML = `
     <div class="page-head"><h1>${esc(e.nome)}</h1></div>
     <div class="card empty"><div class="big">🛠️</div><h2>Área em construção</h2><p>As secções da ${esc(e.nome)} vão ser criadas aqui, uma de cada vez.</p></div>`;
+}
+
+// ---------- Áreas e Funções da Empresa ----------
+const AREAS_BASE = ['Administrativo', 'Gestão', 'Financeiro', 'Recursos Humanos', 'Operações e Produção', 'Logística', 'Produto', 'Comercial', 'Marketing', 'Atendimento ao Cliente'];
+const AR = { list: [], loaded: false, open: null, editing: null };
+const LS_AREAS = 'painel_areas';
+async function arLoad() {
+  if (sb) {
+    const { data, error } = await sb.from('empresa_areas').select('*').order('ordem', { ascending: true });
+    if (error) throw error;
+    AR.list = data || [];
+  } else {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(LS_AREAS)); } catch { /* sem armazenamento */ }
+    AR.list = saved || Object.keys(EMPRESAS).flatMap((empresa) => AREAS_BASE.map((nome, i) => ({ id: `${empresa}-${i}`, empresa, nome, ordem: i + 1, funcoes: [] })));
+  }
+  AR.loaded = true;
+}
+const arPersist = () => { if (!sb) { try { localStorage.setItem(LS_AREAS, JSON.stringify(AR.list)); } catch { /* sem armazenamento */ } } };
+async function arSave(r) {
+  r.updated_at = new Date().toISOString();
+  if (sb) { const { error } = await sb.from('empresa_areas').upsert(r); if (error) throw error; }
+  const i = AR.list.findIndex((x) => x.id === r.id);
+  if (i >= 0) AR.list[i] = r; else AR.list.push(r);
+  arPersist();
+}
+async function arDelete(id) {
+  if (sb) { const { error } = await sb.from('empresa_areas').delete().eq('id', id); if (error) throw error; }
+  AR.list = AR.list.filter((x) => x.id !== id); arPersist();
+}
+const arSigla = (nome) => {
+  const w = String(nome).trim().split(/\s+/).filter((x) => !/^(e|de|da|do|ao|à)$/i.test(x));
+  return (w.length > 1 ? w[0][0] + w[1][0] : String(nome).trim().slice(0, 2)).toUpperCase();
+};
+const AR_TRASH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v6M14 11v6"/></svg>';
+const arCount = (n) => `${n} ${n === 1 ? 'função' : 'funções'}`;
+async function arRemove(a) {
+  if (!confirm(`Eliminar a área “${a.nome}” e as suas funções? Esta ação não se pode desfazer.`)) return false;
+  try { await arDelete(a.id); toast('Área eliminada.'); renderAreas(); return true; }
+  catch (e) { console.error(e); toast('Não foi possível eliminar.', true); return false; }
+}
+// Nova área: só o nome; depois abre logo a página da área para escrever as funções
+function newArea(a) {
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.innerHTML = `<form class="modal" role="dialog" aria-modal="true"><h3>Nova área</h3>
+    <div class="cm-grid"><label class="co-field cm-wide"><span>Nome da área</span><input type="text" id="ar-nome"></label></div>
+    <div class="cm-foot"><span></span><div><button type="button" class="btn" id="ar-cancel">Cancelar</button> <button type="submit" class="btn primary">Guardar</button></div></div></form>`;
+  document.body.appendChild(bg);
+  const close = () => bg.remove();
+  $('#ar-nome', bg).focus();
+  bg.addEventListener('mousedown', (e) => { if (e.target === bg) close(); });
+  bg.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  $('#ar-cancel', bg).addEventListener('click', close);
+  $('form', bg).addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nome = $('#ar-nome', bg).value.trim();
+    if (!nome) { toast('Escreve o nome da área.', true); return; }
+    try { await arSave({ ...a, nome }); close(); AR.open = a.id; renderAreas(); }
+    catch (err) { console.error(err); toast('Não foi possível guardar. Tenta outra vez.', true); }
+  });
+}
+const AR_PEN = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+// Página de uma área: uma linha por função, com Editar e Eliminar, e o quadro "Adicionar ponto"
+function drawAreaDetail(area) {
+  const fns = area.funcoes;
+  $('#ar-body').innerHTML = `<div class="ar-detail emp-${area.empresa}">
+    <nav class="ar-crumb"><button type="button" id="ar-back">Áreas da empresa</button><span>/</span><span>${esc(area.nome)}</span></nav>
+    <div class="ar-title"><h2>${esc(area.nome)}</h2><button type="button" class="ar-act" id="ar-rename">${AR_PEN} Editar nome</button></div>
+    <p class="muted">O que fazes nesta área? Mantém apenas as atividades que fazem parte da tua rotina.</p>
+    <ul class="ar-rows">${fns.map((f, i) => (AR.editing === i
+    ? `<li class="card ar-row"><form class="ar-inline" data-i="${i}"><input type="text" value="${esc(f)}" aria-label="Função"><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ar-undo">Cancelar</button></form></li>`
+    : `<li class="card ar-row"><span>${esc(f)}</span><div><button type="button" class="ar-act ar-ed" data-i="${i}">${AR_PEN} Editar</button><button type="button" class="ar-act ar-rmfn" data-i="${i}">${AR_TRASH} Eliminar</button></div></li>`)).join('')}</ul>
+    <form class="ar-add" id="ar-add-form"><label for="ar-novo">Adicionar ponto</label>
+      <div><input type="text" id="ar-novo" placeholder="Escreve o que fazes nesta área…" autocomplete="off"><button type="submit" class="btn primary" id="ar-add-btn" disabled>+ Adicionar</button></div></form></div>`;
+  let busy = false;
+  const save = async (changes) => {
+    if (busy) return false;
+    busy = true;
+    try { await arSave({ ...area, ...changes }); AR.editing = null; renderAreas(); return true; }
+    catch (e) { console.error(e); toast('Não foi possível guardar. Tenta outra vez.', true); return false; }
+    finally { busy = false; }
+  };
+  $('#ar-back').addEventListener('click', () => { AR.open = null; AR.editing = null; renderAreas(); });
+  $('#ar-rename').addEventListener('click', () => {
+    const nome = (prompt('Nome da área', area.nome) || '').trim();
+    if (nome && nome !== area.nome) save({ nome });
+  });
+  $$('.ar-ed').forEach((b) => b.addEventListener('click', () => { AR.editing = +b.dataset.i; drawAreaDetail(area); const i = $('.ar-inline input'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }));
+  $$('.ar-rmfn').forEach((b) => b.addEventListener('click', () => {
+    const i = +b.dataset.i;
+    if (confirm(`Eliminar “${fns[i]}”?`)) save({ funcoes: fns.filter((_, j) => j !== i) });
+  }));
+  const inline = $('.ar-inline');
+  if (inline) {
+    const undo = () => { AR.editing = null; drawAreaDetail(area); };
+    inline.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const v = $('input', inline).value.trim();
+      if (v) save({ funcoes: fns.map((f, j) => (j === +inline.dataset.i ? v : f)) });
+    });
+    inline.addEventListener('keydown', (e) => { if (e.key === 'Escape') undo(); });
+    $('.ar-undo', inline).addEventListener('click', undo);
+  }
+  const campo = $('#ar-novo'), botao = $('#ar-add-btn');
+  campo.addEventListener('input', () => { botao.disabled = !campo.value.trim(); });
+  $('#ar-add-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const v = campo.value.trim();
+    if (v && await save({ funcoes: [...fns, v] })) $('#ar-novo')?.focus();
+  });
+}
+async function renderAreas() {
+  const empresa = state.empresa;
+  $('#view').innerHTML = `
+    <div class="page-head"><h1>🧩 Áreas e Funções da Empresa</h1></div>
+    <div id="ar-body"><div class="card empty"><p>A carregar…</p></div></div>`;
+  if (!AR.loaded) {
+    try { await arLoad(); } catch (e) { console.error(e); return ($('#ar-body').innerHTML = '<div class="card empty"><p>Não foi possível carregar as áreas.</p></div>'); }
+    if (state.route !== 'areas' || state.empresa !== empresa) return;
+  }
+  const rows = AR.list.filter((a) => a.empresa === empresa).sort((a, b) => a.ordem - b.ordem);
+  const aberta = rows.find((a) => a.id === AR.open);
+  if (aberta) return drawAreaDetail(aberta);
+  $('#ar-body').innerHTML = `
+    <div class="co-bar"><span class="muted">${esc(EMPRESAS[empresa].nome)} · ${rows.length} ${rows.length === 1 ? 'área' : 'áreas'}</span><button class="btn primary" id="ar-new">+ Adicionar área</button></div>
+    <div class="ar-grid emp-${empresa}">${rows.map((a) => `<article class="card ar-card" data-id="${esc(a.id)}">
+      <div class="ar-top"><span class="ar-badge">${esc(arSigla(a.nome))}</span><button type="button" class="ic-btn ic-del ar-rm" title="Eliminar área" aria-label="Eliminar a área ${esc(a.nome)}">${AR_TRASH}</button></div>
+      <h3>${esc(a.nome)}</h3>
+      ${a.funcoes.length ? `<ul>${a.funcoes.slice(0, 3).map((f) => `<li>${esc(f)}</li>`).join('')}</ul>` : '<p class="muted">Ainda sem funções. Uma função por linha.</p>'}
+      <div class="ar-foot"><span>${a.funcoes.length ? arCount(a.funcoes.length) : ''}</span><button type="button" class="ar-open">${a.funcoes.length ? 'Ver todas →' : 'Adicionar funções →'}</button></div></article>`).join('')}</div>`;
+  const find = (el) => AR.list.find((x) => String(x.id) === el.closest('.ar-card').dataset.id);
+  $('#ar-new').addEventListener('click', () => newArea({
+    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), empresa, nome: '',
+    ordem: rows.reduce((m, x) => Math.max(m, x.ordem), 0) + 1, funcoes: [],
+  }));
+  $$('.ar-card').forEach((c) => c.addEventListener('click', (e) => {
+    if (e.target.closest('.ar-rm')) return;
+    AR.open = find(c).id; AR.editing = null; renderAreas(); window.scrollTo(0, 0);
+  }));
+  $$('.ar-rm').forEach((b) => b.addEventListener('click', () => arRemove(find(b))));
 }
 
 // ---------- Alícia C.: visão geral e marca ----------

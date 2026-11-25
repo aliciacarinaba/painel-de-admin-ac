@@ -630,3 +630,37 @@ select { pointer-events: none; }
 .emp-belshop { --emp-bg: #93835E; --emp-fg: #FBF7F4; --emp-detail: #523927; }
 @media (max-width: 1000px) { .emp-grid { grid-template-columns: 1fr; } .emp-card { min-height: 300px; } }
 .nav-item.nav-back { font-size: 13px; white-space: nowrap; gap: 8px; padding-left: 10px; padding-right: 6px; }
+
+/* ---------- Áreas e Funções da Empresa ---------- */
+.ar-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 14px; }
+.ar-card { display: flex; flex-direction: column; gap: 12px; padding: 22px; cursor: pointer; background: #fff; color: var(--text); }
+.ar-card:hover { border-color: var(--emp-bg); }
+.ar-top { display: flex; align-items: center; justify-content: space-between; }
+.ar-badge { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; background: var(--emp-bg); color: var(--emp-fg); font-size: 13px; font-weight: 700; letter-spacing: .03em; }
+.ar-card h3 { margin: 0; font-size: 19px; }
+.ar-card ul { margin: 0; padding-left: 18px; color: var(--text-2); line-height: 1.6; overflow-wrap: break-word; }
+.ar-card p { margin: 0; line-height: 1.6; }
+.ar-foot { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 700; }
+.ar-open { border: 0; background: transparent; padding: 4px 0; font: inherit; font-weight: 700; color: var(--accent); cursor: pointer; }
+@media (max-width: 900px) { .ar-grid { grid-template-columns: 1fr; } }
+
+/* Página de uma área: lista de funções e quadro "Adicionar ponto" */
+.ar-detail { max-width: 860px; }
+.ar-crumb { display: flex; align-items: center; gap: 10px; margin: 6px 0 22px; color: var(--text); }
+.ar-crumb button { border: 0; background: transparent; padding: 0; font: inherit; color: var(--accent); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+.ar-title { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.ar-title h2 { margin: 0; font-size: 30px; }
+.ar-detail > p { margin: 10px 0 20px; }
+.ar-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.ar-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; min-height: 76px; padding: 14px 20px; }
+.ar-row > span { flex: 1; min-width: 200px; font-weight: 700; overflow-wrap: break-word; }
+.ar-row > div { display: flex; gap: 8px; }
+.ar-act { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; font: inherit; font-size: 14px; font-weight: 700; color: var(--text); cursor: pointer; }
+.ar-act:hover { background: var(--accent-soft); }
+.ar-inline { display: flex; align-items: center; gap: 8px; width: 100%; flex-wrap: wrap; }
+.ar-inline input { flex: 1; width: auto; min-width: 200px; }
+.ar-add { margin-top: 24px; padding: 22px; border: 1px solid var(--border); border-radius: 16px; background: var(--accent-soft); }
+.ar-add label { display: block; margin-bottom: 14px; font-weight: 700; }
+.ar-add > div { display: flex; gap: 12px; flex-wrap: wrap; }
+.ar-add input { flex: 1; width: auto; min-width: 200px; background: #fff; }
+.ar-add .btn:disabled { opacity: .45; cursor: default; }
