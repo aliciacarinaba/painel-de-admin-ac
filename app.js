@@ -124,7 +124,7 @@ function go(route) {
   state.route = route;
   $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.route === route && !b.classList.contains('nav-back')));
   if (EMPRESAS[route]) state.empresa = route;
-  if (route === 'areas') { AR.open = null; AR.editing = null; AR.passo = 0; }
+  if (route === 'areas') { AR.open = null; AR.editing = null; AR.passo = 0; AR.mudarObj = false; }
   showArea(areaOf(route));
   if (route === 'home') renderCompanies();
   else if (route === 'alicia') renderHome();
@@ -201,7 +201,7 @@ const AR_CATS = [
     opcoes: [['nao-sei', '🤔', 'Não sei'], ['uma-vez', '1️⃣', 'Uma única vez'], ['as-vezes', '🌤️', 'De vez em quando'], ['mensal', '🗓️', 'Todos os meses'], ['semanal', '📅', 'Todas as semanas'], ['diaria', '☀️', 'Todos os dias'], ['varias', '🔁', 'Várias vezes por dia']] },
 ];
 const AR_PASSOS = ['Mapear o que a tua empresa faz', 'Categorizar as atividades', 'Priorizar as minhas atividades'];
-const AR = { list: [], loaded: false, open: null, editing: null, passo: 0, catArea: null, catTab: 0, fila: Promise.resolve() };
+const AR = { list: [], loaded: false, open: null, editing: null, passo: 0, catArea: null, catTab: 0, fila: Promise.resolve(), mudarObj: false, objTemp: {} };
 const LS_AREAS = 'painel_areas';
 async function arLoad() {
   if (sb) {
@@ -341,10 +341,102 @@ function arResponder(area, i, chave, valor) {
     return novo;
   });
   renderAreas();
+  arGuardarEmFila(area);
+}
+
+// Passo 03: escolher um objetivo e ver as atividades por ordem de prioridade
+const AR_OBJETIVOS = [
+  { k: 'dinheiro', titulo: 'Quero ganhar mais dinheiro', texto: 'Priorizar as atividades com maior retorno financeiro indicado.', ordena: (p) => [p.retorno, p.tempo] },
+  { k: 'tempo', titulo: 'Quero ter mais tempo', texto: 'Aliviar as atividades que mais se repetem e te consomem energia.', ordena: (p) => [p.tempo, p.retorno] },
+  { k: 'equilibrio', titulo: 'Quero equilibrar os dois', texto: 'Procurar um equilíbrio entre o retorno financeiro e o alívio na rotina.', ordena: (p) => [(p.retorno + p.tempo) / 2, p.retorno] },
+];
+// Pontos de cada resposta, de 0 a 1. "Não sei" não tem pontos: a atividade fica fora da classificação
+const AR_PONTOS = {
+  energia: { baixa: 0, media: 0.5, alta: 1 },
+  retorno: { sem: 0, baixo: 1 / 3, medio: 2 / 3, alto: 1 },
+  repeticao: { 'uma-vez': 0, 'as-vezes': 0.2, mensal: 0.4, semanal: 0.6, diaria: 0.8, varias: 1 },
+};
+const arCompleta = (f) => AR_CATS.every((c) => AR_PONTOS[c.k][f[c.k]] !== undefined);
+const arAtividades = (rows) => rows.flatMap((area) => area.funcoes.map((f, i) => ({ area, i, f })));
+const arPontos = (f) => ({ retorno: AR_PONTOS.retorno[f.retorno], tempo: (AR_PONTOS.energia[f.energia] + AR_PONTOS.repeticao[f.repeticao]) / 2 });
+function arRanking(rows, objetivo) {
+  const o = AR_OBJETIVOS.find((x) => x.k === objetivo);
+  return arAtividades(rows).filter((x) => arCompleta(x.f))
+    .map((x) => ({ ...x, nota: o.ordena(arPontos(x.f)) }))
+    .sort((a, b) => b.nota[0] - a.nota[0] || b.nota[1] - a.nota[1]);
+}
+const arRotulo = (k, v) => AR_CATS.find((c) => c.k === k).opcoes.find((o) => o[0] === v)[2];
+// A escolha (objetivo + atividade) fica guardada na própria atividade, em "foco"
+function arFocar(rows, alvo, objetivo) {
+  const mudadas = new Set();
+  rows.forEach((area) => {
+    area.funcoes = area.funcoes.map((f, i) => {
+      const eAlvo = !!alvo && alvo.area === area && alvo.i === i;
+      if (!eAlvo && !f.foco) return f;
+      const novo = typeof f === 'string' ? { t: f } : { ...f };
+      if (eAlvo) novo.foco = objetivo; else delete novo.foco;
+      mudadas.add(area);
+      return novo;
+    });
+  });
+  mudadas.forEach(arGuardarEmFila);
+}
+function arGuardarEmFila(area) {
   AR.fila = AR.fila.then(() => arSave(area)).catch((e) => {
     console.error(e); toast('Não foi possível guardar. Tenta outra vez.', true);
     AR.loaded = false; if (state.route === 'areas') renderAreas();
   });
+}
+function drawPriorizar(rows, passos) {
+  const empresa = state.empresa;
+  const todas = arAtividades(rows);
+  const foco = todas.find((x) => x.f.foco);
+  const objetivo = foco ? foco.f.foco : AR.objTemp[empresa];
+  const escolher = !objetivo || AR.mudarObj;
+  const porFazer = todas.filter((x) => !arCompleta(x.f));
+  const ranking = objetivo ? arRanking(rows, objetivo) : [];
+  const escolha = `<h3 class="ar-pri-q">O que queres desbloquear primeiro?</h3>
+    <p class="muted">Quando escolhes um objetivo, a primeira atividade da nova classificação fica selecionada. Podes mudar essa escolha na lista.</p>
+    <div class="ar-goals">${AR_OBJETIVOS.map((o) => `<button type="button" class="ar-goal ar-goal-${o.k}${o.k === objetivo ? ' active' : ''}" data-obj="${o.k}" aria-pressed="${o.k === objetivo}"><strong>${o.titulo}</strong><span>${o.texto}</span><i aria-hidden="true">→</i></button>`).join('')}</div>
+    ${objetivo ? '<button type="button" class="btn" id="ar-obj-manter">Manter o meu objetivo</button>' : ''}`;
+  const lista = () => {
+    const o = AR_OBJETIVOS.find((x) => x.k === objetivo);
+    return `<div class="ar-rank-head"><div><h3 class="ar-pri-q">${o.titulo}</h3><p class="muted">Escolhe na lista a atividade por onde queres começar.</p></div><button type="button" class="btn" id="ar-obj-mudar">Mudar objetivo</button></div>
+    ${ranking.length ? `<ol class="ar-rank">${ranking.map((x, n) => {
+    const sel = !!x.f.foco;
+    return `<li><button type="button" class="card ar-item${sel ? ' active' : ''}" data-n="${n}" aria-pressed="${sel}"><span class="ar-pos">${n + 1}</span><span class="ar-item-txt"><strong>${esc(arTxt(x.f))}</strong><small>${esc(x.area.nome)} · Retorno: ${arRotulo('retorno', x.f.retorno)} · Energia: ${arRotulo('energia', x.f.energia)} · Repetição: ${arRotulo('repeticao', x.f.repeticao)}</small></span><em>${sel ? 'Selecionada' : 'Escolher'}</em></button></li>`;
+  }).join('')}</ol>` : '<div class="card empty"><p>Ainda não há atividades com as três respostas. Categoriza pelo menos uma para veres a classificação.</p></div>'}`;
+  };
+  $('#ar-body').innerHTML = `${passos}<div class="ar-pri emp-${empresa}">
+    <div class="ar-cat-head"><div><h2>Priorização</h2><p class="muted">Escolhe por onde começar, de acordo com o teu objetivo.</p></div><button type="button" class="btn" id="ar-rever">Rever categorizações</button></div>
+    ${escolher ? escolha : lista()}
+    ${foco ? '<p class="muted ar-saved">As tuas escolhas ficam guardadas no painel.</p>' : ''}
+    ${porFazer.length ? `<div class="ar-pend"><div class="ar-rank-head"><div><h3>${porFazer.length} ${porFazer.length === 1 ? 'atividade precisa' : 'atividades precisam'} de categorização</h3><p class="muted">Completa as respostas em falta ou assinaladas como “Não sei” para entrarem na classificação.</p></div><button type="button" class="btn" id="ar-cat-agora">Categorizar agora</button></div>
+      <ul>${porFazer.map((x, n) => `<li><button type="button" class="ar-link" data-n="${n}"><u>${esc(arTxt(x.f))}</u> →</button> <small class="muted">${esc(x.area.nome)}</small></li>`).join('')}</ul></div>` : ''}
+    ${todas.length ? '' : '<p class="muted ar-saved">Ainda não há funções. Adiciona-as primeiro no passo 01.</p>'}</div>`;
+  const categorizar = (x) => {
+    AR.passo = 1;
+    if (x) {
+      AR.catArea = x.area.id;
+      AR.catTab = Math.max(0, AR_CATS.findIndex((c) => AR_PONTOS[c.k][x.f[c.k]] === undefined));
+    }
+    renderAreas(); window.scrollTo(0, 0);
+  };
+  $('#ar-rever').addEventListener('click', () => categorizar());
+  $('#ar-cat-agora')?.addEventListener('click', () => categorizar(porFazer[0]));
+  $$('.ar-link').forEach((b) => b.addEventListener('click', () => categorizar(porFazer[+b.dataset.n])));
+  $$('.ar-goal').forEach((b) => b.addEventListener('click', () => {
+    const obj = b.dataset.obj;
+    const primeira = arRanking(rows, obj)[0];
+    AR.mudarObj = false;
+    // sem atividades classificadas não há onde guardar: o objetivo vale só nesta visita
+    if (primeira) { delete AR.objTemp[empresa]; arFocar(rows, primeira, obj); }
+    else { AR.objTemp[empresa] = obj; arFocar(rows, null); }
+    renderAreas();
+  }));
+  $('#ar-obj-manter')?.addEventListener('click', () => { AR.mudarObj = false; renderAreas(); });
+  $('#ar-obj-mudar')?.addEventListener('click', () => { AR.mudarObj = true; renderAreas(); });
+  $$('.ar-item').forEach((b) => b.addEventListener('click', () => { arFocar(rows, ranking[+b.dataset.n], objetivo); renderAreas(); }));
 }
 
 async function renderAreas() {
@@ -360,13 +452,13 @@ async function renderAreas() {
   const aberta = rows.find((a) => a.id === AR.open);
   if (aberta) return drawAreaDetail(aberta);
   const passos = `<div class="ar-steps emp-${empresa}">${AR_PASSOS.map((t, i) => `<button type="button" class="ar-step${AR.passo === i ? ' active' : ''}" data-passo="${i}" aria-pressed="${AR.passo === i}"><span class="ar-num">0${i + 1}</span><span>${t}</span></button>`).join('')}</div>`;
-  const ligarPassos = () => $$('.ar-step').forEach((b) => b.addEventListener('click', () => { AR.passo = +b.dataset.passo; renderAreas(); }));
+  const ligarPassos = () => $$('.ar-step').forEach((b) => b.addEventListener('click', () => { AR.passo = +b.dataset.passo; AR.mudarObj = false; renderAreas(); }));
   if (AR.passo === 1) {
     drawCategorizar(rows, passos);
     return ligarPassos();
   }
-  if (AR.passo) {
-    $('#ar-body').innerHTML = `${passos}<div class="card empty"><div class="big">🛠️</div><h2>${AR_PASSOS[AR.passo]}</h2><p>Esta parte está em construção.</p></div>`;
+  if (AR.passo === 2) {
+    drawPriorizar(rows, passos);
     return ligarPassos();
   }
   $('#ar-body').innerHTML = `${passos}
