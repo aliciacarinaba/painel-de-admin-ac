@@ -665,10 +665,5 @@ select { pointer-events: none; }
 .ar-add input { flex: 1; width: auto; min-width: 200px; background: #fff; }
 .ar-add .btn:disabled { opacity: .45; cursor: default; }
 
-/* Descrição de cada área */
-.ar-desc { margin: 12px 0 26px; }
-.ar-desc p { margin: 0 0 4px; line-height: 1.6; }
-.ar-desc .ar-act { margin-left: -12px; }
-.ar-desc-form { margin: 12px 0 26px; }
-.ar-desc-form textarea { width: 100%; resize: vertical; line-height: 1.6; }
-.ar-desc-form > div { display: flex; gap: 8px; margin-top: 8px; }
+/* Descrição de cada área (o seletor tem de ganhar a ".ar-detail > p") */
+.ar-detail > p.ar-desc { margin: 12px 0 22px; line-height: 1.6; }

@@ -256,10 +256,8 @@ function drawAreaDetail(area) {
   const fns = area.funcoes;
   $('#ar-body').innerHTML = `<div class="ar-detail emp-${area.empresa}">
     <nav class="ar-crumb"><button type="button" id="ar-back">Áreas da empresa</button><span>/</span><span>${esc(area.nome)}</span></nav>
-    <div class="ar-title"><h2>${esc(area.nome)}</h2><button type="button" class="ar-act" id="ar-rename">${AR_PEN} Editar nome</button></div>
-    ${AR.editing === 'desc'
-    ? `<form class="ar-desc-form"><textarea rows="3" aria-label="Descrição da área">${esc(area.descricao || '')}</textarea><div><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ar-desc-undo">Cancelar</button></div></form>`
-    : `<div class="ar-desc">${area.descricao ? `<p>${esc(area.descricao)}</p>` : ''}<button type="button" class="ar-act" id="ar-desc-ed">${AR_PEN} ${area.descricao ? 'Editar descrição' : 'Adicionar descrição'}</button></div>`}
+    <div class="ar-title"><h2>${esc(area.nome)}</h2></div>
+    ${area.descricao ? `<p class="ar-desc">${esc(area.descricao)}</p>` : ''}
     <p class="muted">O que fazes nesta área? Mantém apenas as atividades que fazem parte da tua rotina.</p>
     <ul class="ar-rows">${fns.map((f, i) => (AR.editing === i
     ? `<li class="card ar-row"><form class="ar-inline" data-i="${i}"><input type="text" value="${esc(f)}" aria-label="Função"><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ar-undo">Cancelar</button></form></li>`
@@ -275,18 +273,6 @@ function drawAreaDetail(area) {
     finally { busy = false; }
   };
   $('#ar-back').addEventListener('click', () => { AR.open = null; AR.editing = null; renderAreas(); });
-  $('#ar-rename').addEventListener('click', () => {
-    const nome = (prompt('Nome da área', area.nome) || '').trim();
-    if (nome && nome !== area.nome) save({ nome });
-  });
-  $('#ar-desc-ed')?.addEventListener('click', () => { AR.editing = 'desc'; drawAreaDetail(area); $('.ar-desc-form textarea').focus(); });
-  const descForm = $('.ar-desc-form');
-  if (descForm) {
-    const undo = () => { AR.editing = null; drawAreaDetail(area); };
-    descForm.addEventListener('submit', (e) => { e.preventDefault(); save({ descricao: $('textarea', descForm).value.trim() }); });
-    descForm.addEventListener('keydown', (e) => { if (e.key === 'Escape') undo(); });
-    $('.ar-desc-undo', descForm).addEventListener('click', undo);
-  }
   $$('.ar-ed').forEach((b) => b.addEventListener('click', () => { AR.editing = +b.dataset.i; drawAreaDetail(area); const i = $('.ar-inline input'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }));
   $$('.ar-rmfn').forEach((b) => b.addEventListener('click', () => {
     const i = +b.dataset.i;
