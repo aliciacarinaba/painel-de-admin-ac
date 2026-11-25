@@ -191,8 +191,17 @@ const AREAS_DESC = {
   'Marketing': 'Divulga a marca e a oferta da empresa para atrair potenciais clientes. Estuda o mercado, cria conteúdos, gere campanhas e avalia os seus resultados.',
   'Atendimento ao Cliente': 'Apoia os clientes antes e depois da compra. Esclarece dúvidas, informa sobre encomendas e acompanha pedidos e reclamações até à resolução.',
 };
+const arTxt = (f) => (typeof f === 'string' ? f : f.t);
+const AR_CATS = [
+  { k: 'energia', nome: 'Energia', pergunta: 'Quanta energia exige esta atividade?', ajuda: 'Pensa no esforço físico ou mental.',
+    opcoes: [['baixa', '😌', 'Baixa'], ['media', '🙂', 'Média'], ['alta', '🥵', 'Alta'], ['nao-sei', '🤔', 'Não sei']] },
+  { k: 'retorno', nome: 'Retorno', pergunta: 'Quanto é que esta atividade ajuda a gerar dinheiro?', ajuda: 'Considera a tua perceção. Não ter retorno direto não significa não ter importância.',
+    opcoes: [['nao-sei', '🤔', 'Não sei'], ['sem', '➖', 'Sem retorno direto'], ['baixo', '💵', 'Baixo'], ['medio', '💰', 'Médio'], ['alto', '💎', 'Alto']] },
+  { k: 'repeticao', nome: 'Repetição', pergunta: 'Com que frequência fazes esta atividade?', ajuda: 'Escolhe a opção que mais se aproxima da tua rotina.',
+    opcoes: [['nao-sei', '🤔', 'Não sei'], ['uma-vez', '1️⃣', 'Uma única vez'], ['as-vezes', '🌤️', 'De vez em quando'], ['mensal', '🗓️', 'Todos os meses'], ['semanal', '📅', 'Todas as semanas'], ['diaria', '☀️', 'Todos os dias'], ['varias', '🔁', 'Várias vezes por dia']] },
+];
 const AR_PASSOS = ['Mapear o que a tua empresa faz', 'Categorizar as atividades', 'Priorizar as minhas atividades'];
-const AR = { list: [], loaded: false, open: null, editing: null, passo: 0 };
+const AR = { list: [], loaded: false, open: null, editing: null, passo: 0, catArea: null, catTab: 0, fila: Promise.resolve() };
 const LS_AREAS = 'painel_areas';
 async function arLoad() {
   if (sb) {
@@ -261,8 +270,8 @@ function drawAreaDetail(area) {
     ${area.descricao ? `<p class="ar-desc">${esc(area.descricao)}</p>` : ''}
     <p class="muted">O que fazes nesta área? Mantém apenas as atividades que fazem parte da tua rotina.</p>
     <ul class="ar-rows">${fns.map((f, i) => (AR.editing === i
-    ? `<li class="card ar-row"><form class="ar-inline" data-i="${i}"><input type="text" value="${esc(f)}" aria-label="Função"><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ar-undo">Cancelar</button></form></li>`
-    : `<li class="card ar-row"><span>${esc(f)}</span><div><button type="button" class="ar-act ar-ed" data-i="${i}">${AR_PEN} Editar</button><button type="button" class="ar-act ar-rmfn" data-i="${i}">${AR_TRASH} Eliminar</button></div></li>`)).join('')}</ul>
+    ? `<li class="card ar-row"><form class="ar-inline" data-i="${i}"><input type="text" value="${esc(arTxt(f))}" aria-label="Função"><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ar-undo">Cancelar</button></form></li>`
+    : `<li class="card ar-row"><span>${esc(arTxt(f))}</span><div><button type="button" class="ar-act ar-ed" data-i="${i}">${AR_PEN} Editar</button><button type="button" class="ar-act ar-rmfn" data-i="${i}">${AR_TRASH} Eliminar</button></div></li>`)).join('')}</ul>
     <form class="ar-add" id="ar-add-form"><label for="ar-novo">Adicionar ponto</label>
       <div><input type="text" id="ar-novo" placeholder="Escreve o que fazes nesta área…" autocomplete="off"><button type="submit" class="btn primary" id="ar-add-btn" disabled>+ Adicionar</button></div></form></div>`;
   let busy = false;
@@ -277,7 +286,7 @@ function drawAreaDetail(area) {
   $$('.ar-ed').forEach((b) => b.addEventListener('click', () => { AR.editing = +b.dataset.i; drawAreaDetail(area); const i = $('.ar-inline input'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }));
   $$('.ar-rmfn').forEach((b) => b.addEventListener('click', () => {
     const i = +b.dataset.i;
-    if (confirm(`Eliminar “${fns[i]}”?`)) save({ funcoes: fns.filter((_, j) => j !== i) });
+    if (confirm(`Eliminar “${arTxt(fns[i])}”?`)) save({ funcoes: fns.filter((_, j) => j !== i) });
   }));
   const inline = $('.ar-inline');
   if (inline) {
@@ -285,7 +294,7 @@ function drawAreaDetail(area) {
     inline.addEventListener('submit', (e) => {
       e.preventDefault();
       const v = $('input', inline).value.trim();
-      if (v) save({ funcoes: fns.map((f, j) => (j === +inline.dataset.i ? v : f)) });
+      if (v) save({ funcoes: fns.map((f, j) => (j !== +inline.dataset.i ? f : typeof f === 'string' ? v : { ...f, t: v })) });
     });
     inline.addEventListener('keydown', (e) => { if (e.key === 'Escape') undo(); });
     $('.ar-undo', inline).addEventListener('click', undo);
@@ -298,6 +307,46 @@ function drawAreaDetail(area) {
     if (v && await save({ funcoes: [...fns, v] })) $('#ar-novo')?.focus();
   });
 }
+// Passo 02: escolher uma área e classificar cada função em Energia, Retorno e Repetição
+function drawCategorizar(rows, passos) {
+  const area = rows.find((a) => a.id === AR.catArea) || rows.find((a) => a.funcoes.length) || rows[0];
+  if (!area) { $('#ar-body').innerHTML = `${passos}<div class="card empty"><p>Ainda não há áreas nesta empresa.</p></div>`; return; }
+  const cat = AR_CATS[AR.catTab];
+  const fns = area.funcoes;
+  const total = fns.length;
+  const feitas = fns.filter((f) => AR_CATS.every((c) => f[c.k])).length;
+  const respondidas = fns.filter((f) => f[cat.k]).length;
+  $('#ar-body').innerHTML = `${passos}<div class="ar-cat emp-${area.empresa}">
+    <div class="ar-cat-head"><div><h2>Categoriza as atividades que mantiveste</h2><p class="muted">Escolhe uma área e responde apenas sobre as atividades dela.</p></div>
+      <span>${feitas} de ${total} ${total === 1 ? 'atividade categorizada' : 'atividades categorizadas'} nesta área</span></div>
+    <div class="ar-pick"><label for="ar-cat-area">Escolhe uma área para responder</label>
+      <select id="ar-cat-area">${rows.map((a) => `<option value="${esc(a.id)}"${a.id === area.id ? ' selected' : ''}>${esc(a.nome)}</option>`).join('')}</select>
+      <p class="muted">Vais responder apenas sobre as atividades desta área.</p></div>
+    ${total ? `<div class="ar-tabs">${AR_CATS.map((c, i) => `<button type="button" class="ar-tab${i === AR.catTab ? ' active' : ''}" data-tab="${i}" aria-pressed="${i === AR.catTab}"><small>${i + 1}</small> ${c.nome}</button>`).join('')}</div>
+    <p class="muted">${cat.nome} em ${esc(area.nome)}. ${respondidas} de ${total} respondidas</p>
+    <section class="card ar-quiz"><header><div><h3>${cat.pergunta}</h3><p class="muted">${cat.ajuda}</p></div><span>${respondidas}/${total} respondidas</span></header>
+      ${fns.map((f, i) => `<div class="ar-q"><h4>${esc(arTxt(f))}</h4><div class="ar-opts" role="group" aria-label="${esc(`${cat.nome}: ${arTxt(f)}`)}">${cat.opcoes.map(([v, ic, rotulo]) => `<button type="button" class="ar-opt${f[cat.k] === v ? ' active' : ''}" data-i="${i}" data-v="${v}" aria-pressed="${f[cat.k] === v}"><span aria-hidden="true">${ic}</span>${rotulo}</button>`).join('')}</div></div>`).join('')}</section>`
+    : '<div class="card empty"><p>Esta área ainda não tem funções. Adiciona-as primeiro no passo 01.</p><button type="button" class="btn primary" id="ar-cat-add">Adicionar funções →</button></div>'}</div>`;
+  $('#ar-cat-area').addEventListener('change', (e) => { AR.catArea = rows.find((a) => String(a.id) === e.target.value).id; renderAreas(); });
+  $('#ar-cat-add')?.addEventListener('click', () => { AR.passo = 0; AR.open = area.id; AR.editing = null; renderAreas(); });
+  $$('.ar-tab').forEach((b) => b.addEventListener('click', () => { AR.catTab = +b.dataset.tab; renderAreas(); }));
+  $$('.ar-opt').forEach((b) => b.addEventListener('click', () => arResponder(area, +b.dataset.i, cat.k, b.dataset.v)));
+}
+// Mostra logo a resposta e guarda por ordem; clicar de novo na mesma opção retira a resposta
+function arResponder(area, i, chave, valor) {
+  area.funcoes = area.funcoes.map((f, j) => {
+    if (j !== i) return f;
+    const novo = typeof f === 'string' ? { t: f } : { ...f };
+    if (novo[chave] === valor) delete novo[chave]; else novo[chave] = valor;
+    return novo;
+  });
+  renderAreas();
+  AR.fila = AR.fila.then(() => arSave(area)).catch((e) => {
+    console.error(e); toast('Não foi possível guardar. Tenta outra vez.', true);
+    AR.loaded = false; if (state.route === 'areas') renderAreas();
+  });
+}
+
 async function renderAreas() {
   const empresa = state.empresa;
   $('#view').innerHTML = `
@@ -312,6 +361,10 @@ async function renderAreas() {
   if (aberta) return drawAreaDetail(aberta);
   const passos = `<div class="ar-steps emp-${empresa}">${AR_PASSOS.map((t, i) => `<button type="button" class="ar-step${AR.passo === i ? ' active' : ''}" data-passo="${i}" aria-pressed="${AR.passo === i}"><span class="ar-num">0${i + 1}</span><span>${t}</span></button>`).join('')}</div>`;
   const ligarPassos = () => $$('.ar-step').forEach((b) => b.addEventListener('click', () => { AR.passo = +b.dataset.passo; renderAreas(); }));
+  if (AR.passo === 1) {
+    drawCategorizar(rows, passos);
+    return ligarPassos();
+  }
   if (AR.passo) {
     $('#ar-body').innerHTML = `${passos}<div class="card empty"><div class="big">🛠️</div><h2>${AR_PASSOS[AR.passo]}</h2><p>Esta parte está em construção.</p></div>`;
     return ligarPassos();
@@ -321,7 +374,7 @@ async function renderAreas() {
     <div class="ar-grid emp-${empresa}">${rows.map((a) => `<article class="card ar-card" data-id="${esc(a.id)}">
       <div class="ar-top"><span class="ar-badge">${esc(arSigla(a.nome))}</span><button type="button" class="ic-btn ic-del ar-rm" title="Eliminar área" aria-label="Eliminar a área ${esc(a.nome)}">${AR_TRASH}</button></div>
       <h3>${esc(a.nome)}</h3>
-      ${a.funcoes.length ? `<ul>${a.funcoes.slice(0, 3).map((f) => `<li>${esc(f)}</li>`).join('')}</ul>` : '<p class="muted">Ainda sem funções. Uma função por linha.</p>'}
+      ${a.funcoes.length ? `<ul>${a.funcoes.slice(0, 3).map((f) => `<li>${esc(arTxt(f))}</li>`).join('')}</ul>` : '<p class="muted">Ainda sem funções. Uma função por linha.</p>'}
       <div class="ar-foot"><span>${a.funcoes.length ? arCount(a.funcoes.length) : ''}</span><button type="button" class="ar-open">${a.funcoes.length ? 'Ver todas →' : 'Adicionar funções →'}</button></div></article>`).join('')}</div>`;
   const find = (el) => AR.list.find((x) => String(x.id) === el.closest('.ar-card').dataset.id);
   $('#ar-new').addEventListener('click', () => newArea({
