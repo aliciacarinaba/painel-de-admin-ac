@@ -117,13 +117,16 @@ $('#menu-toggle').addEventListener('click', () => $('#sidebar').classList.toggle
 function go(route) {
   // Sempre que se entra no Instagram vindo de outra secção, abre primeiro nas Métricas
   if (route === 'instagram' && state.route !== 'instagram') state.igTab = 'metrics';
-  if (route === 'home' && state.route !== 'home') state.homeTab = 'general';
+  if (route === 'alicia' && state.route !== 'alicia') state.homeTab = 'general';
   if (route === 'calendar' && state.route !== 'calendar') CA.sub = 'cal';
   if (route === 'partnerships' && state.route !== 'partnerships') { PA.open = null; PA.draft = null; PA.dirty = false; }
   if (route === 'courses' && state.route !== 'courses') { state.courseTab = 'draft'; CO.open = null; CO.draft = null; CO.dirty = false; }
   state.route = route;
-  $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.route === route));
-  if (route === 'home') renderHome();
+  $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.route === route && !b.classList.contains('nav-back')));
+  showArea(areaOf(route));
+  if (route === 'home') renderCompanies();
+  else if (route === 'alicia') renderHome();
+  else if (route === 'belrose' || route === 'belshop') renderCompanySoon(route);
   else if (route === 'calendar') renderCalendar();
   else if (route === 'partnerships') renderPartnerships();
   else if (route === 'courses') renderCourses();
@@ -142,10 +145,40 @@ async function safeCount(table, filter) {
   } catch { return 0; }
 }
 
+// ---------- Empresas ----------
+const EMPRESAS = {
+  alicia: { nome: 'Alícia C.', tipo: 'Marca pessoal e formação' },
+  belrose: { nome: 'Belrose', tipo: 'Salão de beleza e bem-estar' },
+  belshop: { nome: 'Belshop', tipo: 'Loja online' },
+};
+// Área onde está cada ecrã: o Início geral, ou uma das empresas
+const areaOf = (route) => (route === 'home' ? 'home' : EMPRESAS[route] ? route : 'alicia');
+function showArea(area) {
+  $$('.nav-item[data-area]').forEach((b) => { b.hidden = !b.dataset.area.split(' ').includes(area); });
+  $('#area-name').textContent = area === 'home' ? 'Admin' : EMPRESAS[area].nome;
+}
+
 // ---------- Início ----------
-function renderHome() {
+function renderCompanies() {
   $('#view').innerHTML = `
     <div class="page-head"><h1>👋 Bem-vinda ao teu Painel de Administração</h1></div>
+    <div class="emp-grid">${Object.entries(EMPRESAS).map(([k, e]) => `<button type="button" class="emp-card emp-${k}" data-emp="${k}" aria-label="Entrar em ${esc(e.nome)}">
+      <span class="emp-logo"><img src="logos/${k}.png" alt="${esc(e.nome)}"></span>
+      <span class="emp-tipo">${esc(e.tipo)}</span>
+      <span class="emp-go">Entrar →</span></button>`).join('')}</div>`;
+  $$('.emp-card').forEach((b) => b.addEventListener('click', () => go(b.dataset.emp)));
+}
+function renderCompanySoon(k) {
+  const e = EMPRESAS[k];
+  $('#view').innerHTML = `
+    <div class="page-head"><h1>${esc(e.nome)}</h1></div>
+    <div class="card empty"><div class="big">🛠️</div><h2>Área em construção</h2><p>As secções da ${esc(e.nome)} vão ser criadas aqui, uma de cada vez.</p></div>`;
+}
+
+// ---------- Alícia C.: visão geral e marca ----------
+function renderHome() {
+  $('#view').innerHTML = `
+    <div class="page-head"><h1>Alícia C.</h1></div>
     <div class="tabs">
       <button class="tab" data-tab="general">Informação Geral</button>
       <button class="tab" data-tab="branding">Branding</button>
@@ -427,13 +460,13 @@ async function runAudience() {
     toast('Audiência atualizada.');
   } catch (e) { console.error(e); toast('Não foi possível atualizar a audiência. Tenta outra vez daqui a pouco.', true); }
   AU.loading = false;
-  if (state.route === 'home' && state.homeTab === 'audience') drawAudience();
+  if (state.route === 'alicia' && state.homeTab === 'audience') drawAudience();
 }
 
 async function renderAudience() {
   $('#home-body').innerHTML = '<div class="card empty" style="margin-top:16px"><p>A carregar…</p></div>';
   if (!AU.loaded) await loadAudience();
-  if (state.route === 'home' && state.homeTab === 'audience') drawAudience();
+  if (state.route === 'alicia' && state.homeTab === 'audience') drawAudience();
 }
 
 // --- pequenos componentes gráficos ---
@@ -788,7 +821,7 @@ async function renderGeneral() {
     safeCount('ig_deliveries', (q) => q.eq('status', 'ok').gte('ts', since)),
     parCount(),
   ]);
-  if (state.route !== 'home' || !$('#n-leads')) return;
+  if (state.route !== 'alicia' || !$('#n-leads')) return;
   $('#n-leads').textContent = leads; $('#n-autos').textContent = autos; $('#n-dms').textContent = dms; $('#n-pars').textContent = pars;
 }
 
