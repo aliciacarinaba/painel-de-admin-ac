@@ -624,7 +624,6 @@ select { pointer-events: none; }
 .emp-card:focus-visible { outline: 3px solid var(--emp-detail); outline-offset: 3px; }
 .emp-logo { flex: 1; display: grid; place-items: center; width: 100%; min-height: 190px; }
 .emp-logo img { width: min(78%, 260px); max-height: 190px; object-fit: contain; }
-.emp-tipo { font-size: 15px; font-weight: 500; letter-spacing: .02em; }
 .emp-go { align-self: stretch; padding: 12px; border-radius: 12px; background: var(--emp-fg); color: var(--emp-bg); font-weight: 700; font-size: 14px; }
 .emp-alicia  { --emp-bg: #8F5B5F; --emp-fg: #F5F1EE; --emp-detail: #C8A49F; }
 .emp-belrose { --emp-bg: #6F3B2F; --emp-fg: #F2E9E3; --emp-detail: #BE9089; }

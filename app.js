@@ -147,9 +147,9 @@ async function safeCount(table, filter) {
 
 // ---------- Empresas ----------
 const EMPRESAS = {
-  alicia: { nome: 'Alícia C.', tipo: 'Marca pessoal e formação' },
-  belrose: { nome: 'Belrose', tipo: 'Salão de beleza e bem-estar' },
-  belshop: { nome: 'Belshop', tipo: 'Loja online' },
+  alicia: { nome: 'Alícia C.' },
+  belrose: { nome: 'Belrose' },
+  belshop: { nome: 'Belshop' },
 };
 // Área onde está cada ecrã: o Início geral, ou uma das empresas
 const areaOf = (route) => (route === 'home' ? 'home' : EMPRESAS[route] ? route : 'alicia');
@@ -164,7 +164,6 @@ function renderCompanies() {
     <div class="page-head"><h1>👋 Bem-vinda ao teu Painel de Administração</h1></div>
     <div class="emp-grid">${Object.entries(EMPRESAS).map(([k, e]) => `<button type="button" class="emp-card emp-${k}" data-emp="${k}" aria-label="Entrar em ${esc(e.nome)}">
       <span class="emp-logo"><img src="logos/${k}.png" alt="${esc(e.nome)}"></span>
-      <span class="emp-tipo">${esc(e.tipo)}</span>
       <span class="emp-go">Entrar →</span></button>`).join('')}</div>`;
   $$('.emp-card').forEach((b) => b.addEventListener('click', () => go(b.dataset.emp)));
 }
