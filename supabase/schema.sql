@@ -340,3 +340,19 @@ insert into empresa_areas (empresa, nome, ordem)
     ('Atendimento ao Cliente', 10)
   ) as a(nome, ordem)
   where not exists (select 1 from empresa_areas);
+-- Descrição de cada área (preenche apenas as que estão vazias)
+alter table empresa_areas add column if not exists descricao text not null default '';
+update empresa_areas as t set descricao = d.descricao, updated_at = now()
+  from (values
+    ('Administrativo', 'Apoia o funcionamento diário da empresa. Organiza documentos, atualiza registos, trata da correspondência e marca reuniões.'),
+    ('Gestão', 'Define a estratégia e coordena as áreas da empresa. Estabelece objetivos, distribui recursos, aprova investimentos e acompanha resultados.'),
+    ('Financeiro', 'Gere as receitas, as despesas e a tesouraria. Emite faturas, acompanha cobranças, paga a fornecedores e prepara orçamentos.'),
+    ('Recursos Humanos', 'Acompanha os colaboradores ao longo do seu percurso na empresa. Recruta e integra pessoas, gere férias e ausências e organiza formação.'),
+    ('Operações e Produção', 'Coordena a produção de bens ou a prestação de serviços. Planeia o trabalho, distribui tarefas e acompanha a qualidade e os prazos.'),
+    ('Logística', 'Gere o armazenamento e a movimentação de materiais e produtos. Recebe mercadorias, controla stocks, prepara encomendas e coordena entregas e devoluções.'),
+    ('Produto', 'Define a oferta da empresa e orienta a sua evolução. Recolhe opiniões dos clientes, identifica necessidades e decide que melhorias implementar primeiro.'),
+    ('Comercial', 'Procura oportunidades de venda e gere a relação comercial com os clientes. Contacta potenciais clientes, prepara propostas, negoceia condições e fecha negócios.'),
+    ('Marketing', 'Divulga a marca e a oferta da empresa para atrair potenciais clientes. Estuda o mercado, cria conteúdos, gere campanhas e avalia os seus resultados.'),
+    ('Atendimento ao Cliente', 'Apoia os clientes antes e depois da compra. Esclarece dúvidas, informa sobre encomendas e acompanha pedidos e reclamações até à resolução.')
+  ) as d(nome, descricao)
+  where t.nome = d.nome and t.descricao = '';

@@ -179,6 +179,18 @@ function renderCompanySoon(k) {
 
 // ---------- Áreas e Funções da Empresa ----------
 const AREAS_BASE = ['Administrativo', 'Gestão', 'Financeiro', 'Recursos Humanos', 'Operações e Produção', 'Logística', 'Produto', 'Comercial', 'Marketing', 'Atendimento ao Cliente'];
+const AREAS_DESC = {
+  'Administrativo': 'Apoia o funcionamento diário da empresa. Organiza documentos, atualiza registos, trata da correspondência e marca reuniões.',
+  'Gestão': 'Define a estratégia e coordena as áreas da empresa. Estabelece objetivos, distribui recursos, aprova investimentos e acompanha resultados.',
+  'Financeiro': 'Gere as receitas, as despesas e a tesouraria. Emite faturas, acompanha cobranças, paga a fornecedores e prepara orçamentos.',
+  'Recursos Humanos': 'Acompanha os colaboradores ao longo do seu percurso na empresa. Recruta e integra pessoas, gere férias e ausências e organiza formação.',
+  'Operações e Produção': 'Coordena a produção de bens ou a prestação de serviços. Planeia o trabalho, distribui tarefas e acompanha a qualidade e os prazos.',
+  'Logística': 'Gere o armazenamento e a movimentação de materiais e produtos. Recebe mercadorias, controla stocks, prepara encomendas e coordena entregas e devoluções.',
+  'Produto': 'Define a oferta da empresa e orienta a sua evolução. Recolhe opiniões dos clientes, identifica necessidades e decide que melhorias implementar primeiro.',
+  'Comercial': 'Procura oportunidades de venda e gere a relação comercial com os clientes. Contacta potenciais clientes, prepara propostas, negoceia condições e fecha negócios.',
+  'Marketing': 'Divulga a marca e a oferta da empresa para atrair potenciais clientes. Estuda o mercado, cria conteúdos, gere campanhas e avalia os seus resultados.',
+  'Atendimento ao Cliente': 'Apoia os clientes antes e depois da compra. Esclarece dúvidas, informa sobre encomendas e acompanha pedidos e reclamações até à resolução.',
+};
 const AR = { list: [], loaded: false, open: null, editing: null };
 const LS_AREAS = 'painel_areas';
 async function arLoad() {
@@ -190,6 +202,7 @@ async function arLoad() {
     let saved = null;
     try { saved = JSON.parse(localStorage.getItem(LS_AREAS)); } catch { /* sem armazenamento */ }
     AR.list = saved || Object.keys(EMPRESAS).flatMap((empresa) => AREAS_BASE.map((nome, i) => ({ id: `${empresa}-${i}`, empresa, nome, ordem: i + 1, funcoes: [] })));
+    AR.list.forEach((a) => { if (a.descricao === undefined) a.descricao = AREAS_DESC[a.nome] || ''; });
   }
   AR.loaded = true;
 }
@@ -244,6 +257,9 @@ function drawAreaDetail(area) {
   $('#ar-body').innerHTML = `<div class="ar-detail emp-${area.empresa}">
     <nav class="ar-crumb"><button type="button" id="ar-back">Áreas da empresa</button><span>/</span><span>${esc(area.nome)}</span></nav>
     <div class="ar-title"><h2>${esc(area.nome)}</h2><button type="button" class="ar-act" id="ar-rename">${AR_PEN} Editar nome</button></div>
+    ${AR.editing === 'desc'
+    ? `<form class="ar-desc-form"><textarea rows="3" aria-label="Descrição da área">${esc(area.descricao || '')}</textarea><div><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ar-desc-undo">Cancelar</button></div></form>`
+    : `<div class="ar-desc">${area.descricao ? `<p>${esc(area.descricao)}</p>` : ''}<button type="button" class="ar-act" id="ar-desc-ed">${AR_PEN} ${area.descricao ? 'Editar descrição' : 'Adicionar descrição'}</button></div>`}
     <p class="muted">O que fazes nesta área? Mantém apenas as atividades que fazem parte da tua rotina.</p>
     <ul class="ar-rows">${fns.map((f, i) => (AR.editing === i
     ? `<li class="card ar-row"><form class="ar-inline" data-i="${i}"><input type="text" value="${esc(f)}" aria-label="Função"><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ar-undo">Cancelar</button></form></li>`
@@ -263,6 +279,14 @@ function drawAreaDetail(area) {
     const nome = (prompt('Nome da área', area.nome) || '').trim();
     if (nome && nome !== area.nome) save({ nome });
   });
+  $('#ar-desc-ed')?.addEventListener('click', () => { AR.editing = 'desc'; drawAreaDetail(area); $('.ar-desc-form textarea').focus(); });
+  const descForm = $('.ar-desc-form');
+  if (descForm) {
+    const undo = () => { AR.editing = null; drawAreaDetail(area); };
+    descForm.addEventListener('submit', (e) => { e.preventDefault(); save({ descricao: $('textarea', descForm).value.trim() }); });
+    descForm.addEventListener('keydown', (e) => { if (e.key === 'Escape') undo(); });
+    $('.ar-desc-undo', descForm).addEventListener('click', undo);
+  }
   $$('.ar-ed').forEach((b) => b.addEventListener('click', () => { AR.editing = +b.dataset.i; drawAreaDetail(area); const i = $('.ar-inline input'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }));
   $$('.ar-rmfn').forEach((b) => b.addEventListener('click', () => {
     const i = +b.dataset.i;
